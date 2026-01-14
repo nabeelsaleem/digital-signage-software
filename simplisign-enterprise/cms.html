@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpliSign Enterprise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .sidebar-link { transition: all 0.2s; border-left: 3px solid transparent; }
+        .sidebar-link:hover, .sidebar-link.active { background-color: #1e293b; border-left-color: #3b82f6; }
+        .sidebar-link.active i { color: #3b82f6; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .toast { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="text-slate-800 h-screen overflow-hidden flex">
+
+    <div id="auth-view" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center hidden">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md text-center">
+            <h1 class="text-2xl font-bold mb-2 text-slate-800">SimpliSign Workspace</h1>
+            <button onclick="signInGoogle()" class="w-full flex justify-center gap-3 bg-white border hover:bg-slate-50 border-slate-300 text-slate-700 font-semibold py-3 rounded-lg mb-6 mt-6 transition-all">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5"> Sign in with Google
+            </button>
+            <div class="border-t pt-4">
+                <input type="email" id="email" placeholder="Email" class="w-full p-3 border rounded-lg mb-3">
+                <input type="password" id="password" placeholder="Password" class="w-full p-3 border rounded-lg mb-4">
+                <button onclick="handleEmailAuth()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">Login / Join</button>
+            </div>
+        </div>
+    </div>
+
+    <aside id="sidebar" class="w-64 bg-slate-900 text-white flex-col hidden md:flex shrink-0">
+        <div class="p-6 border-b border-slate-800 font-bold text-xl tracking-tight flex items-center gap-2">
+            <i class="fa-solid fa-tv text-blue-500"></i> SimpliSign
+        </div>
+        <nav class="flex-1 py-6 space-y-1">
+            <button onclick="nav('media')" class="sidebar-link w-full text-left px-6 py-3 text-slate-300 hover:text-white flex items-center gap-3"><i class="fa-regular fa-images w-5"></i> Media</button>
+            <button onclick="nav('playlists')" class="sidebar-link w-full text-left px-6 py-3 text-slate-300 hover:text-white flex items-center gap-3"><i class="fa-solid fa-layer-group w-5"></i> Playlists</button>
+            <button onclick="nav('schedules')" class="sidebar-link w-full text-left px-6 py-3 text-slate-300 hover:text-white flex items-center gap-3"><i class="fa-regular fa-clock w-5"></i> Schedules</button>
+            <button onclick="nav('devices')" class="sidebar-link w-full text-left px-6 py-3 text-slate-300 hover:text-white flex items-center gap-3"><i class="fa-solid fa-desktop w-5"></i> Screens</button>
+        </nav>
+        <div class="p-6 border-t border-slate-800">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm">U</div>
+                <div class="overflow-hidden"><p class="font-medium truncate text-sm" id="user-email">...</p></div>
+            </div>
+            <button onclick="logout()" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-2"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+        </div>
+    </aside>
+
+    <main id="main-content" class="flex-1 flex flex-col h-screen overflow-hidden hidden">
+        <header class="bg-white border-b h-16 flex items-center justify-between px-8 shadow-sm shrink-0">
+            <h2 id="page-title" class="text-xl font-bold text-slate-800">Overview</h2>
+            <div id="header-actions"></div>
+        </header>
+
+        <div class="flex-1 overflow-auto p-8 bg-slate-50 relative">
+            
+            <div id="view-media" class="hidden space-y-6">
+                <div class="flex gap-2 mb-4">
+                    <button onclick="filterMedia('all')" class="px-4 py-1 rounded-full bg-white border text-sm hover:bg-slate-50">All</button>
+                    <button onclick="filterMedia('image')" class="px-4 py-1 rounded-full bg-white border text-sm hover:bg-slate-50">Images</button>
+                    <button onclick="filterMedia('video')" class="px-4 py-1 rounded-full bg-white border text-sm hover:bg-slate-50">Videos</button>
+                </div>
+                <input type="file" id="media-upload-input" class="hidden" multiple onchange="processUpload()">
+                <div id="media-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6"></div>
+            </div>
+
+            <div id="view-playlists" class="hidden space-y-6">
+                <div id="playlist-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <div id="view-schedules" class="hidden space-y-6">
+                <div id="schedule-list" class="space-y-3"></div>
+            </div>
+
+            <div id="view-devices" class="hidden space-y-6">
+                <div id="device-list" class="space-y-4"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="modal-playlist" class="fixed inset-0 z-50 bg-black/60 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white w-[95%] max-w-5xl h-[85vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg">Playlist Editor</h3>
+                <button onclick="closeModal('modal-playlist')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="flex-1 flex overflow-hidden">
+                <div class="w-1/3 border-r bg-white flex flex-col">
+                    <div class="p-4 border-b space-y-3">
+                        <input type="hidden" id="pl-id">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Name</label>
+                        <input type="text" id="pl-name" class="w-full p-2 border rounded focus:ring-2 ring-blue-500 outline-none">
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 bg-slate-50">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase mb-3">Library</h4>
+                        <div id="pl-source-list" class="space-y-2"></div>
+                    </div>
+                </div>
+                <div class="w-2/3 bg-slate-100 flex flex-col">
+                    <div class="p-3 border-b flex justify-between text-sm font-bold text-slate-600"><span>Timeline</span><span id="pl-count">0 Items</span></div>
+                    <div id="pl-target-list" class="flex-1 overflow-y-auto p-6 space-y-2"></div>
+                </div>
+            </div>
+            <div class="p-4 border-t bg-white flex justify-end gap-3">
+                <button onclick="savePlaylist()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium">Save Playlist</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-schedule" class="fixed inset-0 z-50 bg-black/60 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl p-6 max-h-[90vh] flex flex-col">
+            <h3 class="font-bold text-lg mb-4">Manage Device Schedule</h3>
+            
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Device</label>
+                <select id="sch-device" class="w-full p-2 border rounded bg-slate-50 font-medium" onchange="loadDeviceSchedules(this.value)"></select>
+            </div>
+
+            <div class="flex-1 overflow-y-auto border rounded-lg bg-slate-50 p-2 space-y-2" id="sch-playlist-container">
+                </div>
+
+            <div class="mt-6 flex justify-end gap-3 pt-4 border-t">
+                <button onclick="closeModal('modal-schedule')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded">Close</button>
+                <button onclick="saveSchedule()" class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow-sm">Save All Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <script>
+
+
+// --- CONFIGURATION ---
+let sb = null;
+
+// This function fetches keys from your Vercel backend
+async function initSupabase() {
+    try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+        
+        // Start the app after keys are loaded
+        startApp(); 
+    } catch (error) {
+        alert("Error loading security config. Please contact support.");
+        console.error("Config failed:", error);
+    }
+}
+
+// Wrap your initialization logic in startApp
+function startApp() {
+    // ... Move your auth listener and initial load calls here ...
+    // Example:
+    sb.auth.onAuthStateChange((event, session) => {
+        // ... your existing auth code ...
+    });
+}
+
+
+
+// Kickstart the process
+initSupabase();
+
+        let state = { user: null, media: [], playlists: [], devices: [], schedules: [], draft: [] };
+
+        sb.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                state.user = session.user;
+                document.getElementById('auth-view').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                document.getElementById('sidebar').classList.add('flex');
+                document.getElementById('user-email').innerText = state.user.email;
+                nav('media');
+            } else {
+                document.getElementById('auth-view').classList.remove('hidden');
+                document.getElementById('sidebar').classList.add('hidden');
+            }
+        });
+
+        async function signInGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } }); }
+        async function handleEmailAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const { error } = await sb.auth.signInWithPassword({ email, password });
+            if (error) {
+                const { error: upErr } = await sb.auth.signUp({ email, password });
+                if (upErr) showToast(upErr.message, 'error'); else showToast('Account created!', 'success');
+            }
+        }
+        async function logout() { await sb.auth.signOut(); location.reload(); }
+
+        function nav(view) {
+            ['media', 'playlists', 'devices', 'schedules'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            document.getElementById(`view-${view}`).classList.remove('hidden');
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active', 'bg-slate-800'));
+            
+            const btn = document.getElementById('header-actions');
+            const title = document.getElementById('page-title');
+            
+            if (view === 'media') {
+                title.innerText = 'Media Library';
+                btn.innerHTML = `<button onclick="document.getElementById('media-upload-input').click()" class="bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm">+ Upload</button>`;
+                loadMedia();
+            } else if (view === 'playlists') {
+                title.innerText = 'Playlists';
+                btn.innerHTML = `<button onclick="openPlaylistBuilder()" class="bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm">+ New Playlist</button>`;
+                loadPlaylists();
+            } else if (view === 'schedules') {
+                title.innerText = 'Schedules';
+                btn.innerHTML = `<button onclick="openScheduleModal()" class="bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm">+ Add Schedule</button>`;
+                loadSchedules();
+            } else {
+                title.innerText = 'Screens';
+                btn.innerHTML = `<button onclick="addDevice()" class="bg-blue-600 text-white px-4 py-2 rounded font-medium text-sm">+ New Screen</button>`;
+                loadDevices();
+            }
+        }
+
+        async function loadMedia() {
+            const { data, error } = await sb.from('media').select('*').order('id', {ascending: false});
+            if(error) return showToast(error.message, 'error');
+            state.media = data || [];
+            filterMedia('all');
+        }
+
+        function filterMedia(type) {
+            const grid = document.getElementById('media-grid');
+            grid.innerHTML = '';
+            const filtered = type === 'all' ? state.media : state.media.filter(m => m.type.includes(type));
+            filtered.forEach(m => {
+                grid.innerHTML += `
+                    <div class="group relative bg-white border rounded-xl overflow-hidden shadow-sm">
+                        <div class="aspect-video bg-slate-100 relative">
+                            ${m.type.includes('image') ? `<img src="${m.url}" class="w-full h-full object-cover">` : `<div class="flex items-center justify-center h-full text-slate-400"><i class="fa-solid fa-video text-2xl"></i></div>`}
+                            <button onclick="deleteMedia(${m.id})" class="absolute top-2 right-2 p-1 bg-white rounded-full text-red-500 opacity-0 group-hover:opacity-100"><i class="fa-solid fa-trash text-xs"></i></button>
+                        </div>
+                        <div class="p-3"><p class="text-xs font-bold truncate">${m.name}</p></div>
+                    </div>`;
+            });
+        }
+
+        async function processUpload() {
+            const files = document.getElementById('media-upload-input').files;
+            if(!files.length) return;
+            showToast('Uploading...', 'info');
+            for(let file of files) {
+                const name = `${Date.now()}-${file.name.replace(/\s/g,'')}`;
+                await sb.storage.from('media').upload(name, file);
+                const { data } = sb.storage.from('media').getPublicUrl(name);
+                await sb.from('media').insert({ user_id: state.user.id, name: file.name, type: file.type, url: data.publicUrl });
+            }
+            showToast('Upload Complete', 'success');
+            loadMedia();
+        }
+
+        async function deleteMedia(id) {
+            if(!confirm('Delete file?')) return;
+            await sb.from('media').delete().eq('id', id);
+            loadMedia();
+        }
+
+        async function loadPlaylists() {
+            const { data, error } = await sb.from('playlists').select('*').order('id', {ascending: false});
+            if(error) return showToast(error.message, 'error');
+            state.playlists = data || [];
+            document.getElementById('playlist-list').innerHTML = state.playlists.map(p => `
+                <div class="bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-lg">${p.name}</h3>
+                            <div class="flex gap-2">
+                                <button onclick="renamePlaylist(${p.id}, '${p.name}')" class="text-slate-400 hover:text-blue-500"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deletePlaylist(${p.id})" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-500">${p.items ? p.items.length : 0} items</p>
+                    </div>
+                    <button onclick="editPlaylist(${p.id})" class="mt-4 w-full py-2 border rounded text-sm font-medium hover:bg-slate-50">Edit Content</button>
+                </div>
+            `).join('');
+        }
+
+        function openPlaylistBuilder(pl = null) {
+            document.getElementById('modal-playlist').classList.remove('hidden');
+            document.getElementById('pl-source-list').innerHTML = state.media.map(m => `
+                <div onclick="addToDraft(${m.id})" class="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
+                    <img src="${m.url}" class="w-8 h-8 rounded object-cover bg-slate-200">
+                    <p class="text-xs font-bold truncate flex-1">${m.name}</p>
+                    <i class="fa-solid fa-plus text-blue-500"></i>
+                </div>`).join('');
+            if(pl) {
+                document.getElementById('pl-id').value = pl.id;
+                document.getElementById('pl-name').value = pl.name;
+                state.draft = pl.items || [];
+            } else {
+                document.getElementById('pl-id').value = '';
+                document.getElementById('pl-name').value = '';
+                state.draft = [];
+            }
+            renderDraft();
+        }
+
+        function editPlaylist(id) { openPlaylistBuilder(state.playlists.find(p => p.id === id)); }
+        function addToDraft(id) { state.draft.push({ id, duration: 10 }); renderDraft(); }
+        function renderDraft() {
+            const list = document.getElementById('pl-target-list');
+            document.getElementById('pl-count').innerText = `${state.draft.length} Items`;
+            list.innerHTML = state.draft.map((item, i) => {
+                const m = state.media.find(x => x.id === item.id);
+                if(!m) return '';
+                return `
+                <div class="bg-white p-3 rounded border flex items-center gap-3">
+                    <span class="text-xs font-bold text-slate-300">${i+1}</span>
+                    <img src="${m.url}" class="w-10 h-10 rounded object-cover bg-slate-100">
+                    <p class="text-xs font-bold truncate flex-1">${m.name}</p>
+                    <input type="number" value="${item.duration}" onchange="state.draft[${i}].duration=parseInt(this.value)" class="w-12 p-1 text-xs border rounded text-center">
+                    <button onclick="state.draft.splice(${i},1); renderDraft()" class="text-red-400 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+                </div>`;
+            }).join('');
+        }
+
+        async function savePlaylist() {
+            const name = document.getElementById('pl-name').value;
+            const id = document.getElementById('pl-id').value;
+            if(!name) return showToast('Name required', 'error');
+            const payload = { user_id: state.user.id, name, items: state.draft };
+            const { error } = id ? await sb.from('playlists').update(payload).eq('id', id) : await sb.from('playlists').insert(payload);
+            if(error) showToast(error.message, 'error');
+            else { showToast('Saved', 'success'); closeModal('modal-playlist'); loadPlaylists(); }
+        }
+
+        async function renamePlaylist(id, old) {
+            const name = prompt("New Name:", old);
+            if(name) await sb.from('playlists').update({name}).eq('id', id); loadPlaylists();
+        }
+        async function deletePlaylist(id) {
+            if(confirm("Delete?")) await sb.from('playlists').delete().eq('id', id); loadPlaylists();
+        }
+
+        // --- SCHEDULES (UPDATED FOR MULTI-SELECT) ---
+        async function loadSchedules() {
+            // Fetch all schedules
+            const { data, error } = await sb.from('schedules').select('*').order('device_id');
+            if(error) return showToast(error.message, 'error');
+            state.schedules = data || [];
+            
+            // Ensure dependencies are loaded
+            if(!state.devices.length) await loadDevices();
+            if(!state.playlists.length) await loadPlaylists();
+            
+            const list = document.getElementById('schedule-list');
+            
+            if(state.schedules.length === 0) {
+                list.innerHTML = `<p class="text-center text-slate-400 mt-10">No schedules active.</p>`;
+                return;
+            }
+
+            list.innerHTML = state.schedules.map(s => {
+                const dev = state.devices.find(d => d.id === s.device_id);
+                const pl = state.playlists.find(p => p.id === s.playlist_id);
+                
+                // Format times (remove seconds) e.g., "08:00:00" -> "08:00"
+                const start = s.start_time.slice(0, 5);
+                const end = s.end_time.slice(0, 5);
+
+                return `
+                <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-bold text-slate-700">${dev ? dev.name : 'Unknown Device'}</span>
+                            <i class="fa-solid fa-arrow-right text-slate-300 text-xs"></i>
+                            <span class="font-bold text-blue-600">${pl ? pl.name : 'Unknown Playlist'}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded font-mono">
+                                <i class="fa-regular fa-clock mr-1"></i>${start} - ${end}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openScheduleModal(${s.device_id})" class="text-slate-400 hover:text-blue-600 p-2" title="Edit Device Schedule">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="deleteSchedule(${s.id})" class="text-slate-400 hover:text-red-500 p-2" title="Delete Rule">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // --- NEW SCHEDULE LOGIC ---
+
+        // 1. Open Modal
+       // 2. OPEN MODAL (Updated to accept a specific device ID)
+        function openScheduleModal(targetDeviceId = null) {
+            document.getElementById('modal-schedule').classList.remove('hidden');
+            
+            // Populate Devices Dropdown
+            document.getElementById('sch-device').innerHTML = state.devices.map(d => 
+                `<option value="${d.id}">${d.name} (${d.code})</option>`
+            ).join('');
+
+            // If we clicked "Edit" on a specific row, select that device
+            if (targetDeviceId) {
+                document.getElementById('sch-device').value = targetDeviceId;
+            }
+
+            // Load the checklist for the selected device
+            const currentDevId = document.getElementById('sch-device').value;
+            if(currentDevId) loadDeviceSchedules(currentDevId);
+        }
+
+        // 2. Render the Playlist List with Time Inputs
+        function loadDeviceSchedules(deviceId) {
+            deviceId = parseInt(deviceId);
+            // Filter existing schedules for this specific device
+            const existing = state.schedules.filter(s => s.device_id === deviceId);
+
+            const container = document.getElementById('sch-playlist-container');
+            container.innerHTML = state.playlists.map(p => {
+                // Check if this playlist is already scheduled
+                const match = existing.find(s => s.playlist_id === p.id);
+                const isChecked = !!match;
+                const start = match ? match.start_time : '';
+                const end = match ? match.end_time : '';
+
+                return `
+                <div class="bg-white border rounded-lg p-3 transition-all ${isChecked ? 'border-blue-500 shadow-sm' : 'border-slate-200'}">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" 
+                               class="w-5 h-5 rounded text-blue-600 focus:ring-0 cursor-pointer" 
+                               value="${p.id}" 
+                               id="chk-${p.id}" 
+                               onchange="toggleTimeInputs(${p.id})"
+                               ${isChecked ? 'checked' : ''}>
+                        
+                        <label for="chk-${p.id}" class="flex-1 font-medium text-slate-700 cursor-pointer select-none">
+                            ${p.name}
+                            <span class="text-xs text-slate-400 font-normal ml-2">(${p.items ? p.items.length : 0} items)</span>
+                        </label>
+                    </div>
+
+                    <div id="times-${p.id}" class="${isChecked ? 'flex' : 'hidden'} items-center gap-4 mt-3 pl-8 animate-fade">
+                        <div class="flex-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Start</label>
+                            <input type="time" id="start-${p.id}" value="${start}" class="w-full p-1.5 border rounded text-sm bg-slate-50">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">End</label>
+                            <input type="time" id="end-${p.id}" value="${end}" class="w-full p-1.5 border rounded text-sm bg-slate-50">
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // 3. Toggle Helper
+        function toggleTimeInputs(id) {
+            const wrapper = document.getElementById(`times-${id}`);
+            const checkbox = document.getElementById(`chk-${id}`);
+            if(checkbox.checked) {
+                wrapper.classList.remove('hidden');
+                wrapper.classList.add('flex');
+            } else {
+                wrapper.classList.add('hidden');
+                wrapper.classList.remove('flex');
+            }
+        }
+
+        // 4. Save Logic (Deletes old schedules for device, Inserts new ones)
+        async function saveSchedule() {
+            const deviceId = parseInt(document.getElementById('sch-device').value);
+            
+            // 1. Identify selected playlists
+            const checkboxes = document.querySelectorAll('#sch-playlist-container input[type="checkbox"]:checked');
+            const newSchedules = [];
+
+            // 2. Build Payload
+            for (let cb of checkboxes) {
+                const pid = cb.value;
+                const start = document.getElementById(`start-${pid}`).value;
+                const end = document.getElementById(`end-${pid}`).value;
+
+                if (!start || !end) return showToast(`Set times for selected playlists`, 'error');
+                
+                newSchedules.push({
+                    user_id: state.user.id,
+                    device_id: deviceId,
+                    playlist_id: parseInt(pid),
+                    start_time: start,
+                    end_time: end
+                });
+            }
+
+            // 3. Database Transaction (Simulated)
+            // A. Delete ALL existing schedules for this device (Clean slate)
+            await sb.from('schedules').delete().eq('device_id', deviceId);
+
+            // B. Insert New ones (if any selected)
+            if (newSchedules.length > 0) {
+                const { error } = await sb.from('schedules').insert(newSchedules);
+                if (error) return showToast(error.message, 'error');
+            }
+
+            showToast('Schedule Updated', 'success');
+            closeModal('modal-schedule');
+            loadSchedules(); // Refresh Main List
+        }
+
+        // 3. DELETE SCHEDULE
+        async function deleteSchedule(id) {
+            if(!confirm("Remove this specific schedule rule?")) return;
+            
+            const { error } = await sb.from('schedules').delete().eq('id', id);
+            
+            if(error) showToast(error.message, 'error'); 
+            else { 
+                showToast('Schedule Removed', 'success'); 
+                loadSchedules(); 
+            }
+        }
+        
+        // 4. HELPER: Triggered when you change the dropdown in the modal
+        // (Make sure your HTML select has: onchange="loadDeviceSchedules(this.value)")
+        // This was likely already in your code from the previous step, but ensuring it is here.
+        // If 'loadDeviceSchedules' is missing, copy it from the previous response.
+
+        async function loadDevices() {
+            const { data } = await sb.from('devices').select('*').order('id', {ascending: false});
+            state.devices = data || [];
+            if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*'); state.playlists = pl || []; }
+            document.getElementById('device-list').innerHTML = state.devices.map(d => `
+                <div class="bg-white p-4 rounded-xl border shadow-sm flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-slate-100 rounded flex items-center justify-center font-mono text-xs font-bold">${d.code}</div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h4 class="font-bold">${d.name}</h4>
+                                <button onclick="renameDevice(${d.id}, '${d.name}')" class="text-slate-300 hover:text-blue-500 text-xs"><i class="fa-solid fa-pen"></i></button>
+                            </div>
+                            <span class="text-xs ${d.status==='online'?'text-green-600':'text-red-500'} font-bold">${d.status}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <select onchange="assignPlaylist(${d.id}, this.value)" class="text-sm border-none bg-transparent text-blue-600 font-medium">
+                            <option value="">Default Playlist...</option>
+                            ${state.playlists.map(p => `<option value="${p.id}" ${d.playlist_id === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                        </select>
+                        <button onclick="deleteDevice(${d.id})" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function addDevice() {
+            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+            await sb.from('devices').insert({ user_id: state.user.id, code, name: 'New Screen' });
+            loadDevices();
+        }
+        async function assignPlaylist(id, pid) { await sb.from('devices').update({ playlist_id: pid || null }).eq('id', id); showToast('Updated', 'success'); }
+        async function renameDevice(id, old) { const name = prompt("Name:", old); if(name) await sb.from('devices').update({name}).eq('id', id); loadDevices(); }
+        async function deleteDevice(id) { if(confirm("Unlink?")) await sb.from('devices').delete().eq('id', id); loadDevices(); }
+
+        function showToast(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `toast ${type === 'error' ? 'bg-red-600' : 'bg-slate-800'} text-white px-4 py-3 rounded shadow-lg flex items-center gap-3 text-sm`;
+            div.innerHTML = `<span>${msg}</span>`;
+            document.getElementById('toast-container').appendChild(div);
+            setTimeout(() => div.remove(), 4000);
+        }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    </script>
+</body>
+</html>

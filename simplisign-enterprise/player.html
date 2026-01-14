@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpliSign Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: black; cursor: none; overflow: hidden; }
+        .pairing-mode { cursor: default; background: #0f172a; }
+        .fade-enter { opacity: 0; transition: opacity 1s ease-in-out; }
+        .fade-enter-active { opacity: 1; }
+    </style>
+</head>
+<body class="h-screen w-screen">
+
+    <div id="pairing-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center pairing-mode text-white">
+        <h1 class="text-xl tracking-widest text-slate-400 mb-8">ENTER PAIRING CODE</h1>
+        <input id="pairing-code" type="text" maxlength="6" placeholder="------" 
+            class="bg-slate-800 border-2 border-slate-700 text-6xl text-center py-6 w-96 uppercase tracking-[1rem] rounded-xl outline-none focus:border-blue-500 mb-8">
+        <button onclick="pairDevice()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-full text-xl transition shadow-lg shadow-blue-900/50">
+            CONNECT
+        </button>
+        <p id="status-msg" class="text-red-500 mt-4 h-6"></p>
+    </div>
+
+    <div id="player-canvas" class="absolute inset-0 bg-black hidden">
+        <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter">
+        <div id="status-pill" class="absolute bottom-4 right-4 bg-black/50 backdrop-blur text-white/50 text-xs px-3 py-1 rounded-full font-mono z-10">Starting...</div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+
+
+
+let sb = null;
+
+// This function fetches keys from your Vercel backend
+async function initSupabase() {
+    try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+        
+        // Start the app after keys are loaded
+        startApp(); 
+    } catch (error) {
+        alert("Error loading security config. Please contact support.");
+        console.error("Config failed:", error);
+    }
+}
+
+// Wrap your initialization logic in startApp
+function startApp() {
+    // ... Move your auth listener and initial load calls here ...
+    // Example:
+    sb.auth.onAuthStateChange((event, session) => {
+        // ... your existing auth code ...
+    });
+}
+
+
+
+
+// Kickstart the process
+initSupabase();
+
+        let deviceCode = localStorage.getItem('ss_device_code');
+        let deviceId = null;
+        let currentPlaylist = [];
+        let currentIndex = 0;
+        let imageCache = {};
+        let isPlaying = false;
+
+        // --- INIT ---
+        if (deviceCode) {
+            document.getElementById('pairing-code').value = deviceCode;
+            pairDevice(true);
+        }
+
+        async function pairDevice(silent = false) {
+            const code = document.getElementById('pairing-code').value.toUpperCase();
+            if(!silent) document.querySelector('button').innerText = 'CONNECTING...';
+
+            const { data, error } = await sb.from('devices').select('id, code').eq('code', code).single();
+            
+            if (error || !data) {
+                if(!silent) {
+                    document.getElementById('status-msg').innerText = 'Invalid Code or Network Error';
+                    document.querySelector('button').innerText = 'CONNECT';
+                }
+                return;
+            }
+
+            localStorage.setItem('ss_device_code', code);
+            deviceCode = code;
+            deviceId = data.id;
+            
+            document.getElementById('pairing-screen').classList.add('hidden');
+            document.getElementById('player-canvas').classList.remove('hidden');
+            
+            checkUpdates();
+            setInterval(checkUpdates, 15000); // Check every 15s
+        }
+
+        async function checkUpdates() {
+            document.getElementById('status-pill').innerText = 'Checking...';
+            
+            // 1. Heartbeat
+            await sb.from('devices').update({ status: 'online', last_seen: new Date() }).eq('code', deviceCode);
+
+            // 2. Fetch Device
+            const { data: device } = await sb.from('devices').select('id, playlist_id').eq('id', deviceId).single();
+            if(!device) return reloadApp(); 
+
+            // 3. CHECK SCHEDULES
+            const now = new Date();
+            const timeStr = now.toTimeString().slice(0, 5); // Returns "HH:MM" e.g., "14:30"
+            
+            // Fetch all schedules for this device
+            const { data: schedules } = await sb.from('schedules').select('*').eq('device_id', deviceId);
+            
+            let activeId = device.playlist_id; // Start with Default
+            let statusText = 'Default Playlist';
+
+            if(schedules && schedules.length > 0) {
+                // Find a schedule where Now is between Start and End
+                const match = schedules.find(s => {
+                    // Check logic: Is "14:30" >= "08:00" AND "14:30" <= "10:00"
+                    // We only grab the first 5 chars of DB time to match HH:MM format
+                    const start = s.start_time.slice(0,5);
+                    const end = s.end_time.slice(0,5);
+                    return timeStr >= start && timeStr <= end;
+                });
+
+                if(match) { 
+                    activeId = match.playlist_id; 
+                    statusText = `Scheduled (${match.start_time.slice(0,5)} - ${match.end_time.slice(0,5)})`; 
+                }
+            }
+
+            // 4. Play Content
+            if (!activeId) { 
+                stopPlayback(); 
+                document.getElementById('status-pill').innerText = 'No Content'; 
+                return; 
+            }
+
+            // ... (Rest of logic is same as before) ...
+            const { data: pl } = await sb.from('playlists').select('items').eq('id', activeId).single();
+            if (!pl || !pl.items || !pl.items.length) { stopPlayback(); return; }
+
+            const ids = pl.items.map(i => i.id);
+            const { data: media } = await sb.from('media').select('id, url, name').in('id', ids);
+            
+            const newQueue = pl.items.map(i => {
+                const f = media.find(m => m.id === i.id);
+                return f ? { ...f, duration: i.duration } : null;
+            }).filter(Boolean);
+
+            if (JSON.stringify(newQueue) !== JSON.stringify(currentPlaylist)) {
+                console.log("Switching to:", statusText);
+                currentPlaylist = newQueue;
+                currentIndex = 0;
+                preloadImages(currentPlaylist);
+                if (!isPlaying) runLoop();
+            }
+            document.getElementById('status-pill').innerText = statusText;
+        }
+    </script>
+</body>
+</html>
+
+
+
