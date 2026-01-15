@@ -143,20 +143,20 @@
         let state = { user: null, media: [], playlists: [], devices: [], schedules: [], draft: [] };
 
         // 1. Initialize App (Fetch Keys -> Start Supabase -> Listen for Auth)
+
+// 1. IMPROVED INIT APP
         async function initApp() {
             try {
-                // A. Fetch keys from your secure Vercel API
                 const response = await fetch('/api/config');
-                if (!response.ok) throw new Error('Failed to load security config');
-                
+                if (!response.ok) throw new Error('API Security Error');
                 const config = await response.json();
                 
-                // B. Initialize Supabase (Now we have the keys!)
                 sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-                console.log("Supabase initialized!");
 
-                // C. START AUTH LISTENER (Moved inside here so it waits for 'sb')
-                sb.auth.onAuthStateChange((event, session) => {
+                // This listener handles the UI transition immediately on login/logout
+                sb.auth.onAuthStateChange(async (event, session) => {
+                    console.log("Auth Event:", event);
+                    
                     if (session) {
                         state.user = session.user;
                         document.getElementById('auth-view').classList.add('hidden');
@@ -166,40 +166,48 @@
                         document.getElementById('user-email').innerText = state.user.email;
                         nav('media');
                     } else {
+                        // Reset state on logout
+                        state.user = null;
                         document.getElementById('auth-view').classList.remove('hidden');
                         document.getElementById('sidebar').classList.add('hidden');
                         document.getElementById('main-content').classList.add('hidden');
+                        document.getElementById('sidebar').classList.remove('flex');
                     }
                 });
 
             } catch (error) {
-                console.error("Critical Error:", error);
-                document.body.innerHTML = `<div class="p-10 text-red-600 font-bold">System Error: ${error.message}. Check console.</div>`;
+                console.error("Critical Load Error:", error);
+                alert("Server Connection Failed. Please try again later.");
             }
         }
 
-        // --- AUTH FUNCTIONS (Triggered by clicks, so 'sb' will be ready) ---
+        // 2. IMPROVED GOOGLE SIGN IN (Forces Account Selection)
         async function signInGoogle() { 
             if(!sb) return; 
-            await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } }); 
+            await sb.auth.signInWithOAuth({ 
+                provider: 'google', 
+                options: { 
+                    // This forces Google to always show the "Choose an account" screen
+                    // preventing it from auto-logging you into the previous one
+                    queryParams: {
+                        prompt: 'select_account',
+                        access_type: 'offline'
+                    },
+                    redirectTo: window.location.origin 
+                } 
+            }); 
         }
 
-        async function handleEmailAuth() {
-            if(!sb) return;
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const { error } = await sb.auth.signInWithPassword({ email, password });
-            if (error) {
-                const { error: upErr } = await sb.auth.signUp({ email, password });
-                if (upErr) showToast(upErr.message, 'error'); else showToast('Account created!', 'success');
-            }
-        }
-
+        // 3. SECURE LOGOUT
         async function logout() { 
             if(!sb) return;
+            // Clear the Supabase session completely
             await sb.auth.signOut(); 
-            location.reload(); 
+            // Redirect to home without any tokens in the URL
+            window.location.href = window.location.origin; 
         }
+
+      
 
         // --- NAVIGATION ---
         function nav(view) {
