@@ -136,60 +136,56 @@
 
     <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
 
-    <script>
-
-
-// --- CONFIGURATION ---
-let sb = null;
-
-// This function fetches keys from your Vercel backend
-async function initSupabase() {
-    try {
-        const response = await fetch('/api/config');
-        const config = await response.json();
-        sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-        
-        // Start the app after keys are loaded
-        startApp(); 
-    } catch (error) {
-        alert("Error loading security config. Please contact support.");
-        console.error("Config failed:", error);
-    }
-}
-
-// Wrap your initialization logic in startApp
-function startApp() {
-    // ... Move your auth listener and initial load calls here ...
-    // Example:
-    sb.auth.onAuthStateChange((event, session) => {
-        // ... your existing auth code ...
-    });
-}
-
-
-
-// Kickstart the process
-initSupabase();
-
+  <script>
+        // --- CONFIGURATION ---
+        // Global variables accessible to all functions
+        let sb = null;
         let state = { user: null, media: [], playlists: [], devices: [], schedules: [], draft: [] };
 
-        sb.auth.onAuthStateChange((event, session) => {
-            if (session) {
-                state.user = session.user;
-                document.getElementById('auth-view').classList.add('hidden');
-                document.getElementById('sidebar').classList.remove('hidden');
-                document.getElementById('main-content').classList.remove('hidden');
-                document.getElementById('sidebar').classList.add('flex');
-                document.getElementById('user-email').innerText = state.user.email;
-                nav('media');
-            } else {
-                document.getElementById('auth-view').classList.remove('hidden');
-                document.getElementById('sidebar').classList.add('hidden');
-            }
-        });
+        // 1. Initialize App (Fetch Keys -> Start Supabase -> Listen for Auth)
+        async function initApp() {
+            try {
+                // A. Fetch keys from your secure Vercel API
+                const response = await fetch('/api/config');
+                if (!response.ok) throw new Error('Failed to load security config');
+                
+                const config = await response.json();
+                
+                // B. Initialize Supabase (Now we have the keys!)
+                sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+                console.log("Supabase initialized!");
 
-        async function signInGoogle() { await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } }); }
+                // C. START AUTH LISTENER (Moved inside here so it waits for 'sb')
+                sb.auth.onAuthStateChange((event, session) => {
+                    if (session) {
+                        state.user = session.user;
+                        document.getElementById('auth-view').classList.add('hidden');
+                        document.getElementById('sidebar').classList.remove('hidden');
+                        document.getElementById('main-content').classList.remove('hidden');
+                        document.getElementById('sidebar').classList.add('flex');
+                        document.getElementById('user-email').innerText = state.user.email;
+                        nav('media');
+                    } else {
+                        document.getElementById('auth-view').classList.remove('hidden');
+                        document.getElementById('sidebar').classList.add('hidden');
+                        document.getElementById('main-content').classList.add('hidden');
+                    }
+                });
+
+            } catch (error) {
+                console.error("Critical Error:", error);
+                document.body.innerHTML = `<div class="p-10 text-red-600 font-bold">System Error: ${error.message}. Check console.</div>`;
+            }
+        }
+
+        // --- AUTH FUNCTIONS (Triggered by clicks, so 'sb' will be ready) ---
+        async function signInGoogle() { 
+            if(!sb) return; 
+            await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.href } }); 
+        }
+
         async function handleEmailAuth() {
+            if(!sb) return;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const { error } = await sb.auth.signInWithPassword({ email, password });
@@ -198,8 +194,14 @@ initSupabase();
                 if (upErr) showToast(upErr.message, 'error'); else showToast('Account created!', 'success');
             }
         }
-        async function logout() { await sb.auth.signOut(); location.reload(); }
 
+        async function logout() { 
+            if(!sb) return;
+            await sb.auth.signOut(); 
+            location.reload(); 
+        }
+
+        // --- NAVIGATION ---
         function nav(view) {
             ['media', 'playlists', 'devices', 'schedules'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
             document.getElementById(`view-${view}`).classList.remove('hidden');
@@ -227,7 +229,9 @@ initSupabase();
             }
         }
 
+        // --- MEDIA ---
         async function loadMedia() {
+            if(!sb) return;
             const { data, error } = await sb.from('media').select('*').order('id', {ascending: false});
             if(error) return showToast(error.message, 'error');
             state.media = data || [];
@@ -270,7 +274,9 @@ initSupabase();
             loadMedia();
         }
 
+        // --- PLAYLISTS ---
         async function loadPlaylists() {
+            if(!sb) return;
             const { data, error } = await sb.from('playlists').select('*').order('id', {ascending: false});
             if(error) return showToast(error.message, 'error');
             state.playlists = data || [];
@@ -348,14 +354,13 @@ initSupabase();
             if(confirm("Delete?")) await sb.from('playlists').delete().eq('id', id); loadPlaylists();
         }
 
-        // --- SCHEDULES (UPDATED FOR MULTI-SELECT) ---
+        // --- SCHEDULES ---
         async function loadSchedules() {
-            // Fetch all schedules
+            if(!sb) return;
             const { data, error } = await sb.from('schedules').select('*').order('device_id');
             if(error) return showToast(error.message, 'error');
             state.schedules = data || [];
             
-            // Ensure dependencies are loaded
             if(!state.devices.length) await loadDevices();
             if(!state.playlists.length) await loadPlaylists();
             
@@ -370,7 +375,6 @@ initSupabase();
                 const dev = state.devices.find(d => d.id === s.device_id);
                 const pl = state.playlists.find(p => p.id === s.playlist_id);
                 
-                // Format times (remove seconds) e.g., "08:00:00" -> "08:00"
                 const start = s.start_time.slice(0, 5);
                 const end = s.end_time.slice(0, 5);
 
@@ -389,48 +393,28 @@ initSupabase();
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="openScheduleModal(${s.device_id})" class="text-slate-400 hover:text-blue-600 p-2" title="Edit Device Schedule">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                        <button onclick="deleteSchedule(${s.id})" class="text-slate-400 hover:text-red-500 p-2" title="Delete Rule">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        <button onclick="openScheduleModal(${s.device_id})" class="text-slate-400 hover:text-blue-600 p-2"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteSchedule(${s.id})" class="text-slate-400 hover:text-red-500 p-2"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        // --- NEW SCHEDULE LOGIC ---
-
-        // 1. Open Modal
-       // 2. OPEN MODAL (Updated to accept a specific device ID)
         function openScheduleModal(targetDeviceId = null) {
             document.getElementById('modal-schedule').classList.remove('hidden');
+            document.getElementById('sch-device').innerHTML = state.devices.map(d => `<option value="${d.id}">${d.name} (${d.code})</option>`).join('');
+            if (targetDeviceId) document.getElementById('sch-device').value = targetDeviceId;
             
-            // Populate Devices Dropdown
-            document.getElementById('sch-device').innerHTML = state.devices.map(d => 
-                `<option value="${d.id}">${d.name} (${d.code})</option>`
-            ).join('');
-
-            // If we clicked "Edit" on a specific row, select that device
-            if (targetDeviceId) {
-                document.getElementById('sch-device').value = targetDeviceId;
-            }
-
-            // Load the checklist for the selected device
             const currentDevId = document.getElementById('sch-device').value;
             if(currentDevId) loadDeviceSchedules(currentDevId);
         }
 
-        // 2. Render the Playlist List with Time Inputs
         function loadDeviceSchedules(deviceId) {
             deviceId = parseInt(deviceId);
-            // Filter existing schedules for this specific device
             const existing = state.schedules.filter(s => s.device_id === deviceId);
-
             const container = document.getElementById('sch-playlist-container');
+            
             container.innerHTML = state.playlists.map(p => {
-                // Check if this playlist is already scheduled
                 const match = existing.find(s => s.playlist_id === p.id);
                 const isChecked = !!match;
                 const start = match ? match.start_time : '';
@@ -439,76 +423,38 @@ initSupabase();
                 return `
                 <div class="bg-white border rounded-lg p-3 transition-all ${isChecked ? 'border-blue-500 shadow-sm' : 'border-slate-200'}">
                     <div class="flex items-center gap-3">
-                        <input type="checkbox" 
-                               class="w-5 h-5 rounded text-blue-600 focus:ring-0 cursor-pointer" 
-                               value="${p.id}" 
-                               id="chk-${p.id}" 
-                               onchange="toggleTimeInputs(${p.id})"
-                               ${isChecked ? 'checked' : ''}>
-                        
-                        <label for="chk-${p.id}" class="flex-1 font-medium text-slate-700 cursor-pointer select-none">
-                            ${p.name}
-                            <span class="text-xs text-slate-400 font-normal ml-2">(${p.items ? p.items.length : 0} items)</span>
-                        </label>
+                        <input type="checkbox" class="w-5 h-5 rounded text-blue-600 focus:ring-0 cursor-pointer" value="${p.id}" id="chk-${p.id}" onchange="toggleTimeInputs(${p.id})" ${isChecked ? 'checked' : ''}>
+                        <label for="chk-${p.id}" class="flex-1 font-medium text-slate-700 cursor-pointer select-none">${p.name}<span class="text-xs text-slate-400 font-normal ml-2">(${p.items ? p.items.length : 0} items)</span></label>
                     </div>
-
                     <div id="times-${p.id}" class="${isChecked ? 'flex' : 'hidden'} items-center gap-4 mt-3 pl-8 animate-fade">
-                        <div class="flex-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">Start</label>
-                            <input type="time" id="start-${p.id}" value="${start}" class="w-full p-1.5 border rounded text-sm bg-slate-50">
-                        </div>
-                        <div class="flex-1">
-                            <label class="text-[10px] font-bold text-slate-400 uppercase">End</label>
-                            <input type="time" id="end-${p.id}" value="${end}" class="w-full p-1.5 border rounded text-sm bg-slate-50">
-                        </div>
+                        <div class="flex-1"><label class="text-[10px] font-bold text-slate-400 uppercase">Start</label><input type="time" id="start-${p.id}" value="${start}" class="w-full p-1.5 border rounded text-sm bg-slate-50"></div>
+                        <div class="flex-1"><label class="text-[10px] font-bold text-slate-400 uppercase">End</label><input type="time" id="end-${p.id}" value="${end}" class="w-full p-1.5 border rounded text-sm bg-slate-50"></div>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        // 3. Toggle Helper
         function toggleTimeInputs(id) {
             const wrapper = document.getElementById(`times-${id}`);
             const checkbox = document.getElementById(`chk-${id}`);
-            if(checkbox.checked) {
-                wrapper.classList.remove('hidden');
-                wrapper.classList.add('flex');
-            } else {
-                wrapper.classList.add('hidden');
-                wrapper.classList.remove('flex');
-            }
+            if(checkbox.checked) { wrapper.classList.remove('hidden'); wrapper.classList.add('flex'); }
+            else { wrapper.classList.add('hidden'); wrapper.classList.remove('flex'); }
         }
 
-        // 4. Save Logic (Deletes old schedules for device, Inserts new ones)
         async function saveSchedule() {
             const deviceId = parseInt(document.getElementById('sch-device').value);
-            
-            // 1. Identify selected playlists
             const checkboxes = document.querySelectorAll('#sch-playlist-container input[type="checkbox"]:checked');
             const newSchedules = [];
 
-            // 2. Build Payload
             for (let cb of checkboxes) {
                 const pid = cb.value;
                 const start = document.getElementById(`start-${pid}`).value;
                 const end = document.getElementById(`end-${pid}`).value;
-
                 if (!start || !end) return showToast(`Set times for selected playlists`, 'error');
-                
-                newSchedules.push({
-                    user_id: state.user.id,
-                    device_id: deviceId,
-                    playlist_id: parseInt(pid),
-                    start_time: start,
-                    end_time: end
-                });
+                newSchedules.push({ user_id: state.user.id, device_id: deviceId, playlist_id: parseInt(pid), start_time: start, end_time: end });
             }
 
-            // 3. Database Transaction (Simulated)
-            // A. Delete ALL existing schedules for this device (Clean slate)
             await sb.from('schedules').delete().eq('device_id', deviceId);
-
-            // B. Insert New ones (if any selected)
             if (newSchedules.length > 0) {
                 const { error } = await sb.from('schedules').insert(newSchedules);
                 if (error) return showToast(error.message, 'error');
@@ -516,28 +462,18 @@ initSupabase();
 
             showToast('Schedule Updated', 'success');
             closeModal('modal-schedule');
-            loadSchedules(); // Refresh Main List
+            loadSchedules();
         }
 
-        // 3. DELETE SCHEDULE
         async function deleteSchedule(id) {
             if(!confirm("Remove this specific schedule rule?")) return;
-            
             const { error } = await sb.from('schedules').delete().eq('id', id);
-            
-            if(error) showToast(error.message, 'error'); 
-            else { 
-                showToast('Schedule Removed', 'success'); 
-                loadSchedules(); 
-            }
+            if(error) showToast(error.message, 'error'); else { showToast('Removed', 'success'); loadSchedules(); }
         }
-        
-        // 4. HELPER: Triggered when you change the dropdown in the modal
-        // (Make sure your HTML select has: onchange="loadDeviceSchedules(this.value)")
-        // This was likely already in your code from the previous step, but ensuring it is here.
-        // If 'loadDeviceSchedules' is missing, copy it from the previous response.
 
+        // --- DEVICES ---
         async function loadDevices() {
+            if(!sb) return;
             const { data } = await sb.from('devices').select('*').order('id', {ascending: false});
             state.devices = data || [];
             if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*'); state.playlists = pl || []; }
@@ -573,6 +509,7 @@ initSupabase();
         async function renameDevice(id, old) { const name = prompt("Name:", old); if(name) await sb.from('devices').update({name}).eq('id', id); loadDevices(); }
         async function deleteDevice(id) { if(confirm("Unlink?")) await sb.from('devices').delete().eq('id', id); loadDevices(); }
 
+        // --- UTILS ---
         function showToast(msg, type = 'info') {
             const div = document.createElement('div');
             div.className = `toast ${type === 'error' ? 'bg-red-600' : 'bg-slate-800'} text-white px-4 py-3 rounded shadow-lg flex items-center gap-3 text-sm`;
@@ -581,6 +518,9 @@ initSupabase();
             setTimeout(() => div.remove(), 4000);
         }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // Start the engine
+        initApp();
     </script>
 </body>
 </html>
