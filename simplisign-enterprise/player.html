@@ -293,7 +293,7 @@
             currentIndex = (currentIndex + 1) % currentPlaylist.length;
             
             setTimeout(runLoop, nextDuration);
-        }
+        
 
         // 5. MEMORY LEAK PREVENTION (Refresh once every 24h)
         setTimeout(() => {
@@ -305,6 +305,7 @@
     </script>
 </body>
 </html>
+
 
 
 
