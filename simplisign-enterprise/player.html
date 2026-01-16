@@ -204,10 +204,7 @@ async function checkUpdates() {
             // 1. Heartbeat
             await sb.from('devices').update({ status: 'online', last_seen: new Date() }).eq('code', deviceCode).then(() => {});
 
-            // 2. Fetch Device Data
-            const { data: device, error: devErr } = await sb.from('devices').select('id, playlist_id').eq('id', deviceId).single();
-            if(devErr || !device) return; 
-
+            
             // 3. CHECK SCHEDULES
             const now = new Date();
             const timeStr = now.toTimeString().slice(0, 5); 
@@ -354,6 +351,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
