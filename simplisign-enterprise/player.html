@@ -11,6 +11,27 @@
         .pairing-mode { cursor: default; background: #0f172a; }
         .fade-enter { opacity: 0; transition: opacity 1s ease-in-out; }
         .fade-enter-active { opacity: 1; }
+        /* Offline Dot Style */
+        .status-offline {
+            width: 12px;
+            height: 12px;
+            background-color: red;
+            color: transparent; /* Hide text */
+            padding: 0 !important;
+            overflow: hidden;
+            opacity: 0.8 !important;
+        }
+        
+        /* Faded / Hidden Status (Normal Operation) */
+        .status-idle {
+            opacity: 0.05; /* Almost invisible */
+        }
+        
+        /* Active Status (Downloading/Syncing) */
+        .status-active {
+            opacity: 0.8;
+            background-color: rgba(0,0,0,0.6);
+        }
     </style>
 </head>
 <body class="h-screen w-screen">
@@ -26,8 +47,11 @@
     </div>
 
     <div id="player-canvas" class="absolute inset-0 bg-black hidden">
-        <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter">
-        <div id="status-pill" class="absolute bottom-4 right-4 bg-black/50 backdrop-blur text-white/50 text-xs px-3 py-1 rounded-full font-mono z-10">Starting...</div>
+        <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter transition-opacity duration-1000">
+        
+        <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
+        
+        <div id="status-pill" class="absolute bottom-4 right-4 text-white/50 text-[10px] px-2 py-1 rounded-full font-mono z-50 transition-all duration-500">Starting...</div>
     </div>
 
    
@@ -180,33 +204,90 @@
             updateStatus(statusText);
         }
 
-        function updateStatus(msg) { document.getElementById('status-pill').innerText = msg; }
-        function stopPlayback() { currentPlaylist = []; isPlaying = false; document.getElementById('active-slide').src = ''; }
+
+    function updateStatus(msg, type = 'normal') { 
+            const el = document.getElementById('status-pill');
+            
+            if (msg.includes('OFFLINE')) {
+                // Show Red Dot
+                el.innerText = '';
+                el.className = 'absolute bottom-2 right-2 rounded-full z-50 transition-all duration-500 status-offline';
+            } else if (msg.includes('Scheduled') || msg.includes('Default')) {
+                // Content Playing (Fade out)
+                el.innerText = msg;
+                el.className = 'absolute bottom-4 right-4 text-white px-3 py-1 rounded-full font-mono z-50 transition-all duration-500 status-idle';
+            } else {
+                // Active System Message (Downloading / Checking)
+                el.innerText = msg;
+                el.className = 'absolute bottom-4 right-4 text-white px-3 py-1 rounded-full font-mono z-50 transition-all duration-500 status-active';
+            }
+        }
+    
+    function stopPlayback() { currentPlaylist = []; isPlaying = false; document.getElementById('active-slide').src = ''; }
         
         function preloadImages(q) { 
-            // Simple cache to prevent re-downloading
             q.forEach(i => { 
-                if(!imageCache[i.url]) { 
-                    const img=new Image(); img.src=i.url; imageCache[i.url]=img; 
+                // Only preload images
+                if(i.type.includes('image') && !imageCache[i.url]) { 
+                    const img = new Image(); 
+                    img.src = i.url; 
+                    imageCache[i.url] = img; 
                 } 
             }); 
         }
 
-        function runLoop() {
+       function runLoop() {
             if (!currentPlaylist.length) return;
             isPlaying = true;
             
             const item = currentPlaylist[currentIndex];
-            const slide = document.getElementById('active-slide');
+            const imgEl = document.getElementById('active-slide');
+            const vidEl = document.getElementById('active-video');
             
-            // Only update src if changed (prevents flicker)
-            if(slide.src !== item.url) {
-                slide.classList.remove('fade-enter-active');
+            // Determine Duration (Default to item duration or 10s)
+            let duration = (item.duration || 10) * 1000;
+
+            if (item.type.includes('video')) {
+                // --- VIDEO MODE ---
+                imgEl.classList.add('hidden');    // Hide Image
+                vidEl.classList.remove('hidden'); // Show Video
+                
+                vidEl.src = item.url;
+                vidEl.play().catch(e => console.error("Video Play Error:", e));
+
+                // If duration is set to 0 in CMS, play full video length
+                // Otherwise, cut it off at the specific duration
+                vidEl.onended = () => {
+                   // If we are relying on natural video end
+                   if (item.duration === 0) nextSlide();
+                };
+                
+            } else {
+                // --- IMAGE MODE ---
+                vidEl.classList.add('hidden');      // Hide Video
+                vidEl.pause();                      // Stop Video
+                imgEl.classList.remove('hidden');   // Show Image
+                
+                // Fade Effect
+                imgEl.classList.remove('fade-enter-active');
                 setTimeout(() => {
-                    slide.src = item.url;
-                    slide.classList.add('fade-enter-active');
-                }, 200);
+                    imgEl.src = item.url;
+                    imgEl.classList.add('fade-enter-active');
+                }, 100);
             }
+
+            // Schedule Next Slide
+            // If it's a video with duration 0, we wait for 'onended' event above.
+            // Otherwise, we use the timer.
+            if (!item.type.includes('video') || item.duration > 0) {
+                setTimeout(nextSlide, duration);
+            }
+        }
+
+        function nextSlide() {
+            currentIndex = (currentIndex + 1) % currentPlaylist.length;
+            runLoop();
+        }
 
             const nextDuration = (item.duration || 10) * 1000;
             currentIndex = (currentIndex + 1) % currentPlaylist.length;
@@ -224,6 +305,7 @@
     </script>
 </body>
 </html>
+
 
 
 
