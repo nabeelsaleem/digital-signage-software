@@ -498,16 +498,52 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
+                    
+    <button onclick="requestRefresh(${d.id})" class="text-blue-500 hover:text-blue-700 p-2" title="Force Player Refresh">
+        <i class="fa-solid fa-rotate"></i>
+    </button>
                         <select onchange="assignPlaylist(${d.id}, this.value)" class="text-sm border-none bg-transparent text-blue-600 font-medium">
                             <option value="">Default Playlist...</option>
                             ${state.playlists.map(p => `<option value="${p.id}" ${d.playlist_id === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
                         </select>
                         <button onclick="deleteDevice(${d.id})" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button>
                     </div>
+
+<div class="flex items-center gap-4">
+    <button onclick="requestScreenshot(${d.id})" class="text-slate-500 hover:text-blue-500 p-2" title="Capture Screenshot">
+        <i class="fa-solid fa-camera"></i>
+    </button>
+    
+    <button onclick="requestRefresh(${d.id})" ...>
+    
+    ${d.screenshot_url ? `<img src="${d.screenshot_url}" onclick="window.open(this.src)" class="w-10 h-6 object-cover rounded border border-slate-300 cursor-pointer hover:scale-110 transition">` : `<div class="w-10 h-6 bg-slate-100 rounded border border-dashed border-slate-300"></div>`}
+</div>
+                    
                 </div>
             `).join('');
         }
 
+
+async function requestRefresh(deviceId) {
+    const { error } = await sb.from('devices')
+        .update({ refresh_requested: true })
+        .eq('id', deviceId);
+        
+    if (error) showToast(error.message, 'error');
+    else showToast('Refresh command sent to player', 'success');
+}
+
+
+      async function requestScreenshot(deviceId) {
+    const { error } = await sb.from('devices')
+        .update({ screenshot_requested: true })
+        .eq('id', deviceId);
+        
+    if (error) showToast(error.message, 'error');
+    else showToast('Screenshot requested. Wait 15s...', 'info');
+}
+
+      
         async function addDevice() {
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
             await sb.from('devices').insert({ user_id: state.user.id, code, name: 'New Screen' });
