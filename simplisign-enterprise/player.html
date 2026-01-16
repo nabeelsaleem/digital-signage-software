@@ -147,15 +147,15 @@
             setTimeout(runHeartbeatLoop, 15000);
         }
 
-        async function checkUpdates() {
+       async function checkUpdates() {
             updateStatus('Checking...');
             
-            // 1. Heartbeat (Don't crash if fails)
+            // 1. Heartbeat
             await sb.from('devices').update({ status: 'online', last_seen: new Date() }).eq('code', deviceCode).then(() => {});
 
             // 2. Fetch Device Data
             const { data: device, error: devErr } = await sb.from('devices').select('id, playlist_id').eq('id', deviceId).single();
-            if(devErr || !device) return; // Device might be deleted or network error
+            if(devErr || !device) return; 
 
             // 3. CHECK SCHEDULES
             const now = new Date();
@@ -183,11 +183,12 @@
             const { data: pl } = await sb.from('playlists').select('items').eq('id', activeId).single();
             if (!pl || !pl.items || !pl.items.length) { stopPlayback(); return; }
 
-            // Sync Media
+            // Sync Media - *** CRITICAL FIX IS HERE ***
             const ids = pl.items.map(i => i.id);
-            const { data: media } = await sb.from('media').select('id, url').in('id', ids);
+            // Added ', type' to the select string below
+            const { data: media } = await sb.from('media').select('id, url, type').in('id', ids);
             
-            if(!media) return; // DB Error
+            if(!media) return; 
 
             const newQueue = pl.items.map(i => {
                 const f = media.find(m => m.id === i.id);
@@ -302,6 +303,7 @@
     </script>
 </body>
 </html>
+
 
 
 
