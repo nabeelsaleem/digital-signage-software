@@ -30,68 +30,73 @@
         <div id="status-pill" class="absolute bottom-4 right-4 bg-black/50 backdrop-blur text-white/50 text-xs px-3 py-1 rounded-full font-mono z-10">Starting...</div>
     </div>
 
-    <script>
+   
+
+<script>
         // --- CONFIGURATION ---
-
-
-
-let sb = null;
-
-// This function fetches keys from your Vercel backend
-async function initSupabase() {
-    try {
-        const response = await fetch('/api/config');
-        const config = await response.json();
-        sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-        
-        // Start the app after keys are loaded
-        startApp(); 
-    } catch (error) {
-        alert("Error loading security config. Please contact support.");
-        console.error("Config failed:", error);
-    }
-}
-
-// Wrap your initialization logic in startApp
-function startApp() {
-    // ... Move your auth listener and initial load calls here ...
-    // Example:
-    sb.auth.onAuthStateChange((event, session) => {
-        // ... your existing auth code ...
-    });
-}
-
-
-
-
-// Kickstart the process
-initSupabase();
-
+        let sb = null;
         let deviceCode = localStorage.getItem('ss_device_code');
         let deviceId = null;
         let currentPlaylist = [];
         let currentIndex = 0;
         let imageCache = {};
         let isPlaying = false;
+        let isOffline = false;
 
-        // --- INIT ---
-        if (deviceCode) {
-            document.getElementById('pairing-code').value = deviceCode;
-            pairDevice(true);
+        // 1. ROBUST INIT
+        async function initApp() {
+            try {
+                // Check if already offline
+                if(!navigator.onLine) showOfflineMode();
+
+                const response = await fetch('/api/config');
+                if (!response.ok) throw new Error('Config Load Failed');
+                
+                const config = await response.json();
+                sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+                
+                // If paired, start loop. If not, show code.
+                if (deviceCode) {
+                    document.getElementById('pairing-code').value = deviceCode;
+                    pairDevice(true);
+                }
+            } catch (error) {
+                console.error("Init failed:", error);
+                // Retry in 5 seconds if init fails (e.g. internet down on boot)
+                setTimeout(initApp, 5000); 
+            }
         }
 
+        // 2. NETWORK LISTENERS (Handle drops gracefully)
+        window.addEventListener('offline', () => { showOfflineMode(); });
+        window.addEventListener('online', () => { 
+            isOffline = false; 
+            document.getElementById('status-pill').style.backgroundColor = 'rgba(0,0,0,0.5)';
+            updateStatus('Online - Recovered');
+        });
+
+        function showOfflineMode() {
+            isOffline = true;
+            updateStatus('OFFLINE - Playing Cache');
+            document.getElementById('status-pill').style.backgroundColor = 'red';
+        }
+
+        // 3. PAIRING
         async function pairDevice(silent = false) {
+            if(!sb) return;
             const code = document.getElementById('pairing-code').value.toUpperCase();
+            
             if(!silent) document.querySelector('button').innerText = 'CONNECTING...';
 
+            // Safe DB Call
             const { data, error } = await sb.from('devices').select('id, code').eq('code', code).single();
             
             if (error || !data) {
                 if(!silent) {
-                    document.getElementById('status-msg').innerText = 'Invalid Code or Network Error';
+                    document.getElementById('status-msg').innerText = 'Invalid Code / No Internet';
                     document.querySelector('button').innerText = 'CONNECT';
                 }
-                return;
+                return; // Stop here, don't start loop
             }
 
             localStorage.setItem('ss_device_code', code);
@@ -101,35 +106,43 @@ initSupabase();
             document.getElementById('pairing-screen').classList.add('hidden');
             document.getElementById('player-canvas').classList.remove('hidden');
             
-            checkUpdates();
-            setInterval(checkUpdates, 15000); // Check every 15s
+            runHeartbeatLoop();
+        }
+
+        // 4. ROBUST LOOP (Replacing simple setInterval)
+        async function runHeartbeatLoop() {
+            // Prevent crashing if offline
+            if (!isOffline && sb) {
+                try {
+                    await checkUpdates();
+                } catch (e) {
+                    console.warn("Heartbeat skipped:", e);
+                }
+            }
+            // Recursive call instead of setInterval prevents "pile up" if network is slow
+            setTimeout(runHeartbeatLoop, 15000);
         }
 
         async function checkUpdates() {
-            document.getElementById('status-pill').innerText = 'Checking...';
+            updateStatus('Checking...');
             
-            // 1. Heartbeat
-            await sb.from('devices').update({ status: 'online', last_seen: new Date() }).eq('code', deviceCode);
+            // 1. Heartbeat (Don't crash if fails)
+            await sb.from('devices').update({ status: 'online', last_seen: new Date() }).eq('code', deviceCode).then(() => {});
 
-            // 2. Fetch Device
-            const { data: device } = await sb.from('devices').select('id, playlist_id').eq('id', deviceId).single();
-            if(!device) return reloadApp(); 
+            // 2. Fetch Device Data
+            const { data: device, error: devErr } = await sb.from('devices').select('id, playlist_id').eq('id', deviceId).single();
+            if(devErr || !device) return; // Device might be deleted or network error
 
             // 3. CHECK SCHEDULES
             const now = new Date();
-            const timeStr = now.toTimeString().slice(0, 5); // Returns "HH:MM" e.g., "14:30"
-            
-            // Fetch all schedules for this device
+            const timeStr = now.toTimeString().slice(0, 5); 
             const { data: schedules } = await sb.from('schedules').select('*').eq('device_id', deviceId);
             
-            let activeId = device.playlist_id; // Start with Default
+            let activeId = device.playlist_id; 
             let statusText = 'Default Playlist';
 
             if(schedules && schedules.length > 0) {
-                // Find a schedule where Now is between Start and End
                 const match = schedules.find(s => {
-                    // Check logic: Is "14:30" >= "08:00" AND "14:30" <= "10:00"
-                    // We only grab the first 5 chars of DB time to match HH:MM format
                     const start = s.start_time.slice(0,5);
                     const end = s.end_time.slice(0,5);
                     return timeStr >= start && timeStr <= end;
@@ -141,37 +154,77 @@ initSupabase();
                 }
             }
 
-            // 4. Play Content
-            if (!activeId) { 
-                stopPlayback(); 
-                document.getElementById('status-pill').innerText = 'No Content'; 
-                return; 
-            }
+            if (!activeId) { stopPlayback(); updateStatus('No Content'); return; }
 
-            // ... (Rest of logic is same as before) ...
             const { data: pl } = await sb.from('playlists').select('items').eq('id', activeId).single();
             if (!pl || !pl.items || !pl.items.length) { stopPlayback(); return; }
 
+            // Sync Media
             const ids = pl.items.map(i => i.id);
-            const { data: media } = await sb.from('media').select('id, url, name').in('id', ids);
+            const { data: media } = await sb.from('media').select('id, url').in('id', ids);
             
+            if(!media) return; // DB Error
+
             const newQueue = pl.items.map(i => {
                 const f = media.find(m => m.id === i.id);
                 return f ? { ...f, duration: i.duration } : null;
             }).filter(Boolean);
 
             if (JSON.stringify(newQueue) !== JSON.stringify(currentPlaylist)) {
-                console.log("Switching to:", statusText);
+                console.log("Playlist Sync:", statusText);
                 currentPlaylist = newQueue;
                 currentIndex = 0;
                 preloadImages(currentPlaylist);
                 if (!isPlaying) runLoop();
             }
-            document.getElementById('status-pill').innerText = statusText;
+            updateStatus(statusText);
         }
+
+        function updateStatus(msg) { document.getElementById('status-pill').innerText = msg; }
+        function stopPlayback() { currentPlaylist = []; isPlaying = false; document.getElementById('active-slide').src = ''; }
+        
+        function preloadImages(q) { 
+            // Simple cache to prevent re-downloading
+            q.forEach(i => { 
+                if(!imageCache[i.url]) { 
+                    const img=new Image(); img.src=i.url; imageCache[i.url]=img; 
+                } 
+            }); 
+        }
+
+        function runLoop() {
+            if (!currentPlaylist.length) return;
+            isPlaying = true;
+            
+            const item = currentPlaylist[currentIndex];
+            const slide = document.getElementById('active-slide');
+            
+            // Only update src if changed (prevents flicker)
+            if(slide.src !== item.url) {
+                slide.classList.remove('fade-enter-active');
+                setTimeout(() => {
+                    slide.src = item.url;
+                    slide.classList.add('fade-enter-active');
+                }, 200);
+            }
+
+            const nextDuration = (item.duration || 10) * 1000;
+            currentIndex = (currentIndex + 1) % currentPlaylist.length;
+            
+            setTimeout(runLoop, nextDuration);
+        }
+
+        // 5. MEMORY LEAK PREVENTION (Refresh once every 24h)
+        setTimeout(() => {
+            window.location.reload();
+        }, 24 * 60 * 60 * 1000);
+
+        // Start
+        initApp();
     </script>
 </body>
 </html>
+
 
 
 
