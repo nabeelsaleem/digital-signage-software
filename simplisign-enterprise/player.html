@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpliSign Player</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background: black; cursor: none; overflow: hidden; }
@@ -149,6 +150,53 @@
 
        async function checkUpdates() {
             updateStatus('Checking...');
+
+
+// 1. Heartbeat & Check for Remote Commands
+    const { data: device, error: devErr } = await sb.from('devices')
+        .select('id, playlist_id, refresh_requested')
+        .eq('id', deviceId)
+        .single();
+
+    if(devErr || !device) return;
+
+    // --- REMOTE REFRESH LOGIC ---
+    if (device.refresh_requested) {
+        updateStatus('Remote Refreshing...');
+        // Reset the flag first so we don't loop forever
+        await sb.from('devices').update({ refresh_requested: false }).eq('id', deviceId);
+        // Reload the page
+        window.location.reload(true); 
+        return; 
+    }
+
+
+           // --- REMOTE SCREENSHOT LOGIC ---
+    if (device.screenshot_requested) {
+        updateStatus('Capturing Screen...');
+        
+        // 1. Take Screenshot
+        const canvas = await html2canvas(document.body);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+
+        // 2. Upload to Supabase Storage
+        const fileName = `screenshots/${deviceId}.jpg`;
+        await sb.storage.from('media').upload(fileName, blob, {
+            upsert: true // Overwrite the old screenshot to save space
+        });
+
+        // 3. Get Public URL
+        const { data: publicUrl } = sb.storage.from('media').getPublicUrl(fileName);
+
+        // 4. Update Database & Reset Flag
+        await sb.from('devices').update({ 
+            screenshot_url: publicUrl.publicUrl, 
+            screenshot_requested: false 
+        }).eq('id', deviceId);
+        
+        updateStatus('Screenshot Uploaded');
+    }
+           
             
             // 1. Heartbeat
             await sb.from('devices').update({ status: 'online', last_seen: new Date() }).eq('code', deviceCode).then(() => {});
@@ -303,6 +351,7 @@
     </script>
 </body>
 </html>
+
 
 
 
