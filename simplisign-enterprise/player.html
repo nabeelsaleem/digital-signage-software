@@ -71,23 +71,25 @@
         // 1. ROBUST INIT
         async function initApp() {
             try {
-                // Check if already offline
                 if(!navigator.onLine) showOfflineMode();
 
+                // 1. Fetch config to initialize Supabase (Needed for Storage/Screenshots)
                 const response = await fetch('/api/config');
                 if (!response.ok) throw new Error('Config Load Failed');
-                
                 const config = await response.json();
                 sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
                 
-                // If paired, start loop. If not, show code.
+                // 2. AUTO-RECONNECT LOGIC
+                // Check if we have a saved code from a previous session
                 if (deviceCode) {
-                    document.getElementById('pairing-code').value = deviceCode;
-                    pairDevice(true);
+                    console.log("Found saved code, attempting auto-pair...");
+                    // Call pairDevice with 'true' to do it silently without clearing the UI
+                    await pairDevice(true);
+                } else {
+                    console.log("No saved code found. Showing pairing screen.");
                 }
             } catch (error) {
                 console.error("Init failed:", error);
-                // Retry in 5 seconds if init fails (e.g. internet down on boot)
                 setTimeout(initApp, 5000); 
             }
         }
@@ -317,6 +319,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
