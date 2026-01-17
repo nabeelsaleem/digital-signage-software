@@ -174,7 +174,11 @@ async function checkUpdates() {
                 updateStatus('Capturing Screen...');
                 
                 // A. Take Screenshot
-                const canvas = await html2canvas(document.body);
+                const canvas = await html2canvas(document.body, {
+    useCORS: true,       // Try to fetch cross-origin images/videos
+    allowTaint: true,    // Allow "tainted" canvas (risky but needed for video)
+    ignoreElements: (element) => element.tagName === 'VIDEO' && element.readyState < 2 // Skip unconnected videos
+});
                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
 
                 // B. Upload to Supabase Storage
@@ -247,7 +251,7 @@ async function checkUpdates() {
                 console.log("Playlist Sync:", statusText);
                 currentPlaylist = newQueue;
                 currentIndex = 0;
-                preloadImages(currentPlaylist);
+                preloadMedia(currentPlaylist);
                 if (!isPlaying) runLoop();
             }
             updateStatus(statusText);
@@ -274,14 +278,22 @@ async function checkUpdates() {
     
     function stopPlayback() { currentPlaylist = []; isPlaying = false; document.getElementById('active-slide').src = ''; }
         
-        function preloadImages(q) { 
+      function preloadMedia(q) { 
             q.forEach(i => { 
-                // Only preload images
-                if(i.type.includes('image') && !imageCache[i.url]) { 
+                if (imageCache[i.url]) return; // Already loaded
+
+                if (i.type.includes('image')) { 
+                    // Preload Image
                     const img = new Image(); 
                     img.src = i.url; 
                     imageCache[i.url] = img; 
-                } 
+                } else if (i.type.includes('video')) {
+                    // Preload Video (Fetch blob to force cache)
+                    // We use a fetch request so the browser caches the file
+                    fetch(i.url).then(r => r.blob()).then(blob => {
+                        imageCache[i.url] = URL.createObjectURL(blob);
+                    }).catch(err => console.error("Video Preload Fail:", err));
+                }
             }); 
         }
 
@@ -351,6 +363,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
