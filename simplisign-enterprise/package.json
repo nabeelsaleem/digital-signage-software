@@ -1,5 +1,8 @@
 {
   "name": "simplisign-enterprise",
   "version": "1.0.0",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
 }
