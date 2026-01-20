@@ -201,9 +201,11 @@ async function checkUpdates() {
                 // 2. REMOTE REFRESH LOGIC (With Syntax Fix)
                 if (device.refresh_requested) {
                     updateStatus('Updating...');
-                    setTimeout(() => { 
+                  setTimeout(() => { 
                         window.location.reload(true); 
                     }, 1000);
+                    // -----------------------------------------
+                    
                     return; 
                 }
 
@@ -380,6 +382,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
