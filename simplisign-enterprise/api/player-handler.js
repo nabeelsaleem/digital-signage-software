@@ -59,6 +59,17 @@ export default async function handler(req, res) {
                 return res.status(404).json({ error: 'Device not found' });
             }
 
+            // --- CRITICAL FIX: RESET REFRESH FLAG ---
+            // If a refresh was requested, we turn it off NOW so the player doesn't loop.
+            if (device.refresh_requested) {
+                await supabase.from('devices')
+                    .update({ refresh_requested: false })
+                    .eq('id', deviceId);
+                
+                // We still return the device data with refresh_requested: true 
+                // so the player knows to trigger the reload one last time.
+            }}
+
             // 3. Determine Active Playlist
             let activeId = device.playlist_id;
             const now = new Date();
