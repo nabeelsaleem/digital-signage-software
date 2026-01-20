@@ -175,11 +175,16 @@ async function checkUpdates() {
                 const response = await req.json();
                 const { device, playlist } = response;
 
-                // 2. REMOTE REFRESH LOGIC
-                if (device.refresh_requested) {
-                    updateStatus('Remote Refreshing...');
-                  window.location.reload(true); 
+                // 2. REMOTE REFRESH LOGIC (Fixed Syntax)
+                if (device && device.refresh_requested) {
+                    updateStatus('Updating...');
+                    
+                    // --- SYNTAX FIX HERE ---
+                    setTimeout(() => { 
+                        window.location.reload(true); 
                     }, 1000);
+                    // -----------------------
+                    
                     return; 
                 }
 
@@ -335,6 +340,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
