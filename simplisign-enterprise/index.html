@@ -798,60 +798,7 @@ async function renamePlaylist(id, old) {
     renderDeviceCards(state.devices);
 }
 
-            list.innerHTML = state.devices.map(d => `
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-                    <div class="flex items-center gap-5 w-full lg:w-auto">
-                        <div class="w-14 h-14 rounded-xl bg-slate-900 text-white flex items-center justify-center font-mono text-lg font-bold tracking-widest shadow-lg shadow-slate-200">
-                            ${d.code}
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <h4 class="font-bold text-lg text-slate-800">${d.name}</h4>
-                                <button onclick="renameDevice(${d.id}, '${d.name}')" class="text-slate-300 hover:text-brand-600 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${d.status==='online'?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-600'}">
-                                    <span class="w-1.5 h-1.5 rounded-full ${d.status==='online'?'bg-emerald-500':'bg-red-500'} animate-pulse"></span>
-                                    ${d.status}
-                                </span>
-                                <span class="text-xs text-slate-400">ID: ${d.id}</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full lg:w-auto flex-1 lg:justify-end">
-                        <!-- Default Playlist Select -->
-                         <div class="w-full lg:w-64">
-                             <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Fallback Content</label>
-                            <select onchange="assignPlaylist(${d.id}, this.value)" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-600 focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
-                                <option value="">Select Playlist...</option>
-                                ${state.playlists.map(p => `<option value="${p.id}" ${d.playlist_id === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
-                            </select>
-                        </div>
-
-                        <!-- Screenshot & Actions -->
-                        <div class="flex items-center gap-2 mt-4 lg:mt-5 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100">
-                            <button onclick="requestScreenshot(${d.id})" class="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Capture Screenshot">
-                                <i class="fa-solid fa-camera"></i>
-                            </button>
-                            <button onclick="requestRefresh(${d.id})" class="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Force Player Refresh">
-                                <i class="fa-solid fa-rotate-right"></i>
-                            </button>
-                            <button onclick="deleteDevice(${d.id})" class="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Unlink Device">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                            
-                            <div class="w-12 h-8 bg-slate-100 rounded border border-slate-200 overflow-hidden relative group cursor-pointer" onclick="${d.screenshot_url ? `window.open('${d.screenshot_url}')` : `requestScreenshot(${d.id})`}">
-                                ${d.screenshot_url 
-                                    ? `<img src="${d.screenshot_url}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">` 
-                                    : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i class="fa-solid fa-image text-xs"></i></div>`
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
+            
 
 
 // Universal Search Logic
