@@ -58,6 +58,57 @@
         
         .fade-enter { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* Add these styles to the <style> block */
+
+/* Search Bar */
+.search-wrapper {
+    position: relative;
+    width: 300px;
+}
+.search-wrapper i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+.search-input {
+    width: 100%;
+    padding-left: 36px;
+    padding-right: 12px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+.search-input:focus {
+    background-color: #fff;
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Custom Input Modal */
+#custom-input-modal {
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+}
+.modal-glass {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    width: 90%;
+    max-width: 400px;
+    animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes modalPop {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+    
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden flex text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-900">
@@ -142,14 +193,20 @@
     <main id="main-content" class="flex-1 flex flex-col h-screen overflow-hidden hidden bg-slate-50/50">
         
         <!-- Header -->
-        <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-8 shadow-sm z-10 shrink-0">
-            <div class="flex items-center gap-4">
-                <!-- Mobile Menu Toggle (Visual only for now based on existing logic) -->
-                <button class="md:hidden text-slate-500 hover:text-slate-700"><i class="fa-solid fa-bars"></i></button>
-                <h2 id="page-title" class="text-lg font-bold text-slate-800">Overview</h2>
-            </div>
-            <div id="header-actions" class="flex items-center gap-3"></div>
-        </header>
+        <!-- Replace the content inside <header> with this: -->
+<header class="bg-white border-b h-16 flex items-center justify-between px-8 shadow-sm shrink-0">
+    <div class="flex items-center gap-6 flex-1">
+        <h2 id="page-title" class="text-lg font-bold text-slate-800 whitespace-nowrap">Overview</h2>
+        
+        <!-- Universal Search Bar -->
+        <div class="search-wrapper hidden md:block">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="global-search" class="search-input" placeholder="Search media, screens, playlists..." oninput="handleGlobalSearch(this.value)">
+        </div>
+    </div>
+    
+    <div id="header-actions" class="flex items-center gap-3"></div>
+</header>
 
         <!-- Dynamic Content Area -->
         <div class="flex-1 overflow-auto p-8 relative">
@@ -259,6 +316,21 @@
         </div>
     </div>
 
+<!-- Custom Input Modal for Renaming -->
+<div id="custom-input-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
+    <div class="modal-glass p-6">
+        <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-4">Rename Item</h3>
+        <input type="text" id="modal-input" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none mb-6 bg-slate-50">
+        <div class="flex justify-end gap-3">
+            <button onclick="closeCustomModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm transition-colors">Cancel</button>
+            <button id="modal-save-btn" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20">Save</button>
+        </div>
+    </div>
+</div>
+
+
+
+
     <!-- Toasts -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-[60] flex flex-col gap-3"></div>
 
@@ -266,8 +338,10 @@
         // --- CONFIGURATION ---
         // Global variables accessible to all functions
         let sb = null;
-        let state = { user: null, media: [], playlists: [], devices: [], schedules: [], draft: [] };
-
+// Replace the 'let state = ...' line with:
+let state = { user: null, media: [], playlists: [], devices: [], schedules: [], draft: [] };
+let currentTab = localStorage.getItem('lastActiveTab') || 'media'; // Track tab for search & persistence
+let tempCallback = null; // Store callback for custom modal
         // 1. Initialize App (Fetch Keys -> Start Supabase -> Listen for Auth)
 
 // 1. IMPROVED INIT APP
@@ -290,7 +364,7 @@
                         document.getElementById('main-content').classList.remove('hidden');
                         document.getElementById('sidebar').classList.add('flex');
                         document.getElementById('user-email').innerText = state.user.email;
-                        nav('media');
+                        nav(currentTab);
                     } else {
                         // Reset state on logout
                         state.user = null;
@@ -333,49 +407,54 @@
             window.location.href = window.location.origin; 
         }
 
-        // --- NAVIGATION ---
-        function nav(view) {
-            ['media', 'playlists', 'devices', 'schedules'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
-            document.getElementById(`view-${view}`).classList.remove('hidden');
-            
-            // Update Active State in Sidebar
-            document.querySelectorAll('.sidebar-link').forEach(el => {
-                el.classList.remove('bg-slate-800', 'text-white', 'bg-brand-600');
-                el.classList.add('text-slate-400');
-                el.querySelector('div').classList.remove('text-brand-400'); 
-            });
+        
+// --- NAVIGATION ---
+function nav(view) {
+    ['media', 'playlists', 'devices', 'schedules'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+    document.getElementById(`view-${view}`).classList.remove('hidden');
+    
+    // 1. Track Tab (New Logic for Persistence)
+    currentTab = view;
+    localStorage.setItem('lastActiveTab', view);
+    
+    // 2. Reset Search (New Logic)
+    document.getElementById('global-search').value = '';
 
-            // Find the button that called this (approximate matching for simplicity in vanilla JS)
-            // Or just add the class manually based on view name in a real app, 
-            // here we rely on the user clicking. Let's add the active class based on the view param.
-            const activeBtn = document.querySelector(`button[onclick="nav('${view}')"]`);
-            if(activeBtn) {
-                activeBtn.classList.remove('text-slate-400', 'hover:bg-slate-800');
-                activeBtn.classList.add('bg-slate-800', 'text-white');
-                activeBtn.querySelector('div').classList.add('text-brand-400');
-            }
+    // 3. Update Active State in Sidebar
+    document.querySelectorAll('.sidebar-link').forEach(el => {
+        el.classList.remove('bg-slate-800', 'text-white');
+        el.classList.add('text-slate-400');
+        el.querySelector('div').classList.remove('text-brand-400'); 
+    });
 
-            const btn = document.getElementById('header-actions');
-            const title = document.getElementById('page-title');
-            
-            if (view === 'media') {
-                title.innerText = 'Media Library';
-                btn.innerHTML = `<button onclick="document.getElementById('media-upload-input').click()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Media</button>`;
-                loadMedia();
-            } else if (view === 'playlists') {
-                title.innerText = 'Playlists';
-                btn.innerHTML = `<button onclick="openPlaylistBuilder()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-plus"></i> New Playlist</button>`;
-                loadPlaylists();
-            } else if (view === 'schedules') {
-                title.innerText = 'Schedules';
-                btn.innerHTML = `<button onclick="openScheduleModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-regular fa-calendar-plus"></i> Add Schedule</button>`;
-                loadSchedules();
-            } else {
-                title.innerText = 'Screens';
-                btn.innerHTML = `<button onclick="addDevice()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-plus"></i> New Screen</button>`;
-                loadDevices();
-            }
-        }
+    const activeBtn = document.querySelector(`button[onclick="nav('${view}')"]`);
+    if(activeBtn) {
+        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('bg-slate-800', 'text-white');
+        activeBtn.querySelector('div').classList.add('text-brand-400');
+    }
+
+    const btn = document.getElementById('header-actions');
+    const title = document.getElementById('page-title');
+    
+    if (view === 'media') {
+        title.innerText = 'Media Library';
+        btn.innerHTML = `<button onclick="document.getElementById('media-upload-input').click()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Media</button>`;
+        loadMedia();
+    } else if (view === 'playlists') {
+        title.innerText = 'Playlists';
+        btn.innerHTML = `<button onclick="openPlaylistBuilder()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-plus"></i> New Playlist</button>`;
+        loadPlaylists();
+    } else if (view === 'schedules') {
+        title.innerText = 'Schedules';
+        btn.innerHTML = `<button onclick="openScheduleModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-regular fa-calendar-plus"></i> Add Schedule</button>`;
+        loadSchedules();
+    } else {
+        title.innerText = 'Screens';
+        btn.innerHTML = `<button onclick="addDevice()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-plus"></i> New Screen</button>`;
+        loadDevices();
+    }
+}
 
         // --- MEDIA ---
         async function loadMedia() {
@@ -557,10 +636,16 @@
             else { showToast('Playlist saved successfully', 'success'); closeModal('modal-playlist'); loadPlaylists(); }
         }
 
-        async function renamePlaylist(id, old) {
-            const name = prompt("Enter new name:", old);
-            if(name) await sb.from('playlists').update({name}).eq('id', id); loadPlaylists();
+        // Replace existing renamePlaylist with:
+async function renamePlaylist(id, old) {
+    showCustomPrompt("Rename Playlist", old, async (newName) => {
+        if(newName) {
+            await sb.from('playlists').update({name: newName}).eq('id', id);
+            showToast('Playlist renamed', 'success');
+            loadPlaylists();
         }
+    });
+}
         async function deletePlaylist(id) {
             if(confirm("Delete this playlist? This cannot be undone.")) await sb.from('playlists').delete().eq('id', id); loadPlaylists();
         }
@@ -704,16 +789,14 @@
 
         // --- DEVICES ---
         async function loadDevices() {
-            if(!sb) return;
-            const { data } = await sb.from('devices').select('*').order('id', {ascending: false});
-            state.devices = data || [];
-            if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*'); state.playlists = pl || []; }
-            
-            const list = document.getElementById('device-list');
-            if(state.devices.length === 0) {
-                 list.innerHTML = `<div class="bg-white p-12 rounded-2xl border border-dashed border-slate-300 text-center"><p class="text-slate-400">No screens linked.</p></div>`;
-                 return;
-            }
+    if(!sb) return;
+    const { data } = await sb.from('devices').select('*').order('id', {ascending: false});
+    state.devices = data || [];
+    if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*'); state.playlists = pl || []; }
+    
+    // Use the helper function to render
+    renderDeviceCards(state.devices);
+}
 
             list.innerHTML = state.devices.map(d => `
                 <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -771,6 +854,111 @@
         }
 
 
+// Universal Search Logic
+function handleGlobalSearch(query) {
+    const lowerQuery = query.toLowerCase();
+    
+    if (currentTab === 'media') {
+        // Re-use existing filter logic but modify to search by name
+        if (!lowerQuery) { filterMedia('all'); return; } // Show all if empty
+        const filtered = state.media.filter(m => m.name.toLowerCase().includes(lowerQuery));
+        // Render the filtered list manually (reusing logic from filterMedia)
+        const grid = document.getElementById('media-grid');
+        grid.innerHTML = '';
+        filtered.forEach(m => {
+             const isVideo = m.type.includes('video');
+             const thumbnail = isVideo ? `<div class="flex items-center justify-center h-full text-slate-400 bg-slate-100"><i class="fa-solid fa-play text-2xl opacity-50"></i></div>` : `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">`;
+             grid.innerHTML += `
+                <div class="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 flex flex-col fade-enter">
+                    <div class="aspect-video bg-slate-100 relative overflow-hidden">
+                        ${thumbnail}
+                        <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors"></div>
+                        <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
+                            <button onclick="deleteMedia(${m.id})" class="p-2 bg-white/90 backdrop-blur text-red-500 rounded-lg shadow-lg hover:bg-white hover:text-red-600 hover:scale-105 transition-all"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t border-slate-50 bg-white">
+                        <p class="text-sm font-bold text-slate-700 truncate group-hover:text-brand-600 transition-colors">${m.name}</p>
+                    </div>
+                </div>`;
+        });
+    } 
+    else if (currentTab === 'playlists') {
+        if (!lowerQuery) { loadPlaylists(); return; }
+        const list = document.getElementById('playlist-list');
+        const filtered = state.playlists.filter(p => p.name.toLowerCase().includes(lowerQuery));
+        list.innerHTML = filtered.map(p => `
+            <div class="group bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col h-full relative overflow-hidden fade-enter">
+                <div class="absolute top-0 left-0 w-1 h-full bg-slate-100 group-hover:bg-brand-500 transition-colors"></div>
+                <div class="flex justify-between items-start mb-4 pl-3">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg text-slate-800 group-hover:text-brand-600 transition-colors">${p.name}</h3>
+                        <div class="flex items-center gap-2 mt-2">
+                            <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-md"><i class="fa-solid fa-layer-group mr-1"></i> ${p.items ? p.items.length : 0} items</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-auto pl-3">
+                    <button onclick="editPlaylist(${p.id})" class="w-full py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition-all">Edit Content</button>
+                </div>
+            </div>`).join('');
+    }
+    else if (currentTab === 'devices') {
+        if (!lowerQuery) { loadDevices(); return; }
+        const list = document.getElementById('device-list');
+        const filtered = state.devices.filter(d => d.name.toLowerCase().includes(lowerQuery) || d.code.toLowerCase().includes(lowerQuery));
+        renderDeviceCards(filtered);
+    }
+}
+
+// Helper to render devices (used by loadDevices and Search)
+function renderDeviceCards(devicesData) {
+    const list = document.getElementById('device-list');
+    list.innerHTML = devicesData.map(d => `
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 fade-enter">
+            <div class="flex items-center gap-5 w-full lg:w-auto">
+                <div class="relative group">
+                    <div class="w-16 h-12 bg-slate-900 rounded-lg flex items-center justify-center font-mono text-white text-sm font-bold tracking-widest shadow-lg shadow-slate-200 select-all overflow-hidden whitespace-nowrap px-2">
+                        ${d.code}
+                    </div>
+                    <!-- Copy Button Overlay -->
+                    <button onclick="copyToClipboard('${d.code}')" class="absolute inset-0 bg-slate-900/90 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs gap-1 rounded-lg">
+                        <i class="fa-regular fa-copy"></i> Copy
+                    </button>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <h4 class="font-bold text-lg text-slate-800">${d.name}</h4>
+                        <button onclick="renameDevice(${d.id}, '${d.name}')" class="text-slate-300 hover:text-brand-600 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
+                    </div>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${d.status==='online'?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-600'}">
+                        <span class="w-1.5 h-1.5 rounded-full ${d.status==='online'?'bg-emerald-500':'bg-red-500'} animate-pulse"></span> ${d.status}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full lg:w-auto flex-1 lg:justify-end">
+                <div class="w-full lg:w-64">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Fallback Content</label>
+                    <select onchange="assignPlaylist(${d.id}, this.value)" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-600 focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+                        <option value="">Select Playlist...</option>
+                        ${state.playlists.map(p => `<option value="${p.id}" ${d.playlist_id === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2 mt-4 lg:mt-5 w-full lg:w-auto justify-between lg:justify-end">
+                    <button onclick="requestScreenshot(${d.id})" class="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Capture Screenshot"><i class="fa-solid fa-camera"></i></button>
+                    <button onclick="requestRefresh(${d.id})" class="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Force Player Refresh"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button onclick="deleteDevice(${d.id})" class="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Unlink Device"><i class="fa-solid fa-trash-can"></i></button>
+                    
+                    <div class="w-12 h-8 bg-slate-100 rounded border border-slate-200 overflow-hidden relative group cursor-pointer" onclick="${d.screenshot_url ? `window.open('${d.screenshot_url}')` : `requestScreenshot(${d.id})`}">
+                        ${d.screenshot_url ? `<img src="${d.screenshot_url}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">` : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i class="fa-solid fa-image text-xs"></i></div>`}
+                    </div>
+                </div>
+            </div>
+        </div>`).join('');
+}
+
 async function requestRefresh(deviceId) {
     const { error } = await sb.from('devices')
         .update({ refresh_requested: true })
@@ -797,7 +985,16 @@ async function requestRefresh(deviceId) {
             loadDevices();
         }
         async function assignPlaylist(id, pid) { await sb.from('devices').update({ playlist_id: pid || null }).eq('id', id); showToast('Default content updated', 'success'); }
-        async function renameDevice(id, old) { const name = prompt("Screen Name:", old); if(name) await sb.from('devices').update({name}).eq('id', id); loadDevices(); }
+        // Replace existing renameDevice with:
+async function renameDevice(id, old) {
+    showCustomPrompt("Rename Screen", old, async (newName) => {
+        if(newName) {
+            await sb.from('devices').update({name: newName}).eq('id', id);
+            showToast('Screen renamed', 'success');
+            loadDevices();
+        }
+    });
+}
         async function deleteDevice(id) { if(confirm("Unlink this screen? It will stop showing content.")) await sb.from('devices').delete().eq('id', id); loadDevices(); }
 
         // --- UTILS ---
@@ -825,6 +1022,57 @@ async function requestRefresh(deviceId) {
             }, 4000);
         }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// --- UTILITIES: Custom Modal & Clipboard ---
+
+function showCustomPrompt(title, initialValue, onSave) {
+    document.getElementById('modal-title').innerText = title;
+    const input = document.getElementById('modal-input');
+    input.value = initialValue;
+    
+    // Show modal
+    const modal = document.getElementById('custom-input-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    input.focus();
+
+    // Handle Save
+    const saveBtn = document.getElementById('modal-save-btn');
+    // Remove old listeners to prevent duplicates
+    const newBtn = saveBtn.cloneNode(true);
+    saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+    
+    newBtn.addEventListener('click', () => {
+        if(input.value.trim()) {
+            onSave(input.value.trim());
+            closeCustomModal();
+        } else {
+            input.classList.add('border-red-500');
+        }
+    });
+    
+    // Allow Enter key
+    input.onkeydown = (e) => {
+        if(e.key === 'Enter') newBtn.click();
+        input.classList.remove('border-red-500');
+    };
+}
+
+function closeCustomModal() {
+    document.getElementById('custom-input-modal').classList.add('hidden');
+    document.getElementById('custom-input-modal').classList.remove('flex');
+}
+
+async function copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        showToast('Code copied to clipboard', 'success');
+    } catch (err) {
+        showToast('Failed to copy', 'error');
+    }
+}
+
+
 
         // Start the engine
         initApp();
