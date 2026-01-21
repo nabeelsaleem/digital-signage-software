@@ -1,26 +1,33 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// NOTE: Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in your .env or Vercel Dashboard!
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// Prevent crash if env vars are missing during local testing
+const supabase = supabaseUrl && supabaseKey 
+    ? createClient(supabaseUrl, supabaseKey) 
+    : null;
 
 export default async function handler(req, res) {
-    // 1. Enable CORS (Critical for the Player to talk to this API)
+    // 1. Enable CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     
-    // Handle "Preflight" check from browser
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
+    }
+
+    if (!supabase) {
+        return res.status(500).json({ error: "Server configuration error: Missing database keys." });
     }
 
     const { code, deviceId } = req.query;
 
     try {
-        // --- SCENARIO A: MISSING PARAMETERS (The cause of your Timeout) ---
+        // --- SCENARIO A: MISSING PARAMETERS ---
         if (!code && !deviceId) {
             return res.status(400).json({ 
                 error: "Missing parameters. Provide '?code=X' or '?deviceId=Y'" 
@@ -36,6 +43,9 @@ export default async function handler(req, res) {
                 .single();
             
             if (error || !data) {
+                // If error is "PGRST116", it means no rows found (404 effectively)
+                // If generic error, log it
+                console.error("Pairing DB Error:", error);
                 return res.status(404).json({ error: 'Invalid Pairing Code' });
             }
             return res.status(200).json(data);
@@ -56,25 +66,26 @@ export default async function handler(req, res) {
                 .single();
 
             if (devErr || !device) {
+                console.error("Device fetch error:", devErr);
                 return res.status(404).json({ error: 'Device not found' });
             }
 
-            // --- CRITICAL FIX: RESET REFRESH FLAG ---
-            // If a refresh was requested, we turn it off NOW so the player doesn't loop.
-            if (device.refresh_requested) {
+            // --- FIX: RESET REFRESH FLAG ---
+            // We reset it in the DB, but keep it true in the response variable 
+            // so the frontend JS knows to reload once.
+            const shouldRefresh = device.refresh_requested;
+            if (shouldRefresh) {
                 await supabase.from('devices')
                     .update({ refresh_requested: false })
                     .eq('id', deviceId);
-                
-                // We still return the device data with refresh_requested: true 
-                // so the player knows to trigger the reload one last time.
-            }}
+            }
+            // Return modified device object to frontend
+            const deviceResponse = { ...device, refresh_requested: shouldRefresh };
 
             // 3. Determine Active Playlist
             let activeId = device.playlist_id;
             const now = new Date();
-            // Get HH:MM format (e.g., "14:30")
-            const timeStr = now.toTimeString().slice(0, 5);
+            const timeStr = now.toTimeString().slice(0, 5); // "14:30"
             
             const { data: schedules } = await supabase
                 .from('schedules')
@@ -92,31 +103,29 @@ export default async function handler(req, res) {
 
             // 4. Fetch Media Items
             if (!activeId) {
-                return res.status(200).json({ device, playlist: [] });
+                return res.status(200).json({ device: deviceResponse, playlist: [] });
             }
 
             const { data: pl } = await supabase.from('playlists').select('items').eq('id', activeId).single();
             
-            // Handle empty playlist
             if (!pl || !pl.items || !pl.items.length) {
-                return res.status(200).json({ device, playlist: [] });
+                return res.status(200).json({ device: deviceResponse, playlist: [] });
             }
 
             // 5. Get URLs and Types for items
             const ids = pl.items.map(i => i.id);
             const { data: media } = await supabase.from('media').select('id, url, type').in('id', ids);
 
-            // Merge details
             const playlist = pl.items.map(i => {
                 const f = media ? media.find(m => m.id === i.id) : null;
                 return f ? { ...f, duration: i.duration } : null;
             }).filter(Boolean);
 
-            return res.status(200).json({ device, playlist });
+            return res.status(200).json({ device: deviceResponse, playlist });
         }
 
     } catch (error) {
-        console.error("API Error:", error);
+        console.error("Unhandled API Error:", error);
         return res.status(500).json({ error: error.message });
     }
 }
