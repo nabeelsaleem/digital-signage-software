@@ -498,6 +498,9 @@ function nav(view) {
                             <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors"></div>
                             <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
                                 <button onclick="deleteMedia(${m.id})" class="p-2 bg-white/90 backdrop-blur text-red-500 rounded-lg shadow-lg hover:bg-white hover:text-red-600 hover:scale-105 transition-all"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                                <button onclick="openReplaceDialog('${item.id}')" data-id="${item.id}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm ml-2">
+        REPLACE
+    </button>
                             </div>
                             <div class="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
                                 <span class="px-2 py-1 bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold uppercase rounded">${isVideo ? 'Video' : 'Image'}</span>
@@ -1020,9 +1023,69 @@ async function copyToClipboard(text) {
 }
 
 
+      //code to replace content in media library
+
+      let replaceTargetId = null;
+
+// 1. Function called when you click the "Replace" button
+function openReplaceDialog(mediaId) {
+    replaceTargetId = mediaId;
+    // Trigger the hidden file input
+    document.getElementById('replace-file-input').click();
+}
+
+// 2. Event Listener that runs instantly when a file is selected
+document.getElementById('replace-file-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file || !replaceTargetId) return;
+
+    // Optional: Update button text to show progress
+    const btn = document.querySelector(`button[data-id="${replaceTargetId}"]`);
+    if(btn) btn.innerText = '...';
+
+    try {
+        // Step A: Upload New File with a Unique Timestamp (Forces Player to reload)
+        const fileName = `replaced_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+        const { data: uploadData, error: uploadError } = await sb.storage
+            .from('media')
+            .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // Step B: Get New Public URL
+        const { data: { publicUrl } } = sb.storage.from('media').getPublicUrl(fileName);
+
+        // Step C: UPDATE the existing row (Instead of Inserting new)
+        const { error: dbError } = await sb
+            .from('media')
+            .update({
+                name: file.name,     // Update Name
+                type: file.type,     // Update Type (e.g., Image -> Video)
+                url: publicUrl       // Update URL
+            })
+            .eq('id', replaceTargetId);
+
+        if (dbError) throw dbError;
+
+        alert('Media Replaced Successfully!');
+        
+        // REFRESH YOUR LIST
+        if (typeof fetchMedia === 'function') fetchMedia(); 
+
+    } catch (err) {
+        console.error(err);
+        alert('Replace Failed: ' + err.message);
+    } finally {
+        replaceTargetId = null;
+        e.target.value = ''; // Reset input
+    }
+});
+
+
 
         // Start the engine
         initApp();
     </script>
+    <input type="file" id="replace-file-input" style="display: none;" accept="image/*,video/*">
 </body>
 </html>
