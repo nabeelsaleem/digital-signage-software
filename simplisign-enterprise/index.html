@@ -863,16 +863,44 @@ function handleGlobalSearch(query) {
 }
 
 // Helper to render devices (used by loadDevices and Search)
+// Helper to render devices (used by loadDevices and Search)
 function renderDeviceCards(devicesData) {
     const list = document.getElementById('device-list');
-    list.innerHTML = devicesData.map(d => `
+    
+    list.innerHTML = devicesData.map(d => {
+        // --- SMART STATUS CALCULATION ---
+        // 1. Calculate time difference
+        const lastSeenDate = new Date(d.last_seen);
+        const now = new Date();
+        const diffSeconds = (now - lastSeenDate) / 1000;
+        
+        // 2. Determine Real Status
+        // If not seen for 60 seconds, force OFFLINE
+        const isOffline = diffSeconds > 60; 
+        
+        // 3. Determine Colors & Text
+        let statusText = 'ONLINE';
+        let statusColor = 'bg-emerald-50 text-emerald-600';
+        let dotColor = 'bg-emerald-500';
+
+        if (isOffline) {
+            statusText = 'OFFLINE';
+            statusColor = 'bg-red-50 text-red-600';
+            dotColor = 'bg-red-500';
+        } 
+        else if (d.refresh_requested || d.screenshot_requested) {
+            statusText = 'UPDATING';
+            statusColor = 'bg-orange-50 text-orange-600';
+            dotColor = 'bg-orange-500';
+        }
+
+        return `
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 fade-enter">
             <div class="flex items-center gap-5 w-full lg:w-auto">
                 <div class="relative group">
                     <div class="w-16 h-12 bg-slate-900 rounded-lg flex items-center justify-center font-mono text-white text-sm font-bold tracking-widest shadow-lg shadow-slate-200 select-all overflow-hidden whitespace-nowrap px-2">
                         ${d.code}
                     </div>
-                    <!-- Copy Button Overlay -->
                     <button onclick="copyToClipboard('${d.code}')" class="absolute inset-0 bg-slate-900/90 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs gap-1 rounded-lg">
                         <i class="fa-regular fa-copy"></i> Copy
                     </button>
@@ -882,9 +910,16 @@ function renderDeviceCards(devicesData) {
                         <h4 class="font-bold text-lg text-slate-800">${d.name}</h4>
                         <button onclick="renameDevice(${d.id}, '${d.name}')" class="text-slate-300 hover:text-brand-600 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
                     </div>
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${d.status==='online'?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-600'}">
-                        <span class="w-1.5 h-1.5 rounded-full ${d.status==='online'?'bg-emerald-500':'bg-red-500'} animate-pulse"></span> ${d.status}
-                    </span>
+                    
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${statusColor}">
+                            <span class="w-1.5 h-1.5 rounded-full ${dotColor} ${!isOffline ? 'animate-pulse' : ''}"></span> ${statusText}
+                        </span>
+                        <span class="text-[10px] text-slate-400 font-mono">
+                            <i class="fa-regular fa-clock mr-1"></i>${isOffline ? 'Last seen: ' + lastSeenDate.toLocaleTimeString() : 'Live'}
+                        </span>
+                    </div>
+
                 </div>
             </div>
             
@@ -907,8 +942,10 @@ function renderDeviceCards(devicesData) {
                     </div>
                 </div>
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
+      
 
 async function requestRefresh(deviceId) {
     const { error } = await sb.from('devices')
