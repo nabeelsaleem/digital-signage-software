@@ -13,26 +13,35 @@
         .fade-enter { opacity: 0; transition: opacity 1s ease-in-out; }
         .fade-enter-active { opacity: 1; }
         /* Offline Dot Style */
-        .status-offline {
-            width: 12px;
-            height: 12px;
-            background-color: red;
-            color: transparent; /* Hide text */
-            padding: 0 !important;
-            overflow: hidden;
-            opacity: 0.8 !important;
-        }
+
+        /* --- TRAFFIC LIGHT STATUS DOT --- */
+#status-dot {
+    position: fixed;
+    bottom: 30px; 
+    right: 30px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    z-index: 9999;
+    
+    /* Default to Red (Offline/Error) */
+    background-color: #ef4444; 
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    transition: background-color 0.3s ease;
+}
+
+/* Pulse animation for Orange (Processing) */
+@keyframes pulse-orange {
+    0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+}
+
+.status-processing {
+    animation: pulse-orange 2s infinite;
+}
         
-        /* Faded / Hidden Status (Normal Operation) */
-        .status-idle {
-            opacity: 0.05; /* Almost invisible */
-        }
-        
-        /* Active Status (Downloading/Syncing) */
-        .status-active {
-            opacity: 0.8;
-            background-color: rgba(0,0,0,0.6);
-        }
     </style>
 </head>
 <body class="h-screen w-screen">
@@ -52,9 +61,8 @@
         
         <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
         
-        <div id="status-pill" class="absolute bottom-4 right-4 text-white/50 text-[10px] px-2 py-1 rounded-full font-mono z-50 transition-all duration-500">Starting...</div>
     </div>
-
+<div id="status-dot" title="Initializing..."></div>
    
 
 <script>
@@ -297,23 +305,38 @@ async function checkUpdates() {
             }
         }
 
-    function updateStatus(msg, type = 'normal') { 
-            const el = document.getElementById('status-pill');
-            
-            if (msg.includes('OFFLINE')) {
-                // Show Red Dot
-                el.innerText = '';
-                el.className = 'absolute bottom-2 right-2 rounded-full z-50 transition-all duration-500 status-offline';
-            } else if (msg.includes('Scheduled') || msg.includes('Default')) {
-                // Content Playing (Fade out)
-                el.innerText = msg;
-                el.className = 'absolute bottom-4 right-4 text-white px-3 py-1 rounded-full font-mono z-50 transition-all duration-500 status-idle';
-            } else {
-                // Active System Message (Downloading / Checking)
-                el.innerText = msg;
-                el.className = 'absolute bottom-4 right-4 text-white px-3 py-1 rounded-full font-mono z-50 transition-all duration-500 status-active';
+  // TRAFFIC LIGHT STATUS SYSTEM
+        // Red    = Offline / Error
+        // Green  = Online / Playing
+        // Orange = Updating / Checking / Refreshing
+        function updateStatus(text) {
+            const dot = document.getElementById('status-dot');
+            if (!dot) return;
+
+            // Save text as a tooltip for debugging
+            dot.title = text; 
+            dot.classList.remove('status-processing');
+
+            const lowerText = text.toLowerCase();
+
+            if (lowerText.includes('online')) {
+                // GREEN: Stable connection
+                dot.style.backgroundColor = '#22c55e'; 
+            } 
+            else if (lowerText.includes('offline') || lowerText.includes('error') || lowerText.includes('failed')) {
+                // RED: Problem
+                dot.style.backgroundColor = '#ef4444'; 
+            } 
+            else {
+                // ORANGE: Processing / Checking
+                dot.style.backgroundColor = '#f97316'; 
+                dot.classList.add('status-processing'); 
             }
+            // Optional: Log to console so you can still read what's happening
+            console.log(`Status: ${text}`); 
         }
+
+    
     
     function stopPlayback() { currentPlaylist = []; isPlaying = false; document.getElementById('active-slide').src = ''; }
         
@@ -397,19 +420,32 @@ async function checkUpdates() {
             runLoop();
         }
 
-           
-        
-
+               
         // 5. MEMORY LEAK PREVENTION (Refresh once every 24h)
         setTimeout(() => {
             window.location.reload();
         }, 24 * 60 * 60 * 1000);
 
+
+// FORCE OFFLINE CHECK (Every 5 seconds)
+        // This fixes the "Missing Red Dot" on Android if events fail
+        setInterval(() => {
+            const dot = document.getElementById('status-dot');
+            if (!navigator.onLine) {
+                updateStatus('Offline Connection');
+            } else if (dot && dot.style.backgroundColor === 'rgb(239, 68, 68)') { 
+                // If we are Red but navigator says online, switch to Orange to re-check
+                updateStatus('Checking Connection...'); 
+            }
+        }, 5000);
+
+    
         // Start
         initApp();
     </script>
 </body>
 </html>
+
 
 
 
