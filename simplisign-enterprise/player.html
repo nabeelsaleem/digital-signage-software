@@ -80,51 +80,122 @@
 
 
     
-        // 1. ROBUST INIT
-       async function initApp() {
-            try {
-                if(!navigator.onLine) showOfflineMode();
+       // 1. SMART INIT: Checks Local Data FIRST
+        async function initApp() {
+            // A. Check for saved code
+            const savedCode = localStorage.getItem('ss_device_code');
+            const savedPlaylist = localStorage.getItem('cached_playlist');
 
-                const response = await fetch('/api/config');
-                if (!response.ok) throw new Error('Config Load Failed');
-                const config = await response.json();
-                sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-                
-                // AUTO-RECONNECT LOGIC
-                // We use the global 'deviceCode' which was loaded from localStorage at the top of the script
-                if (deviceCode) {
-                    console.log("Found saved code, attempting auto-pair...");
-                    await pairDevice(true); // <--- This 'true' triggers the fix above
-                } else {
-                    console.log("No saved code found. Showing pairing screen.");
+            if (savedCode) {
+                deviceCode = savedCode;
+                updateStatus('Initializing...');
+
+                // B. CRITICAL CHECK: If we have a playlist, start playing it IMMEDIATELY 
+                // while we try to connect in the background. This fixes the "Stuck" screen.
+                if (savedPlaylist) {
+                    console.log("Fast Boot: Content found, playing immediately.");
+                    startOfflinePlayback(JSON.parse(savedPlaylist));
+                    
+                    // C. Now try to connect silently to see if there are updates
+                    // If this fails, who cares? We are already playing!
+                    if (navigator.onLine) pairDevice(true);
+                } 
+                else {
+                    // No content? We must try to connect.
+                    await pairDevice(true);
                 }
-            } catch (error) {
-                console.error("Init failed:", error);
-                setTimeout(initApp, 5000); 
+            } else {
+                console.log("No saved code. Showing pairing screen.");
+                document.getElementById('pairing-screen').classList.remove('hidden');
+            }
+        }
+
+        // 2. HELPER: Starts Playback & Hides Pairing Screen
+        function startOfflinePlayback(playlistData) {
+            if (!playlistData || playlistData.length === 0) return;
+
+            updateStatus('Offline Mode - Playing Cache');
+            document.getElementById('status-pill').style.backgroundColor = 'red';
+            
+            // Force hide pairing screen
+            document.getElementById('pairing-screen').classList.add('hidden');
+            document.getElementById('player-canvas').classList.remove('hidden');
+            
+            // Load Data
+            currentPlaylist = playlistData;
+            if (typeof preloadMedia === "function") preloadMedia(currentPlaylist);
+            
+            // Only start loop if not already running
+            if (!isPlaying) runLoop();
+        }
+
+
+    
+        // 3. ROBUST PAIRING: Handles Server Errors
+        async function pairDevice(silent = false) {
+            let code = silent ? deviceCode : document.getElementById('pairing-code').value.toUpperCase();
+            if (!code) return;
+
+            if (!silent) document.querySelector('button').innerText = 'CONNECTING...';
+
+            try {
+                // If we are strictly offline, throw immediately to skip fetch
+                if (!navigator.onLine) throw new Error("Offline");
+
+                const req = await fetch(`/api/player-handler?code=${code}`);
+                
+                if (!req.ok) {
+                    if (req.status === 500 || req.status === 404) {
+                        if (silent) {
+                            console.warn("Device deleted. Resetting...");
+                            localStorage.removeItem('ss_device_code'); 
+                            localStorage.removeItem('cached_playlist'); // Clear content too
+                            location.reload(); 
+                            return;
+                        }
+                    }
+                    throw new Error('Network Error');
+                }
+
+                const data = await req.json();
+                if (!data.id) throw new Error('No Device ID');
+
+                // Success - Save everything
+                localStorage.setItem('ss_device_code', code);
+                deviceCode = code;
+                deviceId = data.id;
+
+                // Hide Pairing Screen
+                document.getElementById('pairing-screen').classList.add('hidden');
+                document.getElementById('player-canvas').classList.remove('hidden');
+
+                // Start Heartbeat
+                if (!window.heartbeatRunning) {
+                    window.heartbeatRunning = true; 
+                    runHeartbeatLoop();
+                }
+                
+                // Fetch latest content
+                checkUpdates();
+
+            } catch (e) {
+                console.warn("Connection Failed:", e);
+                
+                // If we failed but haven't started playing yet (e.g. no Fast Boot), try now
+                const cached = localStorage.getItem('cached_playlist');
+                if (silent && cached && !isPlaying) {
+                    startOfflinePlayback(JSON.parse(cached));
+                    return;
+                }
+
+                if (!silent) {
+                    document.getElementById('status-msg').innerText = 'Connection Failed';
+                    document.querySelector('button').innerText = 'CONNECT';
+                }
             }
         }
 
     
-        // 2. NETWORK LISTENERS (Handle drops gracefully)
-        window.addEventListener('offline', () => { showOfflineMode(); });
-        window.addEventListener('online', () => { 
-            isOffline = false; 
-            document.getElementById('status-pill').style.backgroundColor = 'rgba(0,0,0,0.5)';
-            updateStatus('Online - Recovered');
-        });
-
-
-// --- ADD THIS AT THE TOP OF YOUR SCRIPT --- THIS CODE SAVES CONTENT FILE FOR OFFLINE ANDROID APP
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('Offline Ready: Service Worker registered'))
-                    .catch(err => console.log('Service Worker Failed:', err));
-            });
-        }
-        // ------------------------------------------
-
-
     
         function showOfflineMode() {
             isOffline = true;
@@ -277,6 +348,9 @@ async function checkUpdates() {
                 if (playlist && Array.isArray(playlist)) {
                     if (JSON.stringify(playlist) !== JSON.stringify(currentPlaylist)) {
                         console.log("New Playlist Received");
+
+                        // --- THIS LINE IS REQUIRED FOR OFFLINE APK ---
+    localStorage.setItem('cached_playlist', JSON.stringify(playlist));
                         
                         // Clear old memory to prevent crashes
                         imageCache = {}; 
@@ -445,6 +519,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
