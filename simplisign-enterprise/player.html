@@ -81,42 +81,56 @@
 
     
        // 1. SMART INIT: Checks Local Data FIRST
-        async function initApp() {
-            // A. Check for saved code
-            const savedCode = localStorage.getItem('ss_device_code');
-            const savedPlaylist = localStorage.getItem('cached_playlist');
+       // REPLACE your initApp with this corrected version
+async function initApp() {
+    // 1. Load Local Data IMMEDIATELY
+    const savedCode = localStorage.getItem('ss_device_code');
+    const savedPlaylist = localStorage.getItem('cached_playlist');
 
-            if (savedCode) {
+    // 2. FAST BOOT: If we have content, PLAY IT NOW.
+    if (savedPlaylist && savedCode) {
+        try {
+            const parsedList = JSON.parse(savedPlaylist);
+            if (parsedList.length > 0) {
+                console.log("Cache found. Starting playback...");
                 deviceCode = savedCode;
-                updateStatus('Initializing...');
+                
+                // Hide Pairing / Show Canvas
+                document.getElementById('pairing-screen').classList.add('hidden');
+                document.getElementById('player-canvas').classList.remove('hidden');
+                
+                // CORRECT FIX: Use updateStatus instead of showOfflineMode
+                if (typeof updateStatus === "function") updateStatus('Offline Mode (Cache)');
+                
+                // Start Loop
+                currentPlaylist = parsedList;
+                if (typeof preloadMedia === "function") preloadMedia(currentPlaylist);
+                if (!isPlaying) runLoop();
 
-                // B. CRITICAL CHECK: If we have a playlist, start playing it IMMEDIATELY 
-                // while we try to connect in the background. This fixes the "Stuck" screen.
-                if (savedPlaylist) {
-                    console.log("Fast Boot: Content found, playing immediately.");
-                    startOfflinePlayback(JSON.parse(savedPlaylist));
-                    
-                    // C. Now try to connect silently to see if there are updates
-                    // If this fails, who cares? We are already playing!
-                    if (navigator.onLine) pairDevice(true);
-                } 
-                else {
-                    // No content? We must try to connect.
-                    await pairDevice(true);
-                }
-            } else {
-                console.log("No saved code. Showing pairing screen.");
-                document.getElementById('pairing-screen').classList.remove('hidden');
+                // Background Connect
+                setTimeout(() => pairDevice(true), 2000);
+                return; 
             }
+        } catch (e) {
+            console.error("Cache corrupted:", e);
         }
+    }
+
+    // 3. Normal Boot
+    if (savedCode) {
+        pairDevice(true);
+    } else {
+        document.getElementById('pairing-screen').classList.remove('hidden');
+    }
+}
+    
 
         // 2. HELPER: Starts Playback & Hides Pairing Screen
         function startOfflinePlayback(playlistData) {
             if (!playlistData || playlistData.length === 0) return;
 
             updateStatus('Offline Mode - Playing Cache');
-            document.getElementById('status-pill').style.backgroundColor = 'red';
-            
+           
             // Force hide pairing screen
             document.getElementById('pairing-screen').classList.add('hidden');
             document.getElementById('player-canvas').classList.remove('hidden');
@@ -197,11 +211,6 @@
 
     
     
-        function showOfflineMode() {
-            isOffline = true;
-            updateStatus('OFFLINE - Playing Cache');
-            document.getElementById('status-pill').style.backgroundColor = 'red';
-        }
 
    async function pairDevice(silent = false) {
             // Get code from storage (if silent) or input box
@@ -519,6 +528,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
