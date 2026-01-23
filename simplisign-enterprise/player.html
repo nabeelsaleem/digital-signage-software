@@ -362,10 +362,19 @@ async function checkUpdates() {
     localStorage.setItem('cached_playlist', JSON.stringify(playlist));
                         
                         // Clear old memory to prevent crashes
-                        imageCache = {}; 
-                        
+                        imageCache = {};                         
                         currentPlaylist = playlist;
                         currentIndex = 0;
+
+
+                        // --- ADD THIS BLOCK ---
+                        if (currentPlaylist.length === 0) {
+                            updateStatus('No Content Assigned');
+                            // Optional: Show a specific message on the canvas if you want
+                        } else {
+                            if (typeof preloadMedia === "function") preloadMedia(currentPlaylist);
+                            if (!isPlaying) runLoop();
+                        }
                         
                         // Use the SAFE preloader (handles missing types)
                         if (typeof preloadMedia === "function") {
@@ -377,6 +386,8 @@ async function checkUpdates() {
                         if (!isPlaying && currentPlaylist.length > 0) {
                             runLoop();
                         }
+
+                        
                     }
                 }
                 
@@ -528,6 +539,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
