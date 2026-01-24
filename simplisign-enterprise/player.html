@@ -212,54 +212,7 @@ async function initApp() {
     
     
 
-   async function pairDevice(silent = false) {
-            // Get code from storage (if silent) or input box
-            let code = silent ? deviceCode : document.getElementById('pairing-code').value.toUpperCase();
-            
-            if (!code) return;
-
-            if(!silent) document.querySelector('button').innerText = 'CONNECTING...';
-
-            try {
-                const req = await fetch(`/api/player-handler?code=${code}`);
-                
-                // --- THE FIX IS HERE ---
-                if (!req.ok) {
-                    // If the server says 500 (Error) or 404 (Not Found), the code is dead.
-                    if (silent) {
-                        console.warn("Saved code is invalid (Device Deleted). Resetting...");
-                        localStorage.removeItem('ss_device_code'); // <--- WIPE MEMORY
-                        location.reload(); // <--- RESTART FRESH
-                        return;
-                    }
-                    throw new Error('Invalid Code');
-                }
-                // -----------------------
-                
-                const data = await req.json();
-
-                if (!data.id) throw new Error('No Device ID returned');
-
-                localStorage.setItem('ss_device_code', code);
-                deviceCode = code;
-                deviceId = data.id;
-                
-                document.getElementById('pairing-screen').classList.add('hidden');
-                document.getElementById('player-canvas').classList.remove('hidden');
-                
-                if (!window.heartbeatRunning) {
-                    window.heartbeatRunning = true; 
-                    runHeartbeatLoop();
-                }
-
-            } catch (e) {
-                console.error("Pairing Error:", e);
-                if(!silent) {
-                    document.getElementById('status-msg').innerText = 'Connection Failed';
-                    document.querySelector('button').innerText = 'CONNECT';
-                }
-            }
-        }
+ 
         // 4. ROBUST LOOP (Replacing simple setInterval)
         async function runHeartbeatLoop() {
             // Prevent crashing if offline
@@ -518,6 +471,7 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
+
 
 
 
