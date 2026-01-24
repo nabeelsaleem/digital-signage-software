@@ -48,7 +48,12 @@ export default async function handler(req, res) {
                 console.error("Pairing DB Error:", error);
                 return res.status(404).json({ error: 'Invalid Pairing Code' });
             }
-            return res.status(200).json(data);
+
+            return res.status(200).json({
+    ...data,
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseKey: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+});            
         }
 
         // --- SCENARIO C: PLAYING (Heartbeat + Fetch Playlist) ---
