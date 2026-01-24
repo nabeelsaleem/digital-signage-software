@@ -967,34 +967,12 @@ async function requestRefresh(deviceId) {
 }
 
       
-        async function addDevice() {
-    try {
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-        
-        const { data, error } = await sb
-            .from('devices')
-            .insert({ 
-                user_id: state.user.id, 
-                code, 
-                name: 'New Screen',
-                created_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-        
-        if (error) throw error;
-        
-        showToast(`Screen created! Pairing code: ${code}`, 'success');
-        loadDevices();
-        
-        // Optional: Auto-copy code to clipboard
-        navigator.clipboard.writeText(code).catch(() => {});
-        
-    } catch (error) {
-        console.error('Add device error:', error);
-        showToast('Failed to create screen: ' + error.message, 'error');
-    }
-}
+    async function addDevice() {
+            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+            await sb.from('devices').insert({ user_id: state.user.id, code, name: 'New Screen' });
+            loadDevices();
+        }
+      
       
 async function assignPlaylist(id, pid) { 
     try {
