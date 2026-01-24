@@ -972,8 +972,13 @@ async function requestRefresh(deviceId) {
             await sb.from('devices').insert({ user_id: state.user.id, code, name: 'New Screen' });
             loadDevices();
         }
-        async function assignPlaylist(id, pid) { await sb.from('devices').update({ playlist_id: pid || null }).eq('id', id); showToast('Default content updated', 'success'); }
-        // Replace existing renameDevice with:
+      
+async function assignPlaylist(id, pid) { 
+    await sb.from('devices').update({ playlist_id: pid || null }).eq('id', id); 
+    showToast('Default content updated', 'success'); 
+}
+      
+      // Replace existing renameDevice with:
 async function renameDevice(id, old) {
     showCustomPrompt("Rename Screen", old, async (newName) => {
         if(newName) {
