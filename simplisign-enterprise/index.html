@@ -968,14 +968,55 @@ async function requestRefresh(deviceId) {
 
       
         async function addDevice() {
-            const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            await sb.from('devices').insert({ user_id: state.user.id, code, name: 'New Screen' });
-            loadDevices();
-        }
+    try {
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        const { data, error } = await sb
+            .from('devices')
+            .insert({ 
+                user_id: state.user.id, 
+                code, 
+                name: 'New Screen',
+                created_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        showToast(`Screen created! Pairing code: ${code}`, 'success');
+        loadDevices();
+        
+        // Optional: Auto-copy code to clipboard
+        navigator.clipboard.writeText(code).catch(() => {});
+        
+    } catch (error) {
+        console.error('Add device error:', error);
+        showToast('Failed to create screen: ' + error.message, 'error');
+    }
+}
       
 async function assignPlaylist(id, pid) { 
-    await sb.from('devices').update({ playlist_id: pid || null }).eq('id', id); 
-    showToast('Default content updated', 'success'); 
+    try {
+        const { error } = await sb
+            .from('devices')
+            .update({ 
+                playlist_id: pid || null,
+                last_updated: new Date().toISOString() // Track when content changed
+            })
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        showToast('Content assigned successfully', 'success');
+        
+        // Reload devices to show updated status
+        loadDevices();
+        
+    } catch (error) {
+        console.error('Assign playlist error:', error);
+        showToast('Failed to assign content: ' + error.message, 'error');
+    }
 }
       
       // Replace existing renameDevice with:
@@ -988,8 +1029,54 @@ async function renameDevice(id, old) {
         }
     });
 }
-        async function deleteDevice(id) { if(confirm("Unlink this screen? It will stop showing content.")) await sb.from('devices').delete().eq('id', id); loadDevices(); }
 
+      
+async function deleteDevice(id) { 
+    if (!confirm("Unlink this screen? It will stop showing content and delete all data.")) {
+        return;
+    }
+    
+    try {
+        const { error } = await sb
+            .from('devices')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+        
+        showToast('Screen deleted successfully', 'success');
+        loadDevices();
+        
+    } catch (error) {
+        console.error('Delete device error:', error);
+        showToast('Failed to delete screen: ' + error.message, 'error');
+    }
+}
+
+
+async function forcePlaylistSync(deviceId) {
+    try {
+        // Update a timestamp to trigger player sync
+        const { error } = await sb
+            .from('devices')
+            .update({ 
+                last_updated: new Date().toISOString()
+            })
+            .eq('id', deviceId);
+        
+        if (error) throw error;
+        
+        showToast('Sync signal sent to player', 'success');
+        
+    } catch (error) {
+        console.error('Force sync error:', error);
+        showToast('Failed to sync: ' + error.message, 'error');
+    }
+}
+
+
+      
+      
         // --- UTILS ---
         function showToast(msg, type = 'info') {
             const div = document.createElement('div');
