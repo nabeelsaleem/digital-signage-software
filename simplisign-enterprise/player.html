@@ -457,121 +457,75 @@ if ('serviceWorker' in navigator) {
 
     // 7. CHECK UPDATES (HYBRID: API for playlist, Supabase for refresh/screenshot)
     async function checkUpdates() {
-        if (!deviceId) {
-            logDebug('⏭️', 'Skip - no device ID');
-            return;
-        }
+        if (!deviceId) return;
 
         try {
-            logDebug('🔄', 'Checking updates...');
             updateStatus('Checking...');
 
-            // ✅ METHOD 1: Use API endpoint (works with your structure)
+            // API Call
             const req = await fetch(`/api/player-handler?deviceId=${deviceId}`);
-            
-            if (!req.ok) {
-                throw new Error(`API: ${req.status}`);
-            }
+            if (!req.ok) throw new Error(`API: ${req.status}`);
 
             const apiData = await req.json();
-            
-            logDebug('📦', 'API response received');
 
-            // Handle refresh (from API response)
+            // 1. Handle Commands
             if (apiData.device && apiData.device.refresh_requested) {
                 logDebug('🔄', 'Refresh requested');
                 location.reload();
                 return;
             }
-
-            // Handle screenshot (via Supabase if available, else skip)
-            if (apiData.device && apiData.device.screenshot_requested) {
-                if (sb) {
-                    handleScreenshot();
-                } else {
-                    logDebug('⚠️', 'Screenshot requested but no Supabase');
-                }
+            if (apiData.device && apiData.device.screenshot_requested && sb) {
+                handleScreenshot();
             }
 
-            // ✅ Get playlist from API (includes schedule logic & media join)
+            // 2. Validate Playlist
             let playlist = apiData.playlist || [];
-            
-            logDebug('📋', `Playlist: ${playlist.length} items`);
+            playlist = playlist.filter(item => item && item.url); // Filter invalid items
 
-            // ✅ CRITICAL FIX: Validate & filter playlist items
-            playlist = playlist.filter(item => {
-                if (!item || !item.url) {
-                    logDebug('⚠️', 'Invalid item (no URL):', item);
-                    return false;
-                }
-                return true;
-            });
-
-            logDebug('✅', `Valid items: ${playlist.length}`);
-
-            // Sync playlist
+            // 3. Detect Changes
             const playlistChanged = JSON.stringify(playlist) !== JSON.stringify(currentPlaylist);
             
             if (playlistChanged) {
-                logDebug('🆕', 'Playlist changed');
+                logDebug('🆕', `New Playlist: ${playlist.length} items`);
                 
-                // Save for offline
+                // Save to Disk
                 localStorage.setItem('cached_playlist', JSON.stringify(playlist));
                 localStorage.setItem('last_sync_time', new Date().toISOString());
                 
-                // Clear timeout
-                if (currentSlideTimeout) {
-                    clearTimeout(currentSlideTimeout);
-                    currentSlideTimeout = null;
-                }
-                
-                // Reset
+                // Reset State
+                if (currentSlideTimeout) clearTimeout(currentSlideTimeout);
                 imageCache = {}; 
                 currentPlaylist = playlist;
                 currentIndex = 0;
                 isPlaying = false;
 
                 if (currentPlaylist.length === 0) {
-                    logDebug('⚠️', 'Empty playlist');
                     updateStatus('No content');
-                    
-                    const vid = document.getElementById('active-video');
-                    if(vid) {
-                        vid.pause();
-                        vid.src = '';
-                    }
                     document.getElementById('active-slide').src = '';
+                    const vid = document.getElementById('active-video');
+                    if(vid) { vid.pause(); vid.src = ''; }
                 } 
                 else {
-                    logDebug('▶️', 'Starting playback');
-preloadMedia(currentPlaylist);
+                    // A. Preload Images to RAM
+                    preloadMedia(currentPlaylist);
 
-// ✅ Cache media files for offline playback
-cacheMediaFiles(currentPlaylist).catch(e => 
-    logDebug('⚠️', `Background cache failed: ${e.message}`)
-);
+                    // B. Cache Files to Disk
+                    cacheMediaFiles(currentPlaylist).then(() => {
+                        // C. CLEANUP OLD FILES (Critical Step Added)
+                        cleanOldMediaCache(); 
+                    });
 
-runLoop();
+                    runLoop();
                 }
             }
             
-            // Status
-            if (currentPlaylist.length > 0) {
-                updateStatus('Online');
-            } else {
-                updateStatus('No content');
-            }
-
+            updateStatus(currentPlaylist.length > 0 ? 'Online' : 'No content');
             retryCount = 0;
 
         } catch (error) {
             logDebug('❌', `Update failed: ${error.message}`);
-            
             retryCount++;
             updateStatus('Update failed');
-            
-            // Don't use setTimeout recursion here - interval handles it
-            logDebug('⏰', 'Will retry on next interval');
         }
     }
 
@@ -645,36 +599,25 @@ runLoop();
         }
     }
 
-    // PRELOAD
+   // PRELOAD (Images Only - Videos are handled by Cache API)
     function preloadMedia(q) { 
-        logDebug('📥', `Preloading ${q.length} items`);
+        logDebug('📥', `Preloading images for ${q.length} items`);
         
         q.forEach((i, index) => { 
-            if (!i || !i.url) {
-                logDebug('⚠️', `Item ${index} invalid`);
-                return;
-            }
-
-            if (imageCache[i.url]) return;
+            if (!i || !i.url) return;
+            if (imageCache[i.url]) return; // Already in RAM
 
             const type = i.type || 'image'; 
 
+            // Only preload images into RAM for smooth transitions
+            // Videos are streamed from Disk Cache (via cacheMediaFiles)
             if (type.includes('image')) { 
                 const img = new Image(); 
-                img.onload = () => logDebug('✅', `Image ${index + 1}`);
-                img.onerror = () => logDebug('❌', `Image ${index + 1}`);
+                img.onload = () => logDebug('✅', `Image loaded: ${index + 1}`);
                 img.src = i.url; 
                 imageCache[i.url] = img; 
             } 
-            else if (type.includes('video')) {
-                fetch(i.url, { mode: 'cors' })
-                    .then(r => {
-                        if (!r.ok) throw new Error("Failed");
-                        imageCache[i.url] = true; 
-                        logDebug('✅', `Video ${index + 1}`);
-                    })
-                    .catch(() => logDebug('❌', `Video ${index + 1}`));
-            }
+            // Removed 'else if (video)' block to prevent double-downloading
         }); 
     }
 
@@ -914,6 +857,7 @@ if (item.type && item.type.includes('video')) {
 </script>
 </body>
 </html>
+
 
 
 
