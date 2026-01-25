@@ -455,7 +455,7 @@ if ('serviceWorker' in navigator) {
 
       
 
-    // 7. CHECK UPDATES (HYBRID: API for playlist, Supabase for refresh/screenshot)
+   // 7. CHECK UPDATES (Fixed 404 Handling)
     async function checkUpdates() {
         if (!deviceId) return;
 
@@ -464,13 +464,31 @@ if ('serviceWorker' in navigator) {
 
             // API Call
             const req = await fetch(`/api/player-handler?deviceId=${deviceId}`);
-            if (!req.ok) throw new Error(`API: ${req.status}`);
+            
+            // --- CRITICAL FIX START: Handle 404 (Device Deleted) ---
+            if (!req.ok) {
+                if (req.status === 404 || req.status === 500) {
+                    logDebug('❌', 'Device deleted or invalid. Resetting...');
+                    localStorage.clear(); // Wipe ID
+                    location.reload();    // Restart to pairing screen
+                    return;
+                }
+                throw new Error(`API: ${req.status}`);
+            }
+            // --- CRITICAL FIX END ---
 
             const apiData = await req.json();
 
             // 1. Handle Commands
             if (apiData.device && apiData.device.refresh_requested) {
                 logDebug('🔄', 'Refresh requested');
+                // The API has already reset the flag in DB, so we just reload
+                location.reload();
+                return;
+            }
+            if (apiData.device && apiData.device.unpair_requested) {
+                logDebug('🗑️', 'Unpair requested');
+                localStorage.clear();
                 location.reload();
                 return;
             }
@@ -480,7 +498,7 @@ if ('serviceWorker' in navigator) {
 
             // 2. Validate Playlist
             let playlist = apiData.playlist || [];
-            playlist = playlist.filter(item => item && item.url); // Filter invalid items
+            playlist = playlist.filter(item => item && item.url); 
 
             // 3. Detect Changes
             const playlistChanged = JSON.stringify(playlist) !== JSON.stringify(currentPlaylist);
@@ -488,11 +506,9 @@ if ('serviceWorker' in navigator) {
             if (playlistChanged) {
                 logDebug('🆕', `New Playlist: ${playlist.length} items`);
                 
-                // Save to Disk
                 localStorage.setItem('cached_playlist', JSON.stringify(playlist));
                 localStorage.setItem('last_sync_time', new Date().toISOString());
                 
-                // Reset State
                 if (currentSlideTimeout) clearTimeout(currentSlideTimeout);
                 imageCache = {}; 
                 currentPlaylist = playlist;
@@ -506,15 +522,8 @@ if ('serviceWorker' in navigator) {
                     if(vid) { vid.pause(); vid.src = ''; }
                 } 
                 else {
-                    // A. Preload Images to RAM
                     preloadMedia(currentPlaylist);
-
-                    // B. Cache Files to Disk
-                    cacheMediaFiles(currentPlaylist).then(() => {
-                        // C. CLEANUP OLD FILES (Critical Step Added)
-                        cleanOldMediaCache(); 
-                    });
-
+                    cacheMediaFiles(currentPlaylist).then(() => cleanOldMediaCache());
                     runLoop();
                 }
             }
@@ -857,6 +866,7 @@ if (item.type && item.type.includes('video')) {
 </script>
 </body>
 </html>
+
 
 
 
