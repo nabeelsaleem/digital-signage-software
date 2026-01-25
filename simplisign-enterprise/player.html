@@ -112,6 +112,7 @@ if ('serviceWorker' in navigator) {
     // --- CONFIGURATION ---
     let sb = null; // Supabase for heartbeat & screenshots
     let deviceCode = localStorage.getItem('ss_device_code');
+    let deviceId = localStorage.getItem('ss_device_id');  // ← Load from storage
     let deviceId = null;
     let currentPlaylist = [];
     let currentIndex = 0;
@@ -368,6 +369,7 @@ console.log('🔍 Device ID:', data.id);  // ← ADD THIS
 
             logDebug('✅', 'Paired');
             localStorage.setItem('ss_device_code', code);
+            localStorage.setItem('ss_device_id', data.id);  // ← ADD THIS LINE
             localStorage.setItem('last_sync_time', new Date().toISOString());
             deviceCode = code;
             deviceId = data.id;
@@ -870,6 +872,7 @@ if (item.type && item.type.includes('video')) {
 </script>
 </body>
 </html>
+
 
 
 
