@@ -457,10 +457,15 @@ function nav(view) {
     }
 }
 
-        // --- MEDIA ---
+       // --- MEDIA (SECURE) ---
         async function loadMedia() {
-            if(!sb) return;
-            const { data, error } = await sb.from('media').select('*').order('id', {ascending: false});
+            if(!sb || !state.user) return;
+            // SECURITY FIX: Added .eq('user_id', state.user.id)
+            const { data, error } = await sb.from('media')
+                .select('*')
+                .eq('user_id', state.user.id) 
+                .order('id', {ascending: false});
+            
             if(error) return showToast(error.message, 'error');
             state.media = data || [];
             filterMedia('all');
@@ -539,10 +544,15 @@ REPLACE
             loadMedia();
         }
 
-        // --- PLAYLISTS ---
+       // --- PLAYLISTS (SECURE) ---
         async function loadPlaylists() {
-            if(!sb) return;
-            const { data, error } = await sb.from('playlists').select('*').order('id', {ascending: false});
+            if(!sb || !state.user) return;
+            // SECURITY FIX: Added .eq('user_id', state.user.id)
+            const { data, error } = await sb.from('playlists')
+                .select('*')
+                .eq('user_id', state.user.id)
+                .order('id', {ascending: false});
+
             if(error) return showToast(error.message, 'error');
             state.playlists = data || [];
             
@@ -654,10 +664,15 @@ async function renamePlaylist(id, old) {
             if(confirm("Delete this playlist? This cannot be undone.")) await sb.from('playlists').delete().eq('id', id); loadPlaylists();
         }
 
-        // --- SCHEDULES ---
+        // --- SCHEDULES (SECURE) ---
         async function loadSchedules() {
-            if(!sb) return;
-            const { data, error } = await sb.from('schedules').select('*').order('device_id');
+            if(!sb || !state.user) return;
+            // SECURITY FIX: Added .eq('user_id', state.user.id)
+            const { data, error } = await sb.from('schedules')
+                .select('*')
+                .eq('user_id', state.user.id)
+                .order('device_id');
+
             if(error) return showToast(error.message, 'error');
             state.schedules = data || [];
             
@@ -705,6 +720,7 @@ async function renamePlaylist(id, old) {
             }).join('');
         }
 
+	  
         function openScheduleModal(targetDeviceId = null) {
             document.getElementById('modal-schedule').classList.remove('hidden');
             document.getElementById('sch-device').innerHTML = state.devices.map(d => `<option value="${d.id}">${d.name} <span class="text-slate-400 font-normal">(${d.code})</span></option>`).join('');
@@ -790,18 +806,29 @@ async function renamePlaylist(id, old) {
             const { error } = await sb.from('schedules').delete().eq('id', id);
             if(error) showToast(error.message, 'error'); else { showToast('Schedule removed', 'success'); loadSchedules(); }
         }
+	  
 
-        // --- DEVICES ---
+        // --- DEVICES (SECURE) ---
         async function loadDevices() {
-    if(!sb) return;
-    const { data } = await sb.from('devices').select('*').order('id', {ascending: false});
-    state.devices = data || [];
-    if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*'); state.playlists = pl || []; }
-    
-    // Use the helper function to render
-    renderDeviceCards(state.devices);
-}
+            if(!sb || !state.user) return;
+            // SECURITY FIX: Added .eq('user_id', state.user.id)
+            const { data } = await sb.from('devices')
+                .select('*')
+                .eq('user_id', state.user.id)
+                .order('id', {ascending: false});
 
+            state.devices = data || [];
+            
+            // Also securely load playlists for the dropdown
+            if(!state.playlists.length) { 
+                const { data: pl } = await sb.from('playlists')
+                    .select('*')
+                    .eq('user_id', state.user.id); 
+                state.playlists = pl || []; 
+            }
+            
+            renderDeviceCards(state.devices);
+        }
             
 
 
