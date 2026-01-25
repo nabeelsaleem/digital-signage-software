@@ -453,21 +453,7 @@ if ('serviceWorker' in navigator) {
         logDebug('🔄', 'Update loop started');
     }
 
-    // ✅ Cache media files for offline playback
-cacheMediaFiles(currentPlaylist).catch(e => 
-    logDebug('⚠️', `Background cache failed: ${e.message}`)
-);
-
-// Clean old media
-cleanOldMediaCache().catch(e => 
-    logDebug('⚠️', `Cleanup failed: ${e.message}`)
-);
-
-runLoop();
-
-
-
-    
+      
 
     // 7. CHECK UPDATES (HYBRID: API for playlist, Supabase for refresh/screenshot)
     async function checkUpdates() {
@@ -758,6 +744,8 @@ runLoop();
     
 
 // LOAD MEDIA FROM CACHE (Cache-First Strategy)
+    let currentBlobUrls = new Set(); // Track blob URLs for cleanup
+
     async function loadMediaFromCache(url, type) {
         try {
             const cache = await caches.open('media-cache-v1');
@@ -766,6 +754,10 @@ runLoop();
             if (cached) {
                 const blob = await cached.blob();
                 const blobUrl = URL.createObjectURL(blob);
+                
+                // Track for cleanup
+                currentBlobUrls.add(blobUrl);
+                
                 logDebug('📦', `Playing from cache: ${type}`);
                 return blobUrl;
             } else {
@@ -778,11 +770,17 @@ runLoop();
         }
     }
 
-    // PLAYBACK
-    function runLoop() {
-
+    // Clean up blob URLs when switching slides
+    function cleanupBlobUrls() {
+        currentBlobUrls.forEach(url => {
+            URL.revokeObjectURL(url);
+        });
+        currentBlobUrls.clear();
+        logDebug('🧹', 'Cleaned blob URLs');
+    }
     
 
+  
     // PLAYBACK
     function runLoop() {
         if (!currentPlaylist || currentPlaylist.length === 0) {
@@ -864,6 +862,7 @@ if (item.type && item.type.includes('video')) {
     }
 
     function nextSlide() {
+        cleanupBlobUrls(); // Clean up old blob URLs
         currentIndex = (currentIndex + 1) % currentPlaylist.length;
         runLoop();
     }
@@ -915,5 +914,6 @@ if (item.type && item.type.includes('video')) {
 </script>
 </body>
 </html>
+
 
 
