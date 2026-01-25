@@ -359,6 +359,8 @@ if ('serviceWorker' in navigator) {
             }
 
             const data = await req.json();
+            console.log('🔍 API Response:', data);  // ← ADD THIS
+console.log('🔍 Device ID:', data.id);  // ← ADD THIS
             
             if (!data.id) {
                 throw new Error('Invalid response');
@@ -370,6 +372,8 @@ if ('serviceWorker' in navigator) {
             deviceCode = code;
             deviceId = data.id;
             retryCount = 0;
+            console.log('💾 Stored deviceId:', deviceId);  // ← ADD THIS
+
 
             // ✅ Initialize Supabase if credentials provided
             if (!sb && data.supabaseUrl && data.supabaseKey) {
@@ -866,6 +870,7 @@ if (item.type && item.type.includes('video')) {
 </script>
 </body>
 </html>
+
 
 
 
