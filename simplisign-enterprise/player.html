@@ -453,6 +453,22 @@ if ('serviceWorker' in navigator) {
         logDebug('🔄', 'Update loop started');
     }
 
+    // ✅ Cache media files for offline playback
+cacheMediaFiles(currentPlaylist).catch(e => 
+    logDebug('⚠️', `Background cache failed: ${e.message}`)
+);
+
+// Clean old media
+cleanOldMediaCache().catch(e => 
+    logDebug('⚠️', `Cleanup failed: ${e.message}`)
+);
+
+runLoop();
+
+
+
+    
+
     // 7. CHECK UPDATES (HYBRID: API for playlist, Supabase for refresh/screenshot)
     async function checkUpdates() {
         if (!deviceId) {
@@ -542,8 +558,14 @@ if ('serviceWorker' in navigator) {
                 } 
                 else {
                     logDebug('▶️', 'Starting playback');
-                    preloadMedia(currentPlaylist);
-                    runLoop();
+preloadMedia(currentPlaylist);
+
+// ✅ Cache media files for offline playback
+cacheMediaFiles(currentPlaylist).catch(e => 
+    logDebug('⚠️', `Background cache failed: ${e.message}`)
+);
+
+runLoop();
                 }
             }
             
@@ -670,6 +692,97 @@ if ('serviceWorker' in navigator) {
         }); 
     }
 
+
+
+// CACHE MEDIA FILES (Restaurant-Proof)
+    async function cacheMediaFiles(playlist) {
+        if (!playlist || playlist.length === 0) return;
+        
+        logDebug('💾', `Caching ${playlist.length} media files...`);
+        
+        try {
+            const cache = await caches.open('media-cache-v1');
+            
+            for (const item of playlist) {
+                if (!item.url) continue;
+                
+                try {
+                    // Check if already cached
+                    const cached = await cache.match(item.url);
+                    if (cached) {
+                        logDebug('✅', `Already cached: ${item.url.split('/').pop()}`);
+                        continue;
+                    }
+                    
+                    // Download and cache
+                    const req = new Request(item.url, { mode: 'cors' });
+                    const res = await fetch(req);
+                    
+                    if (res.ok) {
+                        await cache.put(req, res.clone());
+                        logDebug('💾', `Cached: ${item.url.split('/').pop()}`);
+                    }
+                } catch (e) {
+                    logDebug('⚠️', `Cache failed: ${item.url.split('/').pop()}`);
+                }
+            }
+            
+            logDebug('✅', 'Media caching complete');
+        } catch (e) {
+            logDebug('❌', `Media cache error: ${e.message}`);
+        }
+    }
+
+// CLEAN OLD MEDIA CACHE
+    async function cleanOldMediaCache() {
+        try {
+            const cache = await caches.open('media-cache-v1');
+            const keys = await cache.keys();
+            
+            // Get current playlist URLs
+            const currentUrls = currentPlaylist.map(item => item.url);
+            
+            // Delete media not in current playlist
+            for (const request of keys) {
+                if (!currentUrls.includes(request.url)) {
+                    await cache.delete(request);
+                    logDebug('🗑️', `Deleted old media: ${request.url.split('/').pop()}`);
+                }
+            }
+        } catch (e) {
+            logDebug('⚠️', `Cache cleanup failed: ${e.message}`);
+        }
+    }
+
+
+    
+
+// LOAD MEDIA FROM CACHE (Cache-First Strategy)
+    async function loadMediaFromCache(url, type) {
+        try {
+            const cache = await caches.open('media-cache-v1');
+            const cached = await cache.match(url);
+            
+            if (cached) {
+                const blob = await cached.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                logDebug('📦', `Playing from cache: ${type}`);
+                return blobUrl;
+            } else {
+                logDebug('🌐', `Playing from network: ${type}`);
+                return url; // Fallback to network
+            }
+        } catch (e) {
+            logDebug('⚠️', `Cache read failed, using network: ${e.message}`);
+            return url; // Fallback to network
+        }
+    }
+
+    // PLAYBACK
+    function runLoop() {
+
+    
+
     // PLAYBACK
     function runLoop() {
         if (!currentPlaylist || currentPlaylist.length === 0) {
@@ -695,43 +808,51 @@ if ('serviceWorker' in navigator) {
         
         let duration = (item.duration || 10) * 1000;
 
-        if (item.type && item.type.includes('video')) {
-            imgEl.classList.add('hidden');
-            vidEl.classList.remove('hidden');
-            
-            vidEl.src = item.url;
-            
-            vidEl.onerror = () => {
-                logDebug('❌', 'Video error');
-                nextSlide();
-            };
-            
-            vidEl.play().catch(e => {
-                logDebug('❌', `Play: ${e.message}`);
-                nextSlide();
-            });
+        // ✅ CACHE-FIRST PLAYBACK (Restaurant-Proof)
+if (item.type && item.type.includes('video')) {
+    imgEl.classList.add('hidden');
+    vidEl.classList.remove('hidden');
+    
+    // Try cache first, fallback to network
+    loadMediaFromCache(item.url, 'video').then(mediaSrc => {
+        vidEl.src = mediaSrc;
+        
+        vidEl.onerror = () => {
+            logDebug('❌', 'Video error');
+            nextSlide();
+        };
+        
+        vidEl.play().catch(e => {
+            logDebug('❌', `Play: ${e.message}`);
+            nextSlide();
+        });
 
-            vidEl.onended = () => {
-               if (item.duration === 0) nextSlide();
-            };
-            
-        } else {
-            vidEl.classList.add('hidden');
-            vidEl.pause();
-            vidEl.src = '';
-            imgEl.classList.remove('hidden');
-            
-            imgEl.onerror = () => {
-                logDebug('❌', 'Image error');
-                nextSlide();
-            };
-            
-            imgEl.classList.remove('fade-enter-active');
-            setTimeout(() => {
-                imgEl.src = item.url;
-                imgEl.classList.add('fade-enter-active');
-            }, 100);
-        }
+        vidEl.onended = () => {
+           if (item.duration === 0) nextSlide();
+        };
+    });
+    
+} else {
+    vidEl.classList.add('hidden');
+    vidEl.pause();
+    vidEl.src = '';
+    imgEl.classList.remove('hidden');
+    
+    imgEl.onerror = () => {
+        logDebug('❌', 'Image error');
+        nextSlide();
+    };
+    
+    imgEl.classList.remove('fade-enter-active');
+    
+    // Try cache first, fallback to network
+    loadMediaFromCache(item.url, 'image').then(mediaSrc => {
+        setTimeout(() => {
+            imgEl.src = mediaSrc;
+            imgEl.classList.add('fade-enter-active');
+        }, 100);
+    });
+}
 
         if (currentSlideTimeout) {
             clearTimeout(currentSlideTimeout);
@@ -794,4 +915,5 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
 
