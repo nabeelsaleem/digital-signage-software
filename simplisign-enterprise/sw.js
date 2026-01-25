@@ -1,25 +1,52 @@
-// sw.js - Production Safe Service Worker
-const SHELL_CACHE = 'shell-v1';
+// sw.js - Safe Hybrid Service Worker (No CDN caching)
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(SHELL_CACHE)
-      .then(cache => cache.addAll(['/player.html']))
+const CACHE_NAME = 'simplisign-player-v3';
+
+// Only cache SAME-ORIGIN assets
+const CORE_ASSETS = [
+  '/player.html'
+];
+
+// INSTALL
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(CORE_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
 
-self.addEventListener('activate', e => {
-  e.waitUntil(self.clients.claim());
+// ACTIVATE
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys.map(key => key !== CACHE_NAME && caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
-  
-  // Only cache same-origin requests (player.html)
-  if (url.origin === location.origin) {
-    e.respondWith(
-      caches.match(e.request).then(r => r || fetch(e.request))
-    );
+// FETCH
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  const url = new URL(req.url);
+
+  // 🚫 Never touch CDN requests
+  if (url.origin !== location.origin) {
+    return;
   }
+
+  // ✅ Cache-first for player.html
+  if (url.pathname === '/player.html') {
+    event.respondWith(
+      caches.match(req).then(res => res || fetch(req))
+    );
+    return;
+  }
+
+  // ✅ Network-first for everything else (API, images, videos)
+  event.respondWith(
+    fetch(req).catch(() => caches.match(req))
+  );
 });
