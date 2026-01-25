@@ -1,12 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase
-// NOTE: Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in your .env or Vercel Dashboard!
+// Initialize Supabase safely
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
-// Prevent crash if env vars are missing during local testing
-const supabase = supabaseUrl && supabaseKey 
+const supabase = (supabaseUrl && supabaseKey) 
     ? createClient(supabaseUrl, supabaseKey) 
     : null;
 
@@ -15,13 +13,14 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Credentials', true);
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     
     if (req.method === 'OPTIONS') {
         return res.status(200).end();
     }
 
     if (!supabase) {
-        return res.status(500).json({ error: "Server configuration error: Missing database keys." });
+        return res.status(500).json({ error: "Server configuration error." });
     }
 
     const { code, deviceId } = req.query;
@@ -29,12 +28,10 @@ export default async function handler(req, res) {
     try {
         // --- SCENARIO A: MISSING PARAMETERS ---
         if (!code && !deviceId) {
-            return res.status(400).json({ 
-                error: "Missing parameters. Provide '?code=X' or '?deviceId=Y'" 
-            });
+            return res.status(400).json({ error: "Missing parameters." });
         }
 
-        // --- SCENARIO B: PAIRING (User entered a code) ---
+        // --- SCENARIO B: PAIRING ---
         if (code && !deviceId) {
             const { data, error } = await supabase
                 .from('devices')
@@ -43,20 +40,18 @@ export default async function handler(req, res) {
                 .single();
             
             if (error || !data) {
-                // If error is "PGRST116", it means no rows found (404 effectively)
-                // If generic error, log it
-                console.error("Pairing DB Error:", error);
                 return res.status(404).json({ error: 'Invalid Pairing Code' });
             }
 
+            // Return public keys for the frontend
             return res.status(200).json({
-    ...data,
-    supabaseUrl: process.env.SUPABASE_URL,
-    supabaseKey: process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
-});            
+                ...data,
+                supabaseUrl: process.env.SUPABASE_URL,
+                supabaseKey: process.env.SUPABASE_ANON_KEY
+            });            
         }
 
-        // --- SCENARIO C: PLAYING (Heartbeat + Fetch Playlist) ---
+        // --- SCENARIO C: PLAYING ---
         if (deviceId) {
             // 1. Update Heartbeat
             await supabase.from('devices')
@@ -66,28 +61,20 @@ export default async function handler(req, res) {
             // 2. Fetch Device Data
             const { data: device, error: devErr } = await supabase
                 .from('devices')
-                .select('id, playlist_id, refresh_requested, screenshot_requested')
+                .select('id, playlist_id, refresh_requested, screenshot_requested, unpair_requested')
                 .eq('id', deviceId)
                 .single();
 
             if (devErr || !device) {
-                console.error("Device fetch error:", devErr);
                 return res.status(404).json({ error: 'Device not found' });
             }
 
-            // --- FIX: RESET REFRESH FLAG ---
-            // We reset it in the DB, but keep it true in the response variable 
-            // so the frontend JS knows to reload once.
-            const shouldRefresh = device.refresh_requested;
-            if (shouldRefresh) {
-                await supabase.from('devices')
-                    .update({ refresh_requested: false })
-                    .eq('id', deviceId);
+            // Reset refresh flag if true
+            if (device.refresh_requested) {
+                await supabase.from('devices').update({ refresh_requested: false }).eq('id', deviceId);
             }
-            // Return modified device object to frontend
-            const deviceResponse = { ...device, refresh_requested: shouldRefresh };
 
-            // 3. Determine Active Playlist
+            // 3. Determine Active Playlist (Schedule Logic)
             let activeId = device.playlist_id;
             const now = new Date();
             const timeStr = now.toTimeString().slice(0, 5); // "14:30"
@@ -106,31 +93,31 @@ export default async function handler(req, res) {
                 if (match) activeId = match.playlist_id;
             }
 
-            // 4. Fetch Media Items
+            // 4. Fetch Items
             if (!activeId) {
-                return res.status(200).json({ device: deviceResponse, playlist: [] });
+                return res.status(200).json({ device, playlist: [] });
             }
 
             const { data: pl } = await supabase.from('playlists').select('items').eq('id', activeId).single();
             
             if (!pl || !pl.items || !pl.items.length) {
-                return res.status(200).json({ device: deviceResponse, playlist: [] });
+                return res.status(200).json({ device, playlist: [] });
             }
 
-            // 5. Get URLs and Types for items
+            // 5. Join with Media Table
             const ids = pl.items.map(i => i.id);
             const { data: media } = await supabase.from('media').select('id, url, type').in('id', ids);
 
             const playlist = pl.items.map(i => {
                 const f = media ? media.find(m => m.id === i.id) : null;
-                return f ? { ...f, duration: i.duration } : null;
+                return f ? { ...f, duration: i.duration || 10 } : null;
             }).filter(Boolean);
 
-            return res.status(200).json({ device: deviceResponse, playlist });
+            return res.status(200).json({ device, playlist });
         }
 
     } catch (error) {
-        console.error("Unhandled API Error:", error);
+        console.error("API Error:", error);
         return res.status(500).json({ error: error.message });
     }
 }
