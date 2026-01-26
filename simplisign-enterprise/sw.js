@@ -1,11 +1,11 @@
-// sw.js - Production Safe Service Worker
-const SHELL_CACHE = 'shell-v2';
+// sw.js - Version 3 (Forces update)
+const SHELL_CACHE = 'shell-v3';
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting(); // Force activate immediately
   e.waitUntil(
     caches.open(SHELL_CACHE)
       .then(cache => cache.addAll(['/player.html']))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -20,19 +20,16 @@ self.addEventListener('activate', (e) => {
         })
       )
     )
-    // ✅ REMOVED self.clients.claim() - Let browser control when to activate
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  
-  // Only cache same-origin requests
-  if (url.origin === location.origin) {
+  // Cache First strategy for player.html
+  if (url.origin === location.origin && url.pathname.includes('player.html')) {
     e.respondWith(
-      caches.match(e.request)
-        .then(response => response || fetch(e.request))
+      caches.match(e.request).then(r => r || fetch(e.request))
     );
   }
-  // Let network handle everything else (API, CDNs, Supabase)
 });
