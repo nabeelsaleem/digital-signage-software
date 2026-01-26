@@ -457,19 +457,14 @@ function nav(view) {
     }
 }
 
-       // --- MEDIA (SECURE) ---
-  async function loadMedia() {
-    if(!sb || !state.user) return;
-    // SECURITY FIX: Filter by the authenticated user's ID
-    const { data, error } = await sb.from('media')
-        .select('*')
-        .eq('user_id', state.user.id) 
-        .order('id', {ascending: false});
-
-    if(error) return showToast(error.message, 'error');
-    state.media = data || [];
-    filterMedia('all');
-}
+        // --- MEDIA ---
+        async function loadMedia() {
+            if(!sb) return;
+            const { data, error } = await sb.from('media').select('*').order('id', {ascending: false});
+            if(error) return showToast(error.message, 'error');
+            state.media = data || [];
+            filterMedia('all');
+        }
 
         function filterMedia(type) {
             const grid = document.getElementById('media-grid');
@@ -544,17 +539,12 @@ REPLACE
             loadMedia();
         }
 
-       // --- PLAYLISTS (SECURE) ---
-   async function loadPlaylists() {
-    if(!sb || !state.user) return;
-    // SECURITY FIX: Filter by the authenticated user's ID
-    const { data, error } = await sb.from('playlists')
-        .select('*')
-        .eq('user_id', state.user.id)
-        .order('id', {ascending: false});
-
-    if(error) return showToast(error.message, 'error');
-    state.playlists = data || [];
+        // --- PLAYLISTS ---
+        async function loadPlaylists() {
+            if(!sb) return;
+            const { data, error } = await sb.from('playlists').select('*').order('id', {ascending: false});
+            if(error) return showToast(error.message, 'error');
+            state.playlists = data || [];
             
             const list = document.getElementById('playlist-list');
             if(state.playlists.length === 0) {
@@ -664,15 +654,10 @@ async function renamePlaylist(id, old) {
             if(confirm("Delete this playlist? This cannot be undone.")) await sb.from('playlists').delete().eq('id', id); loadPlaylists();
         }
 
-        // --- SCHEDULES (SECURE) ---
+        // --- SCHEDULES ---
         async function loadSchedules() {
-            if(!sb || !state.user) return;
-            // SECURITY FIX: Added .eq('user_id', state.user.id)
-            const { data, error } = await sb.from('schedules')
-                .select('*')
-                .eq('user_id', state.user.id)
-                .order('device_id');
-
+            if(!sb) return;
+            const { data, error } = await sb.from('schedules').select('*').order('device_id');
             if(error) return showToast(error.message, 'error');
             state.schedules = data || [];
             
@@ -720,7 +705,6 @@ async function renamePlaylist(id, old) {
             }).join('');
         }
 
-	  
         function openScheduleModal(targetDeviceId = null) {
             document.getElementById('modal-schedule').classList.remove('hidden');
             document.getElementById('sch-device').innerHTML = state.devices.map(d => `<option value="${d.id}">${d.name} <span class="text-slate-400 font-normal">(${d.code})</span></option>`).join('');
@@ -806,29 +790,18 @@ async function renamePlaylist(id, old) {
             const { error } = await sb.from('schedules').delete().eq('id', id);
             if(error) showToast(error.message, 'error'); else { showToast('Schedule removed', 'success'); loadSchedules(); }
         }
-	  
 
-        // --- DEVICES (SECURE) ---
+        // --- DEVICES ---
         async function loadDevices() {
-            if(!sb || !state.user) return;
-            // SECURITY FIX: Added .eq('user_id', state.user.id)
-            const { data } = await sb.from('devices')
-                .select('*')
-                .eq('user_id', state.user.id)
-                .order('id', {ascending: false});
+    if(!sb) return;
+    const { data } = await sb.from('devices').select('*').order('id', {ascending: false});
+    state.devices = data || [];
+    if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*'); state.playlists = pl || []; }
+    
+    // Use the helper function to render
+    renderDeviceCards(state.devices);
+}
 
-            state.devices = data || [];
-            
-            // Also securely load playlists for the dropdown
-            if(!state.playlists.length) { 
-                const { data: pl } = await sb.from('playlists')
-                    .select('*')
-                    .eq('user_id', state.user.id); 
-                state.playlists = pl || []; 
-            }
-            
-            renderDeviceCards(state.devices);
-        }
             
 
 
@@ -890,44 +863,16 @@ function handleGlobalSearch(query) {
 }
 
 // Helper to render devices (used by loadDevices and Search)
-// Helper to render devices (used by loadDevices and Search)
 function renderDeviceCards(devicesData) {
     const list = document.getElementById('device-list');
-    
-    list.innerHTML = devicesData.map(d => {
-        // --- SMART STATUS CALCULATION ---
-        // 1. Calculate time difference
-        const lastSeenDate = new Date(d.last_seen);
-        const now = new Date();
-        const diffSeconds = (now - lastSeenDate) / 1000;
-        
-        // 2. Determine Real Status
-        // If not seen for 60 seconds, force OFFLINE
-        const isOffline = diffSeconds > 60; 
-        
-        // 3. Determine Colors & Text
-        let statusText = 'ONLINE';
-        let statusColor = 'bg-emerald-50 text-emerald-600';
-        let dotColor = 'bg-emerald-500';
-
-        if (isOffline) {
-            statusText = 'OFFLINE';
-            statusColor = 'bg-red-50 text-red-600';
-            dotColor = 'bg-red-500';
-        } 
-        else if (d.refresh_requested || d.screenshot_requested) {
-            statusText = 'UPDATING';
-            statusColor = 'bg-orange-50 text-orange-600';
-            dotColor = 'bg-orange-500';
-        }
-
-        return `
+    list.innerHTML = devicesData.map(d => `
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 fade-enter">
             <div class="flex items-center gap-5 w-full lg:w-auto">
                 <div class="relative group">
                     <div class="w-16 h-12 bg-slate-900 rounded-lg flex items-center justify-center font-mono text-white text-sm font-bold tracking-widest shadow-lg shadow-slate-200 select-all overflow-hidden whitespace-nowrap px-2">
                         ${d.code}
                     </div>
+                    <!-- Copy Button Overlay -->
                     <button onclick="copyToClipboard('${d.code}')" class="absolute inset-0 bg-slate-900/90 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs gap-1 rounded-lg">
                         <i class="fa-regular fa-copy"></i> Copy
                     </button>
@@ -937,16 +882,9 @@ function renderDeviceCards(devicesData) {
                         <h4 class="font-bold text-lg text-slate-800">${d.name}</h4>
                         <button onclick="renameDevice(${d.id}, '${d.name}')" class="text-slate-300 hover:text-brand-600 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
                     </div>
-                    
-                    <div class="flex items-center gap-3">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${statusColor}">
-                            <span class="w-1.5 h-1.5 rounded-full ${dotColor} ${!isOffline ? 'animate-pulse' : ''}"></span> ${statusText}
-                        </span>
-                        <span class="text-[10px] text-slate-400 font-mono">
-                            <i class="fa-regular fa-clock mr-1"></i>${isOffline ? 'Last seen: ' + lastSeenDate.toLocaleTimeString() : 'Live'}
-                        </span>
-                    </div>
-
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${d.status==='online'?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-600'}">
+                        <span class="w-1.5 h-1.5 rounded-full ${d.status==='online'?'bg-emerald-500':'bg-red-500'} animate-pulse"></span> ${d.status}
+                    </span>
                 </div>
             </div>
             
@@ -969,10 +907,8 @@ function renderDeviceCards(devicesData) {
                     </div>
                 </div>
             </div>
-        </div>`;
-    }).join('');
+        </div>`).join('');
 }
-      
 
 async function requestRefresh(deviceId) {
     const { error } = await sb.from('devices')
@@ -999,8 +935,6 @@ async function requestRefresh(deviceId) {
             await sb.from('devices').insert({ user_id: state.user.id, code, name: 'New Screen' });
             loadDevices();
         }
-		
-		
         async function assignPlaylist(id, pid) { await sb.from('devices').update({ playlist_id: pid || null }).eq('id', id); showToast('Default content updated', 'success'); }
         // Replace existing renameDevice with:
 async function renameDevice(id, old) {
