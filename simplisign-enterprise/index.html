@@ -458,14 +458,14 @@ function nav(view) {
 }
 
        // --- MEDIA (SECURE) ---
-       async function loadMedia() {
+  async function loadMedia() {
     if(!sb || !state.user) return;
-    // SECURITY FIX: Filter by logged-in user ID
+    // SECURITY FIX: Filter by the authenticated user's ID
     const { data, error } = await sb.from('media')
         .select('*')
         .eq('user_id', state.user.id) 
         .order('id', {ascending: false});
-    
+
     if(error) return showToast(error.message, 'error');
     state.media = data || [];
     filterMedia('all');
@@ -545,9 +545,9 @@ REPLACE
         }
 
        // --- PLAYLISTS (SECURE) ---
-        async function loadPlaylists() {
+   async function loadPlaylists() {
     if(!sb || !state.user) return;
-    // SECURITY FIX: Filter by logged-in user ID
+    // SECURITY FIX: Filter by the authenticated user's ID
     const { data, error } = await sb.from('playlists')
         .select('*')
         .eq('user_id', state.user.id)
