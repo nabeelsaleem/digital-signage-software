@@ -12,32 +12,26 @@
         .pairing-mode { cursor: default; background: #0f172a; }
         .fade-enter { opacity: 0; transition: opacity 1s ease-in-out; }
         .fade-enter-active { opacity: 1; }
-
-        #status-dot {
-            position: fixed; bottom: 30px; right: 30px;
-            width: 16px; height: 16px; border-radius: 50%; z-index: 9999;
-            background-color: #ef4444; 
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-            transition: background-color 0.3s ease;
+        /* Offline Dot Style */
+        .status-offline {
+            width: 12px;
+            height: 12px;
+            background-color: red;
+            color: transparent; /* Hide text */
+            padding: 0 !important;
+            overflow: hidden;
+            opacity: 0.8 !important;
         }
-        @keyframes pulse-orange {
-            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+        
+        /* Faded / Hidden Status (Normal Operation) */
+        .status-idle {
+            opacity: 0.05; /* Almost invisible */
         }
-        .status-processing { animation: pulse-orange 2s infinite; }
-
-        #error-overlay {
-            display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(239, 68, 68, 0.95); color: white; padding: 12px 24px;
-            border-radius: 8px; font-size: 14px; z-index: 10000; max-width: 80%; text-align: center;
-        }
-        #debug-log {
-            display: none; position: fixed; bottom: 60px; right: 30px;
-            background: rgba(0, 0, 0, 0.9); color: #22c55e; padding: 8px 12px;
-            border-radius: 6px; font-size: 10px; font-family: monospace;
-            max-width: 300px; max-height: 200px; overflow-y: auto; z-index: 9998;
+        
+        /* Active Status (Downloading/Syncing) */
+        .status-active {
+            opacity: 0.8;
+            background-color: rgba(0,0,0,0.6);
         }
     </style>
 </head>
@@ -51,460 +45,369 @@
             CONNECT
         </button>
         <p id="status-msg" class="text-red-500 mt-4 h-6"></p>
-        <button onclick="toggleDebugLog()" class="mt-8 text-xs text-slate-500 hover:text-slate-300">Toggle Debug</button>
     </div>
 
     <div id="player-canvas" class="absolute inset-0 bg-black hidden">
         <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter transition-opacity duration-1000">
+        
         <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
+        
+        <div id="status-pill" class="absolute bottom-4 right-4 text-white/50 text-[10px] px-2 py-1 rounded-full font-mono z-50 transition-all duration-500">Starting...</div>
     </div>
-    
-    <div id="status-dot" title="Initializing..." ondblclick="toggleDebugLog()"></div>
-    <div id="error-overlay"></div>
-    <div id="debug-log"></div>
+
+   
 
 <script>
-    // --- SERVICE WORKER ---
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(reg => console.log('✅ SW Ready'))
-                .catch(err => console.error('❌ SW Fail:', err));
-        });
-    }
+        // --- CONFIGURATION ---
+        let sb = null;
+        let deviceCode = localStorage.getItem('ss_device_code');
+        let deviceId = null;
+        let currentPlaylist = [];
+        let currentIndex = 0;
+        let imageCache = {};
+        let isPlaying = false;
+        let isOffline = false;
 
-    // --- CONFIGURATION ---
-    let sb = null; 
-    let deviceCode = null;
-    let deviceId = null;
-    let currentPlaylist = [];
-    let currentIndex = 0;
-    let imageCache = {};
-    let isPlaying = false;
-    let isOffline = false;
-    let retryCount = 0;
-    let maxRetries = 10;
-    let currentSlideTimeout = null;
-    let debugLogs = [];
-    let updateCheckInterval = null;
-    let currentBlobUrls = new Set(); 
+        // 1. ROBUST INIT
+       async function initApp() {
+            try {
+                if(!navigator.onLine) showOfflineMode();
 
-    // --- UTILS ---
-    function toggleDebugLog() {
-        const log = document.getElementById('debug-log');
-        log.style.display = log.style.display === 'none' ? 'block' : 'none';
-    }
-    function addDebugLog(message) {
-        const timestamp = new Date().toLocaleTimeString();
-        debugLogs.push(`[${timestamp}] ${message}`);
-        if (debugLogs.length > 20) debugLogs.shift();
-        const log = document.getElementById('debug-log');
-        log.innerHTML = debugLogs.join('<br>');
-        log.scrollTop = log.scrollHeight;
-    }
-    function logDebug(icon, message, data = null) {
-        const fullMsg = `${icon} ${message}`;
-        console.log(fullMsg, data || '');
-        addDebugLog(fullMsg);
-    }
-    function showError(message, duration = 5000) {
-        const overlay = document.getElementById('error-overlay');
-        overlay.textContent = message;
-        overlay.style.display = 'block';
-        setTimeout(() => overlay.style.display = 'none', duration);
-        logDebug('❌', message);
-    }
-    function updateStatus(text) {
-        const dot = document.getElementById('status-dot');
-        if (!dot) return;
-        dot.title = text; 
-        dot.classList.remove('status-processing');
-        const lower = text.toLowerCase();
-        if (lower.includes('online') || lower.includes('connected')) dot.style.backgroundColor = '#22c55e';
-        else if (lower.includes('offline') || lower.includes('error') || lower.includes('failed')) dot.style.backgroundColor = '#ef4444';
-        else { dot.style.backgroundColor = '#f97316'; dot.classList.add('status-processing'); }
-    }
-
-    // --- 1. ROBUST STARTUP ---
-    async function initApp() {
-        logDebug('🚀', 'SimpliSign Player v3.2 Starting...');
-        
-        // --- STORAGE CHECK (Critical for Browser Loop) ---
-        try {
-            localStorage.setItem('ss_test', '1');
-            localStorage.removeItem('ss_test');
-        } catch (e) {
-            showError('Storage Blocked! Allow Cookies/Storage for this site.');
-            document.getElementById('status-msg').innerText = "Browser Storage Blocked";
-            return;
+                const response = await fetch('/api/config');
+                if (!response.ok) throw new Error('Config Load Failed');
+                const config = await response.json();
+                sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+                
+                // AUTO-RECONNECT LOGIC
+                // We use the global 'deviceCode' which was loaded from localStorage at the top of the script
+                if (deviceCode) {
+                    console.log("Found saved code, attempting auto-pair...");
+                    await pairDevice(true); // <--- This 'true' triggers the fix above
+                } else {
+                    console.log("No saved code found. Showing pairing screen.");
+                }
+            } catch (error) {
+                console.error("Init failed:", error);
+                setTimeout(initApp, 5000); 
+            }
         }
 
-        // Load credentials
-        const savedCode = localStorage.getItem('ss_device_code');
-        const savedPlaylist = localStorage.getItem('cached_playlist');
-        
-        // A. OFFLINE FAST BOOT (Play cache immediately)
-        if (savedPlaylist && savedCode) {
+        // 2. NETWORK LISTENERS (Handle drops gracefully)
+        window.addEventListener('offline', () => { showOfflineMode(); });
+        window.addEventListener('online', () => { 
+            isOffline = false; 
+            document.getElementById('status-pill').style.backgroundColor = 'rgba(0,0,0,0.5)';
+            updateStatus('Online - Recovered');
+        });
+
+        function showOfflineMode() {
+            isOffline = true;
+            updateStatus('OFFLINE - Playing Cache');
+            document.getElementById('status-pill').style.backgroundColor = 'red';
+        }
+
+   async function pairDevice(silent = false) {
+            // Get code from storage (if silent) or input box
+            let code = silent ? deviceCode : document.getElementById('pairing-code').value.toUpperCase();
+            
+            if (!code) return;
+
+            if(!silent) document.querySelector('button').innerText = 'CONNECTING...';
+
             try {
-                const parsed = JSON.parse(savedPlaylist);
-                if (parsed.length > 0) {
-                    logDebug('📦', 'Cache found. Playing...');
-                    deviceCode = savedCode;
-                    // Don't wait for network, start playing NOW
-                    startOfflinePlayback(parsed);
-                    // Try to connect silently in background
-                    setTimeout(tryBackgroundConnection, 3000);
+                const req = await fetch(`/api/player-handler?code=${code}`);
+                
+                // --- THE FIX IS HERE ---
+                if (!req.ok) {
+                    // If the server says 500 (Error) or 404 (Not Found), the code is dead.
+                    if (silent) {
+                        console.warn("Saved code is invalid (Device Deleted). Resetting...");
+                        localStorage.removeItem('ss_device_code'); // <--- WIPE MEMORY
+                        location.reload(); // <--- RESTART FRESH
+                        return;
+                    }
+                    throw new Error('Invalid Code');
+                }
+                // -----------------------
+                
+                const data = await req.json();
+
+                if (!data.id) throw new Error('No Device ID returned');
+
+                localStorage.setItem('ss_device_code', code);
+                deviceCode = code;
+                deviceId = data.id;
+                
+                document.getElementById('pairing-screen').classList.add('hidden');
+                document.getElementById('player-canvas').classList.remove('hidden');
+                
+                if (!window.heartbeatRunning) {
+                    window.heartbeatRunning = true; 
+                    runHeartbeatLoop();
+                }
+
+            } catch (e) {
+                console.error("Pairing Error:", e);
+                if(!silent) {
+                    document.getElementById('status-msg').innerText = 'Connection Failed';
+                    document.querySelector('button').innerText = 'CONNECT';
+                }
+            }
+        }
+        // 4. ROBUST LOOP (Replacing simple setInterval)
+        async function runHeartbeatLoop() {
+            // Prevent crashing if offline
+            if (!isOffline && sb) {
+                try {
+                    await checkUpdates();
+                } catch (e) {
+                    console.warn("Heartbeat skipped:", e);
+                }
+            }
+            // Recursive call instead of setInterval prevents "pile up" if network is slow
+            setTimeout(runHeartbeatLoop, 15000);
+        }
+
+      
+async function checkUpdates() {
+            updateStatus('Checking...');
+
+            try {
+                // 1. SECURE API CALL
+                const req = await fetch(`/api/player-handler?deviceId=${deviceId}`);
+                
+                // --- CRITICAL FIX: Handle Deleted Devices (500/404 Error) ---
+                if (!req.ok) {
+                    console.error("API Fetch Failed:", req.status);
+                    // If the device was deleted from CMS while playing, reset locally
+                    if (req.status === 500 || req.status === 404) {
+                         console.warn("Device deleted on server. Resetting player...");
+                         localStorage.removeItem('ss_device_code');
+                         window.location.reload(true);
+                         return;
+                    }
+                    // For other internet errors, just wait for next cycle
+                    updateStatus('Connection Error');
+                    return; 
+                }
+                
+                const response = await req.json();
+                
+                // Safety Check: Ensure response is valid
+                if (!response || !response.device) return;
+
+                const { device, playlist } = response;
+
+                // 2. REMOTE REFRESH LOGIC
+                if (device.refresh_requested) {
+                    updateStatus('Updating...');
+                    
+                    // --- FIX: You are missing the opening line below ---
+                    setTimeout(() => { 
+                        window.location.reload(true); 
+                    }, 1000);
+                    // --------------------------------------------------
+                    
+                    return; 
+                }
+
+                // 3. REMOTE UNPAIR LOGIC (New Feature)
+                if (device.unpair_requested) {
+                    updateStatus('Unpairing...');
+                    localStorage.removeItem('ss_device_code');
+                    window.location.reload(true);
                     return;
                 }
-            } catch(e) { 
-                logDebug('❌', 'Cache corrupt'); 
-                localStorage.removeItem('cached_playlist');
-            }
-        }
 
-        // B. NETWORK BOOT
-        if (savedCode) {
-            logDebug('🌐', 'Auto-pairing...');
-            deviceCode = savedCode;
-            pairDevice(true);
-        } else {
-            logDebug('⚠️', 'New Device');
-            document.getElementById('pairing-screen').classList.remove('hidden');
-        }
-    }
-
-    // --- 2. BACKGROUND CONNECT ---
-    async function tryBackgroundConnection() {
-        logDebug('🔌', `Syncing... (Attempt ${retryCount + 1})`);
-        
-        if (!navigator.onLine) {
-            logDebug('📡', 'Offline - Sync delayed');
-            scheduleRetry();
-            return;
-        }
-
-        try {
-            const req = await fetch(`/api/player-handler?code=${deviceCode}`);
-            
-            // SERVER ERROR HANDLING (Enterprise Safe)
-            if (!req.ok) {
-                // If 404/500, we DO NOT wipe storage. We just wait.
-                // This prevents screens from going black during server glitches.
-                logDebug('⚠️', `API ${req.status} - Keeping cached content`);
-                scheduleRetry();
-                return;
-            }
-
-            const data = await req.json();
-            if (!data.id) throw new Error('Invalid ID');
-
-            logDebug('✅', 'Synced');
-            deviceId = data.id;
-            retryCount = 0;
-
-            // Init Supabase if keys provided
-            if (!sb && data.supabaseUrl && data.supabaseKey) {
-                sb = supabase.createClient(data.supabaseUrl, data.supabaseKey);
-                startHeartbeat();
-            }
-            
-            updateStatus('Online');
-            startUpdateLoop();
-
-        } catch (e) {
-            logDebug('⚠️', `Sync failed: ${e.message}`);
-            scheduleRetry();
-        }
-    }
-
-    function scheduleRetry(delay = 30000) {
-        retryCount++;
-        if (retryCount > 5) delay = 300000; // Slow down after 5 fails
-        setTimeout(() => { if(deviceCode && !deviceId) tryBackgroundConnection(); }, delay);
-    }
-
-    // --- 3. PAIRING (Manual & Auto) ---
-    async function pairDevice(silent = false) {
-        let code = silent ? deviceCode : document.getElementById('pairing-code').value.toUpperCase();
-        if (!code) return;
-
-        const button = document.querySelector('button');
-        if (!silent) { button.innerText = 'CONNECTING...'; updateStatus('Connecting...'); }
-
-        try {
-            if (!navigator.onLine && silent) throw new Error("Offline boot");
-
-            const req = await fetch(`/api/player-handler?code=${code}`);
-            
-            if (!req.ok) {
-                if (req.status === 404 && !silent) throw new Error('Invalid Code');
-                if (req.status === 500 && !silent) throw new Error('Server Error');
-                throw new Error(`API ${req.status}`);
-            }
-
-            const data = await req.json();
-            if (!data.id) throw new Error('No ID');
-
-            // SUCCESS
-            localStorage.setItem('ss_device_code', code);
-            deviceCode = code;
-            deviceId = data.id;
-            retryCount = 0;
-
-            if (!sb && data.supabaseUrl && data.supabaseKey) {
-                sb = supabase.createClient(data.supabaseUrl, data.supabaseKey);
-                startHeartbeat();
-            }
-
-            document.getElementById('pairing-screen').classList.add('hidden');
-            document.getElementById('player-canvas').classList.remove('hidden');
-            updateStatus('Connected');
-            
-            // Start Loop if not already running
-            startUpdateLoop();
-
-        } catch (e) {
-            logDebug('❌', `Pairing: ${e.message}`);
-            
-            // Fallback to cache if Silent Boot failed
-            if (silent) {
-                const cached = localStorage.getItem('cached_playlist');
-                if (cached) {
+                // 4. REMOTE SCREENSHOT LOGIC (Your Request)
+                if (device.screenshot_requested) {
+                    updateStatus('Capturing Screen...');
+                    
                     try {
-                        startOfflinePlayback(JSON.parse(cached));
-                        return;
-                    } catch(err) {}
+                        const canvas = await html2canvas(document.body, {
+                            useCORS: true,
+                            allowTaint: true,
+                            ignoreElements: (element) => element.tagName === 'VIDEO' && element.readyState < 2
+                        });
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+                        const fileName = `screenshots/${deviceId}.jpg`;
+
+                        await sb.storage.from('media').upload(fileName, blob, { upsert: true });
+                        const { data: publicUrl } = sb.storage.from('media').getPublicUrl(fileName);
+
+                        await sb.from('devices').update({ 
+                            screenshot_url: publicUrl.publicUrl, 
+                            screenshot_requested: false 
+                        }).eq('id', deviceId);
+                        
+                        updateStatus('Screenshot Uploaded');
+                    } catch (err) {
+                        console.error("Screenshot Failed:", err);
+                        // Don't crash the player if screenshot fails, just continue
+                    }
                 }
-            }
 
-            if (!silent) {
-                showError(e.message);
-                document.getElementById('status-msg').innerText = e.message;
-                button.innerText = 'CONNECT';
-            }
-            updateStatus('Offline Mode');
-        }
-    }
+                // 5. SYNC PLAYLIST (With Memory Cleaning)
+                if (playlist && Array.isArray(playlist)) {
+                    if (JSON.stringify(playlist) !== JSON.stringify(currentPlaylist)) {
+                        console.log("New Playlist Received");
+                        
+                        // Clear old memory to prevent crashes
+                        imageCache = {}; 
+                        
+                        currentPlaylist = playlist;
+                        currentIndex = 0;
+                        
+                        // Use the SAFE preloader (handles missing types)
+                        if (typeof preloadMedia === "function") {
+                             preloadMedia(currentPlaylist);
+                        } else if (typeof preloadImages === "function") {
+                             preloadImages(currentPlaylist);
+                        }
 
-    // --- 4. UPDATE LOOP (The Engine) ---
-    async function checkUpdates() {
-        if (!deviceId) return;
-        updateStatus('Checking...');
-
-        try {
-            const req = await fetch(`/api/player-handler?deviceId=${deviceId}`);
-            
-            // ENTERPRISE SAFE ERROR HANDLING
-            if (!req.ok) {
-                logDebug('⚠️', `API Error: ${req.status} - Keeping content`);
-                updateStatus('Connection Error'); 
-                return; // Keep playing, don't reset
-            }
-
-            const apiData = await req.json();
-            const { device, playlist } = apiData;
-
-            // Commands
-            if (device.refresh_requested) location.reload();
-            if (device.unpair_requested) { localStorage.clear(); location.reload(); }
-            if (device.screenshot_requested && sb) handleScreenshot();
-
-            // Content Sync
-            // Filter invalid items first
-            const cleanPlaylist = (playlist || []).filter(i => i && i.url);
-            
-            if (JSON.stringify(cleanPlaylist) !== JSON.stringify(currentPlaylist)) {
-                logDebug('🆕', `New Playlist: ${cleanPlaylist.length} items`);
-                
-                localStorage.setItem('cached_playlist', JSON.stringify(cleanPlaylist));
-                localStorage.setItem('last_sync_time', new Date().toISOString());
-                
-                // Clear old state
-                if (currentSlideTimeout) clearTimeout(currentSlideTimeout);
-                imageCache = {}; 
-                currentPlaylist = cleanPlaylist;
-                currentIndex = 0;
-                
-                if (currentPlaylist.length === 0) {
-                    updateStatus('No content');
-                    isPlaying = false;
-                    document.getElementById('active-slide').src = '';
-                    document.getElementById('active-video').pause();
-                } else {
-                    // 1. Preload Images (RAM)
-                    preloadMedia(currentPlaylist);
-                    // 2. Download Videos (Disk)
-                    cacheMediaFiles(currentPlaylist).then(cleanOldMediaCache);
-                    // 3. Play
-                    if(!isPlaying) runLoop();
+                        if (!isPlaying && currentPlaylist.length > 0) {
+                            runLoop();
+                        }
+                    }
                 }
+                
+                updateStatus('Online');
+
+            } catch (error) {
+                console.error("Update Error:", error);
+                // Keep playing current content if update fails
             }
-            
-            updateStatus(currentPlaylist.length > 0 ? 'Online' : 'No content');
-
-        } catch (e) {
-            logDebug('⚠️', `Update skipped: ${e.message}`);
-            updateStatus('Offline Mode');
         }
-    }
 
-    function startUpdateLoop() {
-        if (updateCheckInterval) clearInterval(updateCheckInterval);
-        checkUpdates();
-        updateCheckInterval = setInterval(checkUpdates, 30000);
-    }
-
-    // --- 5. MEDIA HANDLING ---
+    function updateStatus(msg, type = 'normal') { 
+            const el = document.getElementById('status-pill');
+            
+            if (msg.includes('OFFLINE')) {
+                // Show Red Dot
+                el.innerText = '';
+                el.className = 'absolute bottom-2 right-2 rounded-full z-50 transition-all duration-500 status-offline';
+            } else if (msg.includes('Scheduled') || msg.includes('Default')) {
+                // Content Playing (Fade out)
+                el.innerText = msg;
+                el.className = 'absolute bottom-4 right-4 text-white px-3 py-1 rounded-full font-mono z-50 transition-all duration-500 status-idle';
+            } else {
+                // Active System Message (Downloading / Checking)
+                el.innerText = msg;
+                el.className = 'absolute bottom-4 right-4 text-white px-3 py-1 rounded-full font-mono z-50 transition-all duration-500 status-active';
+            }
+        }
     
-    // RAM Preloader (Images ONLY - Saves Bandwidth)
-    function preloadMedia(q) { 
-        logDebug('📥', `Preloading images...`);
-        q.forEach((i, index) => { 
-            if (!i.url || imageCache[i.url]) return;
-            if ((i.type || '').includes('image')) { 
-                const img = new Image(); 
-                img.src = i.url; 
-                imageCache[i.url] = img; 
-            } 
-        }); 
-    }
-
-    // Disk Cacher (Videos & Images)
-    async function cacheMediaFiles(playlist) {
-        if (!('caches' in window)) return;
-        try {
-            const cache = await caches.open('media-cache-v1');
-            for (const item of playlist) {
-                if (!item.url) continue;
-                const cached = await cache.match(item.url);
-                if (!cached) {
-                    // Fetch and store
-                    try {
-                        const res = await fetch(item.url, { mode: 'cors' });
-                        if (res.ok) await cache.put(item.url, res);
-                    } catch(e) { console.error('Cache fail', item.url); }
-                }
-            }
-        } catch (e) { console.error('Cache API Error', e); }
-    }
-
-    async function cleanOldMediaCache() {
-        if (!('caches' in window)) return;
-        try {
-            const cache = await caches.open('media-cache-v1');
-            const keys = await cache.keys();
-            const validUrls = currentPlaylist.map(i => i.url);
-            for (const req of keys) {
-                if (!validUrls.includes(req.url)) await cache.delete(req);
-            }
-        } catch(e) {}
-    }
-
-    // Loader (Cache First)
-    async function loadMediaFromCache(url) {
-        try {
-            const cache = await caches.open('media-cache-v1');
-            const resp = await cache.match(url);
-            if (resp) {
-                const blob = await resp.blob();
-                const blobUrl = URL.createObjectURL(blob);
-                currentBlobUrls.add(blobUrl);
-                return blobUrl;
-            }
-        } catch(e) {}
-        return url; // Fallback
-    }
-
-    // --- 6. PLAYBACK LOOP ---
-    function runLoop() {
-        if (!currentPlaylist.length) return;
-        isPlaying = true;
+    function stopPlayback() { currentPlaylist = []; isPlaying = false; document.getElementById('active-slide').src = ''; }
         
-        const item = currentPlaylist[currentIndex];
-        if (!item || !item.url) { nextSlide(); return; }
+      function preloadMedia(q) { 
+    q.forEach(i => { 
+        if (imageCache[i.url]) return; // Already processed
 
-        logDebug('▶️', `Playing item ${currentIndex + 1}`);
+        const type = i.type || 'image'; 
+
+        if (type.includes('image')) { 
+            const img = new Image(); 
+            img.src = i.url; 
+            imageCache[i.url] = img; 
+        } 
+        else if (type.includes('video')) {
+            // STEP 1: Fetch the video to force it into the Browser Cache
+            fetch(i.url, { mode: 'cors' }).then(r => {
+                if (!r.ok) throw new Error("Video preload failed");
+                
+                // STEP 2: Just mark it as 'true'. 
+                // We don't need to store the Blob or a BlobURL in RAM.
+                // When the <video> tag later sets src = i.url, 
+                // the browser will see it's already in the cache and play instantly.
+                imageCache[i.url] = true; 
+                console.log("Video cached in browser storage:", i.url);
+            }).catch(err => console.error("Video Preload Fail:", err));
+        }
+    }); 
+}
+
+       function runLoop() {
+            if (!currentPlaylist.length) return;
+            isPlaying = true;
+            
+            const item = currentPlaylist[currentIndex];
+            const imgEl = document.getElementById('active-slide');
+            const vidEl = document.getElementById('active-video');
+            
+            // Determine Duration (Default to item duration or 10s)
+            let duration = (item.duration || 10) * 1000;
+
+            if (item.type.includes('video')) {
+                // --- VIDEO MODE ---
+                imgEl.classList.add('hidden');    // Hide Image
+                vidEl.classList.remove('hidden'); // Show Video
+                
+                vidEl.src = item.url;
+                vidEl.play().catch(e => console.error("Video Play Error:", e));
+
+                // If duration is set to 0 in CMS, play full video length
+                // Otherwise, cut it off at the specific duration
+                vidEl.onended = () => {
+                   // If we are relying on natural video end
+                   if (item.duration === 0) nextSlide();
+                };
+                
+            } else {
+                // --- IMAGE MODE ---
+                vidEl.classList.add('hidden');      // Hide Video
+                vidEl.pause();                      // Stop Video
+                imgEl.classList.remove('hidden');   // Show Image
+                
+                // Fade Effect
+                imgEl.classList.remove('fade-enter-active');
+                setTimeout(() => {
+                    imgEl.src = item.url;
+                    imgEl.classList.add('fade-enter-active');
+                }, 100);
+            }
+
+            // Schedule Next Slide
+            // If it's a video with duration 0, we wait for 'onended' event above.
+            // Otherwise, we use the timer.
+            if (!item.type.includes('video') || item.duration > 0) {
+                setTimeout(nextSlide, duration);
+            }
+        }
+
+        function nextSlide() {
+            currentIndex = (currentIndex + 1) % currentPlaylist.length;
+            runLoop();
+        }
+
+           
         
-        const imgEl = document.getElementById('active-slide');
-        const vidEl = document.getElementById('active-video');
-        let duration = (item.duration || 10) * 1000;
 
-        if ((item.type || '').includes('video')) {
-            imgEl.classList.add('hidden');
-            vidEl.classList.remove('hidden');
-            
-            loadMediaFromCache(item.url).then(src => {
-                vidEl.src = src;
-                vidEl.play().catch(e => {
-                    console.error("Video error", e);
-                    nextSlide();
-                });
-                vidEl.onended = () => { if(item.duration === 0) nextSlide(); };
-            });
-        } else {
-            vidEl.classList.add('hidden');
-            vidEl.pause();
-            imgEl.classList.remove('hidden');
-            imgEl.classList.remove('fade-enter-active');
-            
-            loadMediaFromCache(item.url).then(src => {
-                imgEl.src = src;
-                requestAnimationFrame(() => imgEl.classList.add('fade-enter-active'));
-            });
-        }
+        // 5. MEMORY LEAK PREVENTION (Refresh once every 24h)
+        setTimeout(() => {
+            window.location.reload();
+        }, 24 * 60 * 60 * 1000);
 
-        // Cleanup Blobs
-        if (currentBlobUrls.size > 5) {
-            const [first] = currentBlobUrls;
-            URL.revokeObjectURL(first);
-            currentBlobUrls.delete(first);
-        }
-
-        if (currentSlideTimeout) clearTimeout(currentSlideTimeout);
-        if (!(item.type || '').includes('video') || item.duration > 0) {
-            currentSlideTimeout = setTimeout(nextSlide, duration);
-        }
-    }
-
-    function nextSlide() {
-        currentIndex = (currentIndex + 1) % currentPlaylist.length;
-        runLoop();
-    }
-
-    // --- 7. EXTRAS ---
-    function startHeartbeat() {
-        setInterval(async () => {
-            if(sb && deviceId) await sb.from('devices').update({ status: 'online', last_seen: new Date() }).eq('id', deviceId);
-        }, 15000);
-    }
-
-    async function handleScreenshot() {
-        try {
-            const canvas = await html2canvas(document.body);
-            canvas.toBlob(async blob => {
-                const name = `screen_${deviceId}_${Date.now()}.jpg`;
-                await sb.storage.from('media').upload(name, blob);
-                const { data } = sb.storage.from('media').getPublicUrl(name);
-                await sb.from('devices').update({ screenshot_url: data.publicUrl, screenshot_requested: false }).eq('id', deviceId);
-                logDebug('📸', 'Screenshot sent');
-            }, 'image/jpeg', 0.6);
-        } catch(e) {}
-    }
-
-    function startOfflinePlayback(data) {
-        document.getElementById('pairing-screen').classList.add('hidden');
-        document.getElementById('player-canvas').classList.remove('hidden');
-        updateStatus('Offline Mode');
-        currentPlaylist = data;
-        preloadMedia(data);
-        if(!isPlaying) runLoop();
-    }
-
-    // Refresh every 24h
-    setTimeout(() => location.reload(), 86400000);
-
-    // Init
-    initApp();
-</script>
+        // Start
+        initApp();
+    </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
