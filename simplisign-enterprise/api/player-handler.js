@@ -113,7 +113,17 @@ export default async function handler(req, res) {
                 return f ? { ...f, duration: i.duration || 10 } : null;
             }).filter(Boolean);
 
-            return res.status(200).json({ device, playlist });
+// Ensure all control flags are sent to the player
+            return res.status(200).json({ 
+                device: {
+                    ...device,
+                    refresh_requested: device.refresh_requested,
+                    unpair_requested: device.unpair_requested,
+                    screenshot_requested: device.screenshot_requested
+                }, 
+                playlist 
+            });
+        
         }
 
     } catch (error) {
