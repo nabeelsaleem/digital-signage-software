@@ -1,5 +1,5 @@
 // sw.js - Production Safe Service Worker
-const SHELL_CACHE = 'shell-v1';
+const SHELL_CACHE = 'shell-v2';
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
