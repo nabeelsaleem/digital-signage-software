@@ -113,7 +113,6 @@ if ('serviceWorker' in navigator) {
     let sb = null; // Supabase for heartbeat & screenshots
     let deviceCode = localStorage.getItem('ss_device_code');
     let deviceId = localStorage.getItem('ss_device_id');  // ← Load from storage
-    let deviceId = null;
     let currentPlaylist = [];
     let currentIndex = 0;
     let imageCache = {};
@@ -872,6 +871,7 @@ if (item.type && item.type.includes('video')) {
 </script>
 </body>
 </html>
+
 
 
 
