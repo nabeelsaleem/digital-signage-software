@@ -458,18 +458,18 @@ function nav(view) {
 }
 
        // --- MEDIA (SECURE) ---
-        async function loadMedia() {
-            if(!sb || !state.user) return;
-            // SECURITY FIX: Added .eq('user_id', state.user.id)
-            const { data, error } = await sb.from('media')
-                .select('*')
-                .eq('user_id', state.user.id) 
-                .order('id', {ascending: false});
-            
-            if(error) return showToast(error.message, 'error');
-            state.media = data || [];
-            filterMedia('all');
-        }
+       async function loadMedia() {
+    if(!sb || !state.user) return;
+    // SECURITY FIX: Filter by logged-in user ID
+    const { data, error } = await sb.from('media')
+        .select('*')
+        .eq('user_id', state.user.id) 
+        .order('id', {ascending: false});
+    
+    if(error) return showToast(error.message, 'error');
+    state.media = data || [];
+    filterMedia('all');
+}
 
         function filterMedia(type) {
             const grid = document.getElementById('media-grid');
@@ -546,15 +546,15 @@ REPLACE
 
        // --- PLAYLISTS (SECURE) ---
         async function loadPlaylists() {
-            if(!sb || !state.user) return;
-            // SECURITY FIX: Added .eq('user_id', state.user.id)
-            const { data, error } = await sb.from('playlists')
-                .select('*')
-                .eq('user_id', state.user.id)
-                .order('id', {ascending: false});
+    if(!sb || !state.user) return;
+    // SECURITY FIX: Filter by logged-in user ID
+    const { data, error } = await sb.from('playlists')
+        .select('*')
+        .eq('user_id', state.user.id)
+        .order('id', {ascending: false});
 
-            if(error) return showToast(error.message, 'error');
-            state.playlists = data || [];
+    if(error) return showToast(error.message, 'error');
+    state.playlists = data || [];
             
             const list = document.getElementById('playlist-list');
             if(state.playlists.length === 0) {
