@@ -14,58 +14,30 @@
         .fade-enter-active { opacity: 1; }
 
         #status-dot {
-            position: fixed;
-            bottom: 30px; 
-            right: 30px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            z-index: 9999;
+            position: fixed; bottom: 30px; right: 30px;
+            width: 16px; height: 16px; border-radius: 50%; z-index: 9999;
             background-color: #ef4444; 
             border: 2px solid rgba(255, 255, 255, 0.8);
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
             transition: background-color 0.3s ease;
         }
-
         @keyframes pulse-orange {
             0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.7); }
             70% { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
             100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
         }
-
         .status-processing { animation: pulse-orange 2s infinite; }
 
         #error-overlay {
-            display: none;
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(239, 68, 68, 0.95);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 10000;
-            max-width: 80%;
-            text-align: center;
+            display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(239, 68, 68, 0.95); color: white; padding: 12px 24px;
+            border-radius: 8px; font-size: 14px; z-index: 10000; max-width: 80%; text-align: center;
         }
-
         #debug-log {
-            display: none;
-            position: fixed;
-            bottom: 60px;
-            right: 30px;
-            background: rgba(0, 0, 0, 0.9);
-            color: #22c55e;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-family: monospace;
-            max-width: 300px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 9998;
+            display: none; position: fixed; bottom: 60px; right: 30px;
+            background: rgba(0, 0, 0, 0.9); color: #22c55e; padding: 8px 12px;
+            border-radius: 6px; font-size: 10px; font-family: monospace;
+            max-width: 300px; max-height: 200px; overflow-y: auto; z-index: 9998;
         }
     </style>
 </head>
@@ -92,27 +64,19 @@
     <div id="debug-log"></div>
 
 <script>
+    // --- SERVICE WORKER ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('✅ SW Ready'))
+                .catch(err => console.error('❌ SW Fail:', err));
+        });
+    }
 
-// Register Service Worker for Offline Support
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('✅ Service Worker registered:', registration.scope);
-            })
-            .catch(error => {
-                console.log('❌ Service Worker registration failed:', error);
-            });
-    });
-}
-
-
-
-    
     // --- CONFIGURATION ---
-    let sb = null; // Supabase for heartbeat & screenshots
-    let deviceCode = localStorage.getItem('ss_device_code');
-    let deviceId = localStorage.getItem('ss_device_id');  // ← Load from storage
+    let sb = null; 
+    let deviceCode = null;
+    let deviceId = null;
     let currentPlaylist = [];
     let currentIndex = 0;
     let imageCache = {};
@@ -123,759 +87,424 @@ if ('serviceWorker' in navigator) {
     let currentSlideTimeout = null;
     let debugLogs = [];
     let updateCheckInterval = null;
+    let currentBlobUrls = new Set(); 
 
-    // DEBUG UTILITIES
+    // --- UTILS ---
     function toggleDebugLog() {
         const log = document.getElementById('debug-log');
         log.style.display = log.style.display === 'none' ? 'block' : 'none';
     }
-
     function addDebugLog(message) {
         const timestamp = new Date().toLocaleTimeString();
         debugLogs.push(`[${timestamp}] ${message}`);
         if (debugLogs.length > 20) debugLogs.shift();
-        
         const log = document.getElementById('debug-log');
         log.innerHTML = debugLogs.join('<br>');
         log.scrollTop = log.scrollHeight;
     }
-
     function logDebug(icon, message, data = null) {
-        const timestamp = new Date().toISOString();
         const fullMsg = `${icon} ${message}`;
-        console.log(`[${timestamp}]`, fullMsg, data || '');
+        console.log(fullMsg, data || '');
         addDebugLog(fullMsg);
     }
-
     function showError(message, duration = 5000) {
         const overlay = document.getElementById('error-overlay');
         overlay.textContent = message;
         overlay.style.display = 'block';
-        
-        setTimeout(() => {
-            overlay.style.display = 'none';
-        }, duration);
-        
+        setTimeout(() => overlay.style.display = 'none', duration);
         logDebug('❌', message);
     }
+    function updateStatus(text) {
+        const dot = document.getElementById('status-dot');
+        if (!dot) return;
+        dot.title = text; 
+        dot.classList.remove('status-processing');
+        const lower = text.toLowerCase();
+        if (lower.includes('online') || lower.includes('connected')) dot.style.backgroundColor = '#22c55e';
+        else if (lower.includes('offline') || lower.includes('error') || lower.includes('failed')) dot.style.backgroundColor = '#ef4444';
+        else { dot.style.backgroundColor = '#f97316'; dot.classList.add('status-processing'); }
+    }
 
-    // 1. SMART INIT: RESTAURANT-PROOF OFFLINE STARTUP
+    // --- 1. ROBUST STARTUP ---
     async function initApp() {
-        logDebug('🚀', 'SimpliSign Player v3.0 Starting...');
+        logDebug('🚀', 'SimpliSign Player v3.2 Starting...');
         
-        if (!window.localStorage) {
-            showError('Browser storage not supported');
+        // --- STORAGE CHECK (Critical for Browser Loop) ---
+        try {
+            localStorage.setItem('ss_test', '1');
+            localStorage.removeItem('ss_test');
+        } catch (e) {
+            showError('Storage Blocked! Allow Cookies/Storage for this site.');
+            document.getElementById('status-msg').innerText = "Browser Storage Blocked";
             return;
         }
 
+        // Load credentials
         const savedCode = localStorage.getItem('ss_device_code');
         const savedPlaylist = localStorage.getItem('cached_playlist');
-        const lastSync = localStorage.getItem('last_sync_time');
-
-        logDebug('📊', `Cache: Code=${!!savedCode}, Playlist=${!!savedPlaylist}, LastSync=${lastSync || 'never'}`);
-        console.log('Status: OFFLINE - Playing Cache');  // Add this!
-
-
-        // ✅ OFFLINE STARTUP (Restaurant Mode)
+        
+        // A. OFFLINE FAST BOOT (Play cache immediately)
         if (savedPlaylist && savedCode) {
             try {
-                const parsedList = JSON.parse(savedPlaylist);
-                if (parsedList.length > 0) {
-                    logDebug('📦', `Cache: ${parsedList.length} items`);
-                    logDebug('▶️', 'OFFLINE PLAYBACK START');
-                    
+                const parsed = JSON.parse(savedPlaylist);
+                if (parsed.length > 0) {
+                    logDebug('📦', 'Cache found. Playing...');
                     deviceCode = savedCode;
-                    
-                    document.getElementById('pairing-screen').classList.add('hidden');
-                    document.getElementById('player-canvas').classList.remove('hidden');
-                    
-                    updateStatus('Offline Mode');
-                    
-                    currentPlaylist = parsedList;
-                    preloadMedia(currentPlaylist);
-                    runLoop();
-
-                    logDebug('🔄', 'Background connection in 3s...');
+                    // Don't wait for network, start playing NOW
+                    startOfflinePlayback(parsed);
+                    // Try to connect silently in background
                     setTimeout(tryBackgroundConnection, 3000);
-                    
                     return;
                 }
-            } catch (e) {
-                logDebug('❌', 'Cache corrupted', e.message);
+            } catch(e) { 
+                logDebug('❌', 'Cache corrupt'); 
                 localStorage.removeItem('cached_playlist');
             }
         }
 
-        // No cache - try online
-        logDebug('🌐', 'No cache, attempting pairing...');
+        // B. NETWORK BOOT
         if (savedCode) {
+            logDebug('🌐', 'Auto-pairing...');
+            deviceCode = savedCode;
             pairDevice(true);
         } else {
-            logDebug('⚠️', 'No code - show pairing screen');
+            logDebug('⚠️', 'New Device');
             document.getElementById('pairing-screen').classList.remove('hidden');
-            updateStatus('Waiting for pairing');
         }
     }
 
-    // 2. BACKGROUND CONNECTION
+    // --- 2. BACKGROUND CONNECT ---
     async function tryBackgroundConnection() {
-        logDebug('🔌', `Background attempt #${retryCount + 1}`);
+        logDebug('🔌', `Syncing... (Attempt ${retryCount + 1})`);
         
-        try {
-            if (!navigator.onLine) {
-                logDebug('📡', 'Offline - retry 30s');
-                scheduleRetry(30000);
-                return;
-            }
+        if (!navigator.onLine) {
+            logDebug('📡', 'Offline - Sync delayed');
+            scheduleRetry();
+            return;
+        }
 
-            logDebug('🌐', 'Network OK, connecting...');
+        try {
+            const req = await fetch(`/api/player-handler?code=${deviceCode}`);
             
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            
-            const req = await fetch(`/api/player-handler?code=${deviceCode}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-            
+            // SERVER ERROR HANDLING (Enterprise Safe)
             if (!req.ok) {
-                logDebug('⚠️', `Server: ${req.status}`);
-                
-                if (req.status === 404 || req.status === 500) {
-                    if (retryCount > 5) {
-                        logDebug('🗑️', 'Device may be deleted');
-                    }
-                }
-                
+                // If 404/500, we DO NOT wipe storage. We just wait.
+                // This prevents screens from going black during server glitches.
+                logDebug('⚠️', `API ${req.status} - Keeping cached content`);
                 scheduleRetry();
                 return;
             }
 
             const data = await req.json();
-            
-            if (!data.id) {
-                logDebug('⚠️', 'Invalid response');
-                scheduleRetry();
-                return;
-            }
+            if (!data.id) throw new Error('Invalid ID');
 
-            logDebug('✅', 'Connected');
+            logDebug('✅', 'Synced');
             deviceId = data.id;
             retryCount = 0;
 
-            // ✅ Initialize Supabase if credentials provided
+            // Init Supabase if keys provided
             if (!sb && data.supabaseUrl && data.supabaseKey) {
                 sb = supabase.createClient(data.supabaseUrl, data.supabaseKey);
-                logDebug('✅', 'Supabase initialized');
                 startHeartbeat();
-            } else {
-                logDebug('⚠️', 'No Supabase credentials - using API only');
             }
             
             updateStatus('Online');
             startUpdateLoop();
 
         } catch (e) {
-            logDebug('⚠️', `Connection failed: ${e.message}`);
+            logDebug('⚠️', `Sync failed: ${e.message}`);
             scheduleRetry();
         }
     }
 
-    // 3. RETRY SCHEDULER
-    function scheduleRetry(delay = null) {
+    function scheduleRetry(delay = 30000) {
         retryCount++;
-        
-        if (retryCount > maxRetries) {
-            logDebug('🛑', `Max retries (${maxRetries}), retry every 5min`);
-            delay = 300000;
-            retryCount = maxRetries;
-        }
-        
-        if (!delay) {
-            delay = Math.min(300000, 30000 * Math.pow(2, retryCount - 1));
-        }
-        
-        logDebug('⏰', `Retry in ${Math.round(delay/1000)}s`);
-        
-        setTimeout(() => {
-            if (!deviceId && deviceCode) {
-                tryBackgroundConnection();
-            }
-        }, delay);
+        if (retryCount > 5) delay = 300000; // Slow down after 5 fails
+        setTimeout(() => { if(deviceCode && !deviceId) tryBackgroundConnection(); }, delay);
     }
 
-    // 4. PAIRING
+    // --- 3. PAIRING (Manual & Auto) ---
     async function pairDevice(silent = false) {
         let code = silent ? deviceCode : document.getElementById('pairing-code').value.toUpperCase();
-        
-        if (!code) {
-            if (!silent) showError('Enter pairing code');
-            return;
-        }
+        if (!code) return;
 
         const button = document.querySelector('button');
-        if (!silent && button) {
-            button.innerText = 'CONNECTING...';
-            updateStatus('Connecting...');
-        }
+        if (!silent) { button.innerText = 'CONNECTING...'; updateStatus('Connecting...'); }
 
         try {
-            if (!navigator.onLine) {
-                throw new Error("No internet");
-            }
+            if (!navigator.onLine && silent) throw new Error("Offline boot");
 
-            logDebug('🔐', `Pairing: ${code}`);
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-            const req = await fetch(`/api/player-handler?code=${code}`, {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' },
-                signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
+            const req = await fetch(`/api/player-handler?code=${code}`);
             
             if (!req.ok) {
-                logDebug('❌', `API: ${req.status}`);
-                
-                if (req.status === 404) {
-                    throw new Error('Invalid code');
-                } else if (req.status === 500) {
-                    if (silent) {
-                        logDebug('🗑️', 'Device deleted');
-                        localStorage.removeItem('ss_device_code'); 
-                        localStorage.removeItem('cached_playlist');
-                        setTimeout(() => location.reload(), 1000);
-                        return;
-                    }
-                    throw new Error('Server error');
-                }
-                throw new Error(`Failed (${req.status})`);
+                if (req.status === 404 && !silent) throw new Error('Invalid Code');
+                if (req.status === 500 && !silent) throw new Error('Server Error');
+                throw new Error(`API ${req.status}`);
             }
 
             const data = await req.json();
-            console.log('🔍 API Response:', data);  // ← ADD THIS
-console.log('🔍 Device ID:', data.id);  // ← ADD THIS
-            
-            if (!data.id) {
-                throw new Error('Invalid response');
-            }
+            if (!data.id) throw new Error('No ID');
 
-            logDebug('✅', 'Paired');
+            // SUCCESS
             localStorage.setItem('ss_device_code', code);
-            localStorage.setItem('ss_device_id', data.id);  // ← ADD THIS LINE
-            localStorage.setItem('last_sync_time', new Date().toISOString());
             deviceCode = code;
             deviceId = data.id;
             retryCount = 0;
-            console.log('💾 Stored deviceId:', deviceId);  // ← ADD THIS
 
-
-            // ✅ Initialize Supabase if credentials provided
             if (!sb && data.supabaseUrl && data.supabaseKey) {
                 sb = supabase.createClient(data.supabaseUrl, data.supabaseKey);
-                logDebug('✅', 'Supabase initialized');
                 startHeartbeat();
-            } else {
-                logDebug('⚠️', 'No Supabase - API mode only');
             }
 
             document.getElementById('pairing-screen').classList.add('hidden');
             document.getElementById('player-canvas').classList.remove('hidden');
-            
             updateStatus('Connected');
+            
+            // Start Loop if not already running
             startUpdateLoop();
 
         } catch (e) {
-            logDebug('❌', `Pairing failed: ${e.message}`);
+            logDebug('❌', `Pairing: ${e.message}`);
             
+            // Fallback to cache if Silent Boot failed
             if (silent) {
                 const cached = localStorage.getItem('cached_playlist');
                 if (cached) {
                     try {
-                        const playlist = JSON.parse(cached);
-                        if (playlist.length > 0) {
-                            logDebug('📦', 'Using cache');
-                            startOfflinePlayback(playlist);
-                            scheduleRetry();
-                            return;
-                        }
-                    } catch (err) {}
+                        startOfflinePlayback(JSON.parse(cached));
+                        return;
+                    } catch(err) {}
                 }
             }
 
             if (!silent) {
                 showError(e.message);
                 document.getElementById('status-msg').innerText = e.message;
-                if (button) button.innerText = 'CONNECT';
+                button.innerText = 'CONNECT';
             }
-            
-            updateStatus('Connection Failed');
+            updateStatus('Offline Mode');
         }
     }
 
-    // 5. HEARTBEAT (via Supabase if available)
-    function startHeartbeat() {
-        if (!sb || !deviceId) {
-            logDebug('⚠️', 'No heartbeat - missing Supabase');
-            return;
-        }
-
-        setInterval(async () => {
-            try {
-                await sb.from('devices').update({ 
-                    status: 'online',
-                    last_seen: new Date().toISOString() 
-                }).eq('id', deviceId);
-                
-                // Silent heartbeat - don't log every time
-            } catch (err) {
-                logDebug('💔', `Heartbeat failed: ${err.message}`);
-            }
-        }, 10000);
-        
-        logDebug('💓', 'Heartbeat started');
-    }
-
-    // 6. START UPDATE LOOP
-    function startUpdateLoop() {
-        // Clear any existing interval
-        if (updateCheckInterval) {
-            clearInterval(updateCheckInterval);
-        }
-        
-        // Check immediately
-        checkUpdates();
-        
-        // Then check every 30 seconds
-        updateCheckInterval = setInterval(checkUpdates, 30000);
-        
-        logDebug('🔄', 'Update loop started');
-    }
-
-      
-
-   // 7. CHECK UPDATES (Fixed 404 Handling)
+    // --- 4. UPDATE LOOP (The Engine) ---
     async function checkUpdates() {
         if (!deviceId) return;
+        updateStatus('Checking...');
 
         try {
-            updateStatus('Checking...');
-
-            // API Call
             const req = await fetch(`/api/player-handler?deviceId=${deviceId}`);
             
-            // --- CRITICAL FIX START: Handle 404 (Device Deleted) ---
+            // ENTERPRISE SAFE ERROR HANDLING
             if (!req.ok) {
-                if (req.status === 404 || req.status === 500) {
-                    logDebug('❌', 'Device deleted or invalid. Resetting...');
-                    localStorage.clear(); // Wipe ID
-                    location.reload();    // Restart to pairing screen
-                    return;
-                }
-                throw new Error(`API: ${req.status}`);
+                logDebug('⚠️', `API Error: ${req.status} - Keeping content`);
+                updateStatus('Connection Error'); 
+                return; // Keep playing, don't reset
             }
-            // --- CRITICAL FIX END ---
 
             const apiData = await req.json();
+            const { device, playlist } = apiData;
 
-            // 1. Handle Commands
-            if (apiData.device && apiData.device.refresh_requested) {
-                logDebug('🔄', 'Refresh requested');
-                // The API has already reset the flag in DB, so we just reload
-                location.reload();
-                return;
-            }
-            if (apiData.device && apiData.device.unpair_requested) {
-                logDebug('🗑️', 'Unpair requested');
-                localStorage.clear();
-                location.reload();
-                return;
-            }
-            if (apiData.device && apiData.device.screenshot_requested && sb) {
-                handleScreenshot();
-            }
+            // Commands
+            if (device.refresh_requested) location.reload();
+            if (device.unpair_requested) { localStorage.clear(); location.reload(); }
+            if (device.screenshot_requested && sb) handleScreenshot();
 
-            // 2. Validate Playlist
-            let playlist = apiData.playlist || [];
-            playlist = playlist.filter(item => item && item.url); 
-
-            // 3. Detect Changes
-            const playlistChanged = JSON.stringify(playlist) !== JSON.stringify(currentPlaylist);
+            // Content Sync
+            // Filter invalid items first
+            const cleanPlaylist = (playlist || []).filter(i => i && i.url);
             
-            if (playlistChanged) {
-                logDebug('🆕', `New Playlist: ${playlist.length} items`);
+            if (JSON.stringify(cleanPlaylist) !== JSON.stringify(currentPlaylist)) {
+                logDebug('🆕', `New Playlist: ${cleanPlaylist.length} items`);
                 
-                localStorage.setItem('cached_playlist', JSON.stringify(playlist));
+                localStorage.setItem('cached_playlist', JSON.stringify(cleanPlaylist));
                 localStorage.setItem('last_sync_time', new Date().toISOString());
                 
+                // Clear old state
                 if (currentSlideTimeout) clearTimeout(currentSlideTimeout);
                 imageCache = {}; 
-                currentPlaylist = playlist;
+                currentPlaylist = cleanPlaylist;
                 currentIndex = 0;
-                isPlaying = false;
-
+                
                 if (currentPlaylist.length === 0) {
                     updateStatus('No content');
+                    isPlaying = false;
                     document.getElementById('active-slide').src = '';
-                    const vid = document.getElementById('active-video');
-                    if(vid) { vid.pause(); vid.src = ''; }
-                } 
-                else {
+                    document.getElementById('active-video').pause();
+                } else {
+                    // 1. Preload Images (RAM)
                     preloadMedia(currentPlaylist);
-                    cacheMediaFiles(currentPlaylist).then(() => cleanOldMediaCache());
-                    runLoop();
+                    // 2. Download Videos (Disk)
+                    cacheMediaFiles(currentPlaylist).then(cleanOldMediaCache);
+                    // 3. Play
+                    if(!isPlaying) runLoop();
                 }
             }
             
             updateStatus(currentPlaylist.length > 0 ? 'Online' : 'No content');
-            retryCount = 0;
 
-        } catch (error) {
-            logDebug('❌', `Update failed: ${error.message}`);
-            retryCount++;
-            updateStatus('Update failed');
+        } catch (e) {
+            logDebug('⚠️', `Update skipped: ${e.message}`);
+            updateStatus('Offline Mode');
         }
     }
 
-    // 8. SCREENSHOT (via Supabase)
-    async function handleScreenshot() {
-        if (!sb || !deviceId) {
-            logDebug('⚠️', 'Screenshot needs Supabase');
-            return;
-        }
-
-        try {
-            logDebug('📸', 'Taking screenshot...');
-            const canvas = await html2canvas(document.body);
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
-            
-            const fileName = `screenshot_${deviceId}_${Date.now()}.jpg`;
-            const { error: uploadError } = await sb.storage
-                .from('screenshots')
-                .upload(fileName, blob);
-
-            if (uploadError) throw uploadError;
-
-            const { data: { publicUrl } } = sb.storage.from('screenshots').getPublicUrl(fileName);
-            await sb.from('devices').update({ 
-                screenshot_url: publicUrl, 
-                screenshot_requested: false 
-            }).eq('id', deviceId);
-            
-            logDebug('✅', 'Screenshot uploaded');
-            
-        } catch (err) { 
-            logDebug('❌', `Screenshot: ${err.message}`);
-        }
+    function startUpdateLoop() {
+        if (updateCheckInterval) clearInterval(updateCheckInterval);
+        checkUpdates();
+        updateCheckInterval = setInterval(checkUpdates, 30000);
     }
 
-    // 9. OFFLINE PLAYBACK
-    function startOfflinePlayback(playlistData) {
-        if (!playlistData || playlistData.length === 0) return;
-
-        logDebug('▶️', 'Offline playback');
-        updateStatus('Offline Mode');
-       
-        document.getElementById('pairing-screen').classList.add('hidden');
-        document.getElementById('player-canvas').classList.remove('hidden');
-        
-        currentPlaylist = playlistData;
-        preloadMedia(currentPlaylist);
-        
-        if (!isPlaying) runLoop();
-    }
-
-    // STATUS
-    function updateStatus(text) {
-        const dot = document.getElementById('status-dot');
-        if (!dot) return;
-
-        dot.title = text; 
-        dot.classList.remove('status-processing');
-
-        const lowerText = text.toLowerCase();
-
-        if (lowerText.includes('online') || lowerText.includes('connected')) {
-            dot.style.backgroundColor = '#22c55e';
-        } 
-        else if (lowerText.includes('offline') || lowerText.includes('error') || lowerText.includes('failed')) {
-            dot.style.backgroundColor = '#ef4444';
-        } 
-        else {
-            dot.style.backgroundColor = '#f97316';
-            dot.classList.add('status-processing'); 
-        }
-    }
-
-   // PRELOAD (Images Only - Videos are handled by Cache API)
+    // --- 5. MEDIA HANDLING ---
+    
+    // RAM Preloader (Images ONLY - Saves Bandwidth)
     function preloadMedia(q) { 
-        logDebug('📥', `Preloading images for ${q.length} items`);
-        
+        logDebug('📥', `Preloading images...`);
         q.forEach((i, index) => { 
-            if (!i || !i.url) return;
-            if (imageCache[i.url]) return; // Already in RAM
-
-            const type = i.type || 'image'; 
-
-            // Only preload images into RAM for smooth transitions
-            // Videos are streamed from Disk Cache (via cacheMediaFiles)
-            if (type.includes('image')) { 
+            if (!i.url || imageCache[i.url]) return;
+            if ((i.type || '').includes('image')) { 
                 const img = new Image(); 
-                img.onload = () => logDebug('✅', `Image loaded: ${index + 1}`);
                 img.src = i.url; 
                 imageCache[i.url] = img; 
             } 
-            // Removed 'else if (video)' block to prevent double-downloading
         }); 
     }
 
-
-
-// CACHE MEDIA FILES (Restaurant-Proof)
+    // Disk Cacher (Videos & Images)
     async function cacheMediaFiles(playlist) {
-        if (!playlist || playlist.length === 0) return;
-        
-        logDebug('💾', `Caching ${playlist.length} media files...`);
-        
+        if (!('caches' in window)) return;
         try {
             const cache = await caches.open('media-cache-v1');
-            
             for (const item of playlist) {
                 if (!item.url) continue;
-                
-                try {
-                    // Check if already cached
-                    const cached = await cache.match(item.url);
-                    if (cached) {
-                        logDebug('✅', `Already cached: ${item.url.split('/').pop()}`);
-                        continue;
-                    }
-                    
-                    // Download and cache
-                    const req = new Request(item.url, { mode: 'cors' });
-                    const res = await fetch(req);
-                    
-                    if (res.ok) {
-                        await cache.put(req, res.clone());
-                        logDebug('💾', `Cached: ${item.url.split('/').pop()}`);
-                    }
-                } catch (e) {
-                    logDebug('⚠️', `Cache failed: ${item.url.split('/').pop()}`);
+                const cached = await cache.match(item.url);
+                if (!cached) {
+                    // Fetch and store
+                    try {
+                        const res = await fetch(item.url, { mode: 'cors' });
+                        if (res.ok) await cache.put(item.url, res);
+                    } catch(e) { console.error('Cache fail', item.url); }
                 }
             }
-            
-            logDebug('✅', 'Media caching complete');
-        } catch (e) {
-            logDebug('❌', `Media cache error: ${e.message}`);
-        }
+        } catch (e) { console.error('Cache API Error', e); }
     }
 
-// CLEAN OLD MEDIA CACHE
     async function cleanOldMediaCache() {
+        if (!('caches' in window)) return;
         try {
             const cache = await caches.open('media-cache-v1');
             const keys = await cache.keys();
-            
-            // Get current playlist URLs
-            const currentUrls = currentPlaylist.map(item => item.url);
-            
-            // Delete media not in current playlist
-            for (const request of keys) {
-                if (!currentUrls.includes(request.url)) {
-                    await cache.delete(request);
-                    logDebug('🗑️', `Deleted old media: ${request.url.split('/').pop()}`);
-                }
+            const validUrls = currentPlaylist.map(i => i.url);
+            for (const req of keys) {
+                if (!validUrls.includes(req.url)) await cache.delete(req);
             }
-        } catch (e) {
-            logDebug('⚠️', `Cache cleanup failed: ${e.message}`);
-        }
+        } catch(e) {}
     }
 
-
-    
-
-// LOAD MEDIA FROM CACHE (Cache-First Strategy)
-    let currentBlobUrls = new Set(); // Track blob URLs for cleanup
-
-    async function loadMediaFromCache(url, type) {
+    // Loader (Cache First)
+    async function loadMediaFromCache(url) {
         try {
             const cache = await caches.open('media-cache-v1');
-            const cached = await cache.match(url);
-            
-            if (cached) {
-                const blob = await cached.blob();
+            const resp = await cache.match(url);
+            if (resp) {
+                const blob = await resp.blob();
                 const blobUrl = URL.createObjectURL(blob);
-                
-                // Track for cleanup
                 currentBlobUrls.add(blobUrl);
-                
-                logDebug('📦', `Playing from cache: ${type}`);
                 return blobUrl;
-            } else {
-                logDebug('🌐', `Playing from network: ${type}`);
-                return url; // Fallback to network
             }
-        } catch (e) {
-            logDebug('⚠️', `Cache read failed, using network: ${e.message}`);
-            return url; // Fallback to network
-        }
+        } catch(e) {}
+        return url; // Fallback
     }
 
-    // Clean up blob URLs when switching slides
-    function cleanupBlobUrls() {
-        currentBlobUrls.forEach(url => {
-            URL.revokeObjectURL(url);
-        });
-        currentBlobUrls.clear();
-        logDebug('🧹', 'Cleaned blob URLs');
-    }
-    
-
-  
-    // PLAYBACK
+    // --- 6. PLAYBACK LOOP ---
     function runLoop() {
-        if (!currentPlaylist || currentPlaylist.length === 0) {
-            logDebug('⏹️', 'No playlist');
-            isPlaying = false;
-            return;
-        }
-        
+        if (!currentPlaylist.length) return;
         isPlaying = true;
         
         const item = currentPlaylist[currentIndex];
-        
-        if (!item || !item.url) {
-            logDebug('⚠️', `Invalid item ${currentIndex}`);
-            nextSlide();
-            return;
-        }
-        
-        logDebug('▶️', `[${currentIndex + 1}/${currentPlaylist.length}]`);
+        if (!item || !item.url) { nextSlide(); return; }
+
+        logDebug('▶️', `Playing item ${currentIndex + 1}`);
         
         const imgEl = document.getElementById('active-slide');
         const vidEl = document.getElementById('active-video');
-        
         let duration = (item.duration || 10) * 1000;
 
-        // ✅ CACHE-FIRST PLAYBACK (Restaurant-Proof)
-if (item.type && item.type.includes('video')) {
-    imgEl.classList.add('hidden');
-    vidEl.classList.remove('hidden');
-    
-    // Try cache first, fallback to network
-    loadMediaFromCache(item.url, 'video').then(mediaSrc => {
-        vidEl.src = mediaSrc;
-        
-        vidEl.onerror = () => {
-            logDebug('❌', 'Video error');
-            nextSlide();
-        };
-        
-        vidEl.play().catch(e => {
-            logDebug('❌', `Play: ${e.message}`);
-            nextSlide();
-        });
-
-        vidEl.onended = () => {
-           if (item.duration === 0) nextSlide();
-        };
-    });
-    
-} else {
-    vidEl.classList.add('hidden');
-    vidEl.pause();
-    vidEl.src = '';
-    imgEl.classList.remove('hidden');
-    
-    imgEl.onerror = () => {
-        logDebug('❌', 'Image error');
-        nextSlide();
-    };
-    
-    imgEl.classList.remove('fade-enter-active');
-    
-    // Try cache first, fallback to network
-    loadMediaFromCache(item.url, 'image').then(mediaSrc => {
-        setTimeout(() => {
-            imgEl.src = mediaSrc;
-            imgEl.classList.add('fade-enter-active');
-        }, 100);
-    });
-}
-
-        if (currentSlideTimeout) {
-            clearTimeout(currentSlideTimeout);
+        if ((item.type || '').includes('video')) {
+            imgEl.classList.add('hidden');
+            vidEl.classList.remove('hidden');
+            
+            loadMediaFromCache(item.url).then(src => {
+                vidEl.src = src;
+                vidEl.play().catch(e => {
+                    console.error("Video error", e);
+                    nextSlide();
+                });
+                vidEl.onended = () => { if(item.duration === 0) nextSlide(); };
+            });
+        } else {
+            vidEl.classList.add('hidden');
+            vidEl.pause();
+            imgEl.classList.remove('hidden');
+            imgEl.classList.remove('fade-enter-active');
+            
+            loadMediaFromCache(item.url).then(src => {
+                imgEl.src = src;
+                requestAnimationFrame(() => imgEl.classList.add('fade-enter-active'));
+            });
         }
-        
-        if (!item.type || !item.type.includes('video') || item.duration > 0) {
+
+        // Cleanup Blobs
+        if (currentBlobUrls.size > 5) {
+            const [first] = currentBlobUrls;
+            URL.revokeObjectURL(first);
+            currentBlobUrls.delete(first);
+        }
+
+        if (currentSlideTimeout) clearTimeout(currentSlideTimeout);
+        if (!(item.type || '').includes('video') || item.duration > 0) {
             currentSlideTimeout = setTimeout(nextSlide, duration);
         }
     }
 
     function nextSlide() {
-        cleanupBlobUrls(); // Clean up old blob URLs
         currentIndex = (currentIndex + 1) % currentPlaylist.length;
         runLoop();
     }
 
-    // MEMORY
-    setTimeout(() => {
-        logDebug('🔄', '24h refresh');
-        window.location.reload();
-    }, 24 * 60 * 60 * 1000);
+    // --- 7. EXTRAS ---
+    function startHeartbeat() {
+        setInterval(async () => {
+            if(sb && deviceId) await sb.from('devices').update({ status: 'online', last_seen: new Date() }).eq('id', deviceId);
+        }, 15000);
+    }
 
-    // NETWORK
-    window.addEventListener('online', () => {
-        logDebug('🌐', 'Online');
-        updateStatus('Back online');
-        if (deviceCode && !deviceId) {
-            setTimeout(tryBackgroundConnection, 2000);
-        }
-    });
+    async function handleScreenshot() {
+        try {
+            const canvas = await html2canvas(document.body);
+            canvas.toBlob(async blob => {
+                const name = `screen_${deviceId}_${Date.now()}.jpg`;
+                await sb.storage.from('media').upload(name, blob);
+                const { data } = sb.storage.from('media').getPublicUrl(name);
+                await sb.from('devices').update({ screenshot_url: data.publicUrl, screenshot_requested: false }).eq('id', deviceId);
+                logDebug('📸', 'Screenshot sent');
+            }, 'image/jpeg', 0.6);
+        } catch(e) {}
+    }
 
-    window.addEventListener('offline', () => {
-        logDebug('📡', 'Offline');
-        updateStatus('Offline');
-    });
+    function startOfflinePlayback(data) {
+        document.getElementById('pairing-screen').classList.add('hidden');
+        document.getElementById('player-canvas').classList.remove('hidden');
+        updateStatus('Offline Mode');
+        currentPlaylist = data;
+        preloadMedia(data);
+        if(!isPlaying) runLoop();
+    }
 
-    // PERIODIC CHECK
-    setInterval(() => {
-        if (!navigator.onLine && !isOffline) {
-            isOffline = true;
-            updateStatus('Offline');
-        } else if (navigator.onLine && isOffline) {
-            isOffline = false;
-            if (deviceCode && !deviceId) {
-                tryBackgroundConnection();
-            }
-        }
-    }, 30000);
+    // Refresh every 24h
+    setTimeout(() => location.reload(), 86400000);
 
-    // ERROR HANDLERS
-    window.addEventListener('error', (e) => {
-        logDebug('❌', `Error: ${e.message}`);
-    });
-
-    window.addEventListener('unhandledrejection', (e) => {
-        logDebug('❌', `Unhandled: ${e.reason}`);
-    });
-
-    // START
+    // Init
     initApp();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
