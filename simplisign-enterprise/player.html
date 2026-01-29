@@ -69,39 +69,81 @@
         let isOffline = false;
 
         // 1. ROBUST INIT
-       async function initApp() {
+       // 1. ROBUST INIT (Offline First)
+        async function initApp() {
+            console.log("🚀 Booting SimpliSign Player...");
+
+            // --- STEP A: Storage Check (Prevent Infinite Loop) ---
             try {
-                if(!navigator.onLine) showOfflineMode();
+                localStorage.setItem('ss_test', '1');
+                localStorage.removeItem('ss_test');
+            } catch (e) {
+                document.body.innerHTML = '<div style="color:white; text-align:center; padding-top:20%; font-family:sans-serif;"><h1>Storage Blocked</h1><p>Please enable cookies/site data for this domain.</p></div>';
+                return; 
+            }
 
-                // --- V1.0 POLISH: VISIBLE STORAGE CHECK ---
+            // --- STEP B: Load Credentials & Cache ---
+            const savedCode = localStorage.getItem('ss_device_code');
+            const savedPlaylist = localStorage.getItem('cached_playlist');
+
+            // --- STEP C: Offline Playback (Critical for Morning Boot) ---
+            if (savedPlaylist && savedCode) {
                 try {
-                    localStorage.setItem('ss_test', '1');
-                    localStorage.removeItem('ss_test');
+                    const parsed = JSON.parse(savedPlaylist);
+                    if (parsed.length > 0) {
+                        console.log("📦 Found cached content. Playing immediately...");
+                        
+                        // Restore state from cache
+                        deviceCode = savedCode;
+                        currentPlaylist = parsed;
+                        
+                        // Hide pairing screen & Start Playing
+                        document.getElementById('pairing-screen').classList.add('hidden');
+                        document.getElementById('player-canvas').classList.remove('hidden');
+                        updateStatus('Offline Playback');
+                        
+                        // Start the loop
+                        preloadMedia(currentPlaylist); // Preload images
+                        if (!isPlaying) runLoop();
+                    }
                 } catch (e) {
-                    // This stops the "loop" and tells the user exactly what is wrong
-                    document.body.innerHTML = '<div style="color:white; text-align:center; padding-top:20%; font-family:sans-serif;"><h1>Storage Blocked</h1><p>Please enable cookies/site data for this domain to use the player.</p></div>';
-                    return; 
+                    console.error("Cache corrupted:", e);
                 }
-                // ------------------------------------------
+            }
 
+            // --- STEP D: Network Connection (Background) ---
+            if (!navigator.onLine) {
+                showOfflineMode();
+                console.log("📡 Device is offline. Skipping network connect.");
+                return; // Stop here if offline (we are already playing cache above)
+            }
+
+            try {
                 const response = await fetch('/api/config');
                 if (!response.ok) throw new Error('Config Load Failed');
                 const config = await response.json();
                 sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
                 
-                // AUTO-RECONNECT LOGIC
-                // We use the global 'deviceCode' which was loaded from localStorage at the top of the script
+                // If we have a code, try to "Go Online" officially
                 if (deviceCode) {
-                    console.log("Found saved code, attempting auto-pair...");
-                    await pairDevice(true); // <--- This 'true' triggers the fix above
+                    console.log("🌐 Connecting to server...");
+                    await pairDevice(true); 
                 } else {
-                    console.log("No saved code found. Showing pairing screen.");
+                    console.log("⚠️ New Device. Waiting for pairing.");
+                    // Only show pairing screen if we aren't already playing cache
+                    if (!currentPlaylist.length) {
+                        document.getElementById('pairing-screen').classList.remove('hidden');
+                    }
                 }
             } catch (error) {
-                console.error("Init failed:", error);
-                setTimeout(initApp, 5000); 
+                console.error("Network Init Failed:", error);
+                // If we have cache, we don't care about this error.
+                if (!currentPlaylist.length) {
+                    setTimeout(initApp, 5000); // Retry only if screen is empty
+                }
             }
         }
+
 
         // 2. NETWORK LISTENERS (Handle drops gracefully)
         window.addEventListener('offline', () => { showOfflineMode(); });
@@ -262,6 +304,8 @@ async function checkUpdates() {
                 if (playlist && Array.isArray(playlist)) {
                     if (JSON.stringify(playlist) !== JSON.stringify(currentPlaylist)) {
                         console.log("New Playlist Received");
+                        
+                        localStorage.setItem('cached_playlist', JSON.stringify(playlist));
                         
                         // Clear old memory to prevent crashes
                         imageCache = {}; 
