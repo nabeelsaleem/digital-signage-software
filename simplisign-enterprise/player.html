@@ -306,7 +306,7 @@ async function checkUpdates() {
                         console.log("New Playlist Received");
                         
                         localStorage.setItem('cached_playlist', JSON.stringify(playlist));
-                        
+
                         // Clear old memory to prevent crashes
                         imageCache = {}; 
                         
@@ -444,6 +444,21 @@ async function checkUpdates() {
 
         // Start
         initApp();
+
+// 6. SERVICE WORKER REGISTRATION (Keeps the App Alive Offline)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('✅ ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('❌ ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
+
     </script>
 </body>
 </html>
