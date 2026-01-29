@@ -73,6 +73,17 @@
             try {
                 if(!navigator.onLine) showOfflineMode();
 
+                // --- V1.0 POLISH: VISIBLE STORAGE CHECK ---
+                try {
+                    localStorage.setItem('ss_test', '1');
+                    localStorage.removeItem('ss_test');
+                } catch (e) {
+                    // This stops the "loop" and tells the user exactly what is wrong
+                    document.body.innerHTML = '<div style="color:white; text-align:center; padding-top:20%; font-family:sans-serif;"><h1>Storage Blocked</h1><p>Please enable cookies/site data for this domain to use the player.</p></div>';
+                    return; 
+                }
+                // ------------------------------------------
+
                 const response = await fetch('/api/config');
                 if (!response.ok) throw new Error('Config Load Failed');
                 const config = await response.json();

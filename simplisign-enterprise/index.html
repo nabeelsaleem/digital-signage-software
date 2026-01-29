@@ -535,6 +535,14 @@ REPLACE
 
         async function deleteMedia(id) {
             if(!confirm('Are you sure you want to delete this file?')) return;
+            
+            // FIXED: Remove file from Storage to prevent orphans
+            const file = state.media.find(m => m.id === id);
+            if (file && file.url) {
+                const path = file.url.split('/media/').pop(); // Extract filename from URL
+                if(path) await sb.storage.from('media').remove([path]);
+            }
+
             await sb.from('media').delete().eq('id', id);
             loadMedia();
         }
@@ -590,7 +598,9 @@ REPLACE
             if(pl) {
                 document.getElementById('pl-id').value = pl.id;
                 document.getElementById('pl-name').value = pl.name;
-                state.draft = pl.items || [];
+                
+                // FIXED: Create a deep copy so "Cancel" works correctly
+                state.draft = pl.items ? JSON.parse(JSON.stringify(pl.items)) : [];
             } else {
                 document.getElementById('pl-id').value = '';
                 document.getElementById('pl-name').value = '';
@@ -633,13 +643,29 @@ REPLACE
         async function savePlaylist() {
             const name = document.getElementById('pl-name').value;
             const id = document.getElementById('pl-id').value;
+            // Select button
+            const saveBtn = document.querySelector('#modal-playlist button[onclick="savePlaylist()"]');
+            
             if(!name) return showToast('Please provide a playlist name', 'error');
+            
+            // Disable button
+            saveBtn.innerText = 'Saving...';
+            saveBtn.disabled = true;
+
             const payload = { user_id: state.user.id, name, items: state.draft };
             const { error } = id ? await sb.from('playlists').update(payload).eq('id', id) : await sb.from('playlists').insert(payload);
+            
+            // Re-enable button
+            saveBtn.innerText = 'Save Playlist';
+            saveBtn.disabled = false;
+
             if(error) showToast(error.message, 'error');
             else { showToast('Playlist saved successfully', 'success'); closeModal('modal-playlist'); loadPlaylists(); }
         }
 
+
+
+        
         // Replace existing renamePlaylist with:
 async function renamePlaylist(id, old) {
     showCustomPrompt("Rename Playlist", old, async (newName) => {
@@ -1071,7 +1097,7 @@ document.getElementById('replace-file-input').addEventListener('change', async (
         alert('Media Replaced Successfully!');
         
         // REFRESH YOUR LIST
-        if (typeof fetchMedia === 'function') fetchMedia(); 
+        if (typeof loadMedia === 'function') loadMedia(); 
 
     } catch (err) {
         console.error(err);
