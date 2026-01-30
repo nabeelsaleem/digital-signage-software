@@ -68,12 +68,11 @@
         let isPlaying = false;
         let isOffline = false;
 
-        // 1. ROBUST INIT
-       // 1. ROBUST INIT (Offline First)
+        // 1. ROBUST INIT (Offline First)
         async function initApp() {
             console.log("🚀 Booting SimpliSign Player...");
 
-            // --- STEP A: Storage Check (Prevent Infinite Loop) ---
+            // --- STEP A: Storage Check ---
             try {
                 localStorage.setItem('ss_test', '1');
                 localStorage.removeItem('ss_test');
@@ -82,40 +81,35 @@
                 return; 
             }
 
-            // --- STEP B: Load Credentials & Cache ---
             const savedCode = localStorage.getItem('ss_device_code');
             const savedPlaylist = localStorage.getItem('cached_playlist');
 
-            // --- STEP C: Offline Playback (Critical for Morning Boot) ---
-            if (savedPlaylist && savedCode) {
+            // --- STEP B: Offline Playback ---
+            // VS CODE FIX: Added '!isPlaying' to prevent stuttering if this function retries
+            if (!isPlaying && savedPlaylist && savedCode) {
                 try {
                     const parsed = JSON.parse(savedPlaylist);
                     if (parsed.length > 0) {
                         console.log("📦 Found cached content. Playing immediately...");
-                        
-                        // Restore state from cache
                         deviceCode = savedCode;
                         currentPlaylist = parsed;
                         
-                        // Hide pairing screen & Start Playing
                         document.getElementById('pairing-screen').classList.add('hidden');
                         document.getElementById('player-canvas').classList.remove('hidden');
                         updateStatus('Offline Playback');
                         
-                        // Start the loop
-                        preloadMedia(currentPlaylist); // Preload images
-                        if (!isPlaying) runLoop();
+                        preloadMedia(currentPlaylist);
+                        runLoop();
                     }
                 } catch (e) {
                     console.error("Cache corrupted:", e);
                 }
             }
 
-            // --- STEP D: Network Connection (Background) ---
+            // --- STEP C: Network Connection ---
             if (!navigator.onLine) {
                 showOfflineMode();
-                console.log("📡 Device is offline. Skipping network connect.");
-                return; // Stop here if offline (we are already playing cache above)
+                return; 
             }
 
             try {
@@ -124,28 +118,21 @@
                 const config = await response.json();
                 sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
                 
-                // If we have a code, try to "Go Online" officially
                 if (deviceCode) {
                     console.log("🌐 Connecting to server...");
                     await pairDevice(true); 
-                } else {
+                } else if (!currentPlaylist.length) {
                     console.log("⚠️ New Device. Waiting for pairing.");
-                    // Only show pairing screen if we aren't already playing cache
-                    if (!currentPlaylist.length) {
-                        document.getElementById('pairing-screen').classList.remove('hidden');
-                    }
+                    document.getElementById('pairing-screen').classList.remove('hidden');
                 }
             } catch (error) {
                 console.error("Network Init Failed:", error);
-                // If we have cache, we don't care about this error.
-                if (!currentPlaylist.length) {
-                    setTimeout(initApp, 5000); // Retry only if screen is empty
-                }
+                // VS CODE FIX: Always retry in background (Zombie Fix)
+                setTimeout(initApp, 10000); 
             }
         }
 
 
-        // 2. NETWORK LISTENERS (Handle drops gracefully)
         // 2. NETWORK LISTENERS (Handle drops gracefully)
         window.addEventListener('offline', () => { showOfflineMode(); });
         
@@ -165,10 +152,8 @@
 
         
 
-   async function pairDevice(silent = false) {
-            // Get code from storage (if silent) or input box
+async function pairDevice(silent = false) {
             let code = silent ? deviceCode : document.getElementById('pairing-code').value.toUpperCase();
-            
             if (!code) return;
 
             if(!silent) document.querySelector('button').innerText = 'CONNECTING...';
@@ -176,21 +161,19 @@
             try {
                 const req = await fetch(`/api/player-handler?code=${code}`);
                 
-                // --- THE FIX IS HERE ---
                 if (!req.ok) {
-                    // If the server says 500 (Error) or 404 (Not Found), the code is dead.
-                    if (silent) {
+                    // VS CODE FIX: Only wipe memory if 404 (Not Found). 
+                    // If it is 500 (Server Error), we keep the code and try again later.
+                    if (silent && req.status === 404) {
                         console.warn("Saved code is invalid (Device Deleted). Resetting...");
-                        localStorage.removeItem('ss_device_code'); // <--- WIPE MEMORY
-                        location.reload(); // <--- RESTART FRESH
+                        localStorage.removeItem('ss_device_code'); 
+                        location.reload(); 
                         return;
                     }
-                    throw new Error('Invalid Code');
+                    throw new Error('Invalid Code or Server Error');
                 }
-                // -----------------------
                 
                 const data = await req.json();
-
                 if (!data.id) throw new Error('No Device ID returned');
 
                 localStorage.setItem('ss_device_code', code);
@@ -213,7 +196,7 @@
                 }
             }
         }
-        // 4. ROBUST LOOP (Replacing simple setInterval)
+
         async function runHeartbeatLoop() {
             // Prevent crashing if offline
             if (!isOffline && sb) {
@@ -232,27 +215,22 @@ async function checkUpdates() {
             updateStatus('Checking...');
 
             try {
-                // 1. SECURE API CALL
                 const req = await fetch(`/api/player-handler?deviceId=${deviceId}`);
                 
-                // --- CRITICAL FIX: Handle Deleted Devices (500/404 Error) ---
                 if (!req.ok) {
                     console.error("API Fetch Failed:", req.status);
-                    // If the device was deleted from CMS while playing, reset locally
-                    if (req.status === 500 || req.status === 404) {
+                    // VS CODE FIX: Only unpair if 404. Ignore 500.
+                    if (req.status === 404) {
                          console.warn("Device deleted on server. Resetting player...");
                          localStorage.removeItem('ss_device_code');
                          window.location.reload(true);
                          return;
                     }
-                    // For other internet errors, just wait for next cycle
                     updateStatus('Connection Error');
                     return; 
                 }
                 
                 const response = await req.json();
-                
-                // Safety Check: Ensure response is valid
                 if (!response || !response.device) return;
 
                 const { device, playlist } = response;
@@ -260,13 +238,9 @@ async function checkUpdates() {
                 // 2. REMOTE REFRESH LOGIC
                 if (device.refresh_requested) {
                     updateStatus('Updating...');
-                    
-                    // --- FIX: You are missing the opening line below ---
                     setTimeout(() => { 
                         window.location.reload(true); 
                     }, 1000);
-                    // --------------------------------------------------
-                    
                     return; 
                 }
 
@@ -468,22 +442,3 @@ async function checkUpdates() {
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
