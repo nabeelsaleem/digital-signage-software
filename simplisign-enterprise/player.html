@@ -146,18 +146,24 @@
 
 
         // 2. NETWORK LISTENERS (Handle drops gracefully)
+        // 2. NETWORK LISTENERS (Handle drops gracefully)
         window.addEventListener('offline', () => { showOfflineMode(); });
-        window.addEventListener('online', () => { 
+        
+        window.addEventListener('online', async () => { 
+            console.log("[System] Network connection restored.");
             isOffline = false; 
             document.getElementById('status-pill').style.backgroundColor = 'rgba(0,0,0,0.5)';
-            updateStatus('Online - Recovered');
+            updateStatus('Online - Recovering...');
+
+            // CRITICAL FIX: If we booted offline, we have no Server Connection (sb) and no Device ID.
+            // We must re-run the initialization logic to fetch keys and log in.
+            if (!sb || !deviceId) {
+                console.log("[System] Re-initializing connection to server...");
+                await initApp();
+            }
         });
 
-        function showOfflineMode() {
-            isOffline = true;
-            updateStatus('OFFLINE - Playing Cache');
-            document.getElementById('status-pill').style.backgroundColor = 'red';
-        }
+        
 
    async function pairDevice(silent = false) {
             // Get code from storage (if silent) or input box
