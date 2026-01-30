@@ -12,26 +12,28 @@
         .pairing-mode { cursor: default; background: #0f172a; }
         .fade-enter { opacity: 0; transition: opacity 1s ease-in-out; }
         .fade-enter-active { opacity: 1; }
-        /* Offline Dot Style */
-        .status-offline {
+        
+        /* Status Dot System */
+        .status-dot {
             width: 12px;
             height: 12px;
-            background-color: red;
-            color: transparent; /* Hide text */
-            padding: 0 !important;
-            overflow: hidden;
-            opacity: 0.8 !important;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            transition: opacity 0.5s ease, background-color 0.3s ease;
+            font-size: 0; /* Hide Text */
+            color: transparent;
         }
+        .status-red { background-color: #ef4444; opacity: 1; } /* Offline */
+        .status-orange { background-color: #f97316; opacity: 1; animation: pulse 2s infinite; } /* Working */
+        .status-green { background-color: #22c55e; opacity: 0; } /* Online (Hidden) */
         
-        /* Faded / Hidden Status (Normal Operation) */
-        .status-idle {
-            opacity: 0.05; /* Almost invisible */
-        }
-        
-        /* Active Status (Downloading/Syncing) */
-        .status-active {
-            opacity: 0.8;
-            background-color: rgba(0,0,0,0.6);
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.9); }
         }
     </style>
 </head>
@@ -52,7 +54,7 @@
         
         <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
         
-        <div id="status-pill" class="absolute bottom-4 right-4 text-white/50 text-[10px] px-2 py-1 rounded-full font-mono z-50 transition-all duration-500">Starting...</div>
+        <div id="status-pill" class="status-dot status-orange"></div>
     </div>
 
    
@@ -139,7 +141,6 @@
         window.addEventListener('online', async () => { 
             console.log("[System] Network connection restored.");
             isOffline = false; 
-            document.getElementById('status-pill').style.backgroundColor = 'rgba(0,0,0,0.5)';
             updateStatus('Online - Recovering...');
 
             // CRITICAL FIX: If we booted offline, we have no Server Connection (sb) and no Device ID.
@@ -314,22 +315,24 @@ async function checkUpdates() {
             }
         }
 
-    function updateStatus(msg, type = 'normal') { 
+    function updateStatus(msg) { 
             const el = document.getElementById('status-pill');
+            // Reset to base
+            el.className = 'status-dot';
             
-            if (msg.includes('OFFLINE')) {
-                // Show Red Dot
-                el.innerText = '';
-                el.className = 'absolute bottom-2 right-2 rounded-full z-50 transition-all duration-500 status-offline';
-            } else if (msg.includes('Scheduled') || msg.includes('Default')) {
-                // Content Playing (Fade out)
-                el.innerText = msg;
-                el.className = 'absolute bottom-4 right-4 text-white px-3 py-1 rounded-full font-mono z-50 transition-all duration-500 status-idle';
+            const text = msg.toLowerCase();
+
+            if (text.includes('offline') || text.includes('error') || text.includes('failed')) {
+                el.classList.add('status-red');
+            } 
+            else if (text.includes('checking') || text.includes('updating') || text.includes('capturing') || text.includes('unpairing')) {
+                el.classList.add('status-orange');
             } else {
-                // Active System Message (Downloading / Checking)
-                el.innerText = msg;
-                el.className = 'absolute bottom-4 right-4 text-white px-3 py-1 rounded-full font-mono z-50 transition-all duration-500 status-active';
+                // Online / Playback (Hidden)
+                el.classList.add('status-green');
             }
+            
+            el.innerText = ''; // Ensure no text is rendered
         }
     
     function stopPlayback() { currentPlaylist = []; isPlaying = false; document.getElementById('active-slide').src = ''; }
