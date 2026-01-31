@@ -216,7 +216,7 @@ async function checkUpdates() {
             updateStatus('Checking...');
 
             try {
-                const req = await fetch(`/api/player-handler?deviceId=${deviceId}`);
+                const req = await fetch(`/api/player-handler?deviceId=${deviceId}&code=${deviceCode}`);
                 
                 if (!req.ok) {
                     console.error("API Fetch Failed:", req.status);

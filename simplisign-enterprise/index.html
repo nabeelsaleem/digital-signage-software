@@ -565,7 +565,7 @@ REPLACE
                     <div class="absolute top-0 left-0 w-1 h-full bg-slate-100 group-hover:bg-brand-500 transition-colors"></div>
                     <div class="flex justify-between items-start mb-4 pl-3">
                         <div class="flex-1">
-                            <h3 class="font-bold text-lg text-slate-800 group-hover:text-brand-600 transition-colors">${p.name}</h3>
+                            <h3 class="font-bold text-lg text-slate-800 group-hover:text-brand-600 transition-colors">${escapeHtml(p.name)}</h3>
                             <div class="flex items-center gap-2 mt-2">
                                 <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-md"><i class="fa-solid fa-layer-group mr-1"></i> ${p.items ? p.items.length : 0} items</span>
                             </div>
@@ -975,6 +975,17 @@ async function renameDevice(id, old) {
         async function deleteDevice(id) { if(confirm("Unlink this screen? It will stop showing content.")) await sb.from('devices').delete().eq('id', id); loadDevices(); }
 
         // --- UTILS ---
+        // SECURITY: Prevent XSS attacks
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return unsafe;
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         function showToast(msg, type = 'info') {
             const div = document.createElement('div');
             let bgClass = 'bg-slate-800';

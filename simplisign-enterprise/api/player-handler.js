@@ -52,22 +52,28 @@ export default async function handler(req, res) {
         }
 
         // --- SCENARIO C: PLAYING (Heartbeat + Fetch Playlist) ---
-        if (deviceId) {
+        if (deviceId && code) {
             // 1. Update Heartbeat
             await supabase.from('devices')
                 .update({ status: 'online', last_seen: new Date() })
-                .eq('id', deviceId);
+                .eq('id', deviceId)
+                .eq('code', code.toUpperCase()); // Security Check
 
             // 2. Fetch Device Data
             const { data: device, error: devErr } = await supabase
                 .from('devices')
-                .select('id, playlist_id, refresh_requested, screenshot_requested')
+                .select('id, code, playlist_id, refresh_requested, screenshot_requested')
                 .eq('id', deviceId)
                 .single();
 
             if (devErr || !device) {
                 console.error("Device fetch error:", devErr);
                 return res.status(404).json({ error: 'Device not found' });
+            }
+
+            // SECURITY CHECK: Verify the code matches
+            if (device.code !== code.toUpperCase()) {
+                return res.status(403).json({ error: 'Unauthorized Access' });
             }
 
             // --- FIX: RESET REFRESH FLAG ---
