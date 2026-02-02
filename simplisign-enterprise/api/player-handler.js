@@ -62,7 +62,7 @@ export default async function handler(req, res) {
             // 2. Fetch Device Data
                 const { data: device, error: devErr } = await supabase
                 .from('devices')
-                .select('id, group_id, playlist_id, refresh_requested, screenshot_requested, unpair_requested') // <--- ADD group_id
+                .select('id, code, group_id, playlist_id, refresh_requested, screenshot_requested, unpair_requested')
                 .eq('id', deviceId)
                 .single();
 
