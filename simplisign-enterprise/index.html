@@ -753,23 +753,34 @@ async function renamePlaylist(id, old) {
             }
 
             list.innerHTML = state.schedules.map(s => {
-                const dev = state.devices.find(d => d.id === s.device_id);
                 const pl = state.playlists.find(p => p.id === s.playlist_id);
-                
                 const start = s.start_time.slice(0, 5);
                 const end = s.end_time.slice(0, 5);
+
+                let targetName, targetIcon, editButton;
+                if (s.group_id) {
+                    const group = state.groups.find(g => g.id === s.group_id);
+                    targetName = group ? escapeHtml(group.name) : 'Unknown Group';
+                    targetIcon = '<i class="fa-solid fa-users-rectangle"></i>';
+                    editButton = `<button onclick="openScheduleModal({ type: 'group', id: ${s.group_id} })" class="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors text-sm"><i class="fa-solid fa-pen-to-square"></i></button>`;
+                } else {
+                    const dev = state.devices.find(d => d.id === s.device_id);
+                    targetName = dev ? escapeHtml(dev.name) : 'Unknown Device';
+                    targetIcon = '<i class="fa-solid fa-desktop"></i>';
+                    editButton = `<button onclick="openScheduleModal({ type: 'device', id: ${s.device_id} })" class="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors text-sm"><i class="fa-solid fa-pen-to-square"></i></button>`;
+                }
 
                 return `
                 <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div class="flex items-center gap-4 min-w-0">
                         <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
-                            <i class="fa-solid fa-clock"></i>
+                            ${targetIcon}
                         </div>
                         <div class="min-w-0">
                             <div class="flex items-center gap-2 mb-1 truncate">
-                                <span class="font-bold text-slate-800 text-sm">${dev ? dev.name : 'Unknown Device'}</span>
-                                <i class="fa-solid fa-arrow-right text-slate-300 text-[10px]"></i>
-                                <span class="font-bold text-brand-600 text-sm truncate">${pl ? pl.name : 'Unknown Playlist'}</span>
+                                <span class="font-bold text-slate-800 text-sm">${targetName}</span>
+                                <i class="fa-solid fa-arrow-right text-slate-300 text-[10px] mx-1"></i>
+                                <span class="font-bold text-brand-600 text-sm truncate">${pl ? escapeHtml(pl.name) : 'Unknown Playlist'}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="text-xs font-mono font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100">
@@ -779,29 +790,57 @@ async function renamePlaylist(id, old) {
                         </div>
                     </div>
                     <div class="flex items-center gap-2 shrink-0">
-                        <button onclick="openScheduleModal(${s.device_id})" class="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors text-sm"><i class="fa-solid fa-pen-to-square"></i></button>
+                        ${editButton}
                         <button onclick="deleteSchedule(${s.id})" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 </div>`;
             }).join('');
         }
 
-        function openScheduleModal(targetDeviceId = null) {
+        function openScheduleModal(target = null) {
             document.getElementById('modal-schedule').classList.remove('hidden');
-            document.getElementById('sch-device').innerHTML = state.devices.map(d => `<option value="${d.id}">${d.name} <span class="text-slate-400 font-normal">(${d.code})</span></option>`).join('');
-            if (targetDeviceId) document.getElementById('sch-device').value = targetDeviceId;
             
-            const currentDevId = document.getElementById('sch-device').value;
-            if(currentDevId) loadDeviceSchedules(currentDevId);
+            // Populate both dropdowns
+            document.getElementById('sch-device').innerHTML = state.devices.map(d => `<option value="${d.id}">${d.name} <span class="text-slate-400 font-normal">(${d.code})</span></option>`).join('');
+            document.getElementById('sch-group-select').innerHTML = state.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+
+            if (target && target.id) {
+                if (target.type === 'group') {
+                    switchScheduleTab('group');
+                    document.getElementById('sch-group-select').value = target.id;
+                    loadGroupSchedules(target.id);
+                } else { // device
+                    switchScheduleTab('device');
+                    document.getElementById('sch-device').value = target.id;
+                    loadDeviceSchedules(target.id);
+                }
+            } else {
+                // Default view
+                switchScheduleTab('device');
+                const currentDevId = document.getElementById('sch-device').value;
+                if(currentDevId) loadDeviceSchedules(currentDevId);
+            }
         }
 
         function loadDeviceSchedules(deviceId) {
             deviceId = parseInt(deviceId);
             const existing = state.schedules.filter(s => s.device_id === deviceId);
             const container = document.getElementById('sch-playlist-container');
-            
+            renderSchedulePlaylistItems(existing, container);
+        }
+
+        function loadGroupSchedules(groupId) {
+            groupId = parseInt(groupId);
+            const existing = state.schedules.filter(s => s.group_id === groupId);
+            const container = document.getElementById('sch-playlist-container');
+            renderSchedulePlaylistItems(existing, container);
+        }
+
+        // Helper to render playlist items for schedule modal
+        function renderSchedulePlaylistItems(existingSchedules, container) {
+            if (!container) return;
             container.innerHTML = state.playlists.map(p => {
-                const match = existing.find(s => s.playlist_id === p.id);
+                const match = existingSchedules.find(s => s.playlist_id === p.id);
                 const isChecked = !!match;
                 const start = match ? match.start_time : '';
                 const end = match ? match.end_time : '';
@@ -829,6 +868,31 @@ async function renamePlaylist(id, old) {
             }).join('');
         }
 
+        function switchScheduleTab(tab) {
+            const deviceTab = document.getElementById('tab-sch-device');
+            const groupTab = document.getElementById('tab-sch-group');
+            const deviceView = document.getElementById('sch-target-device');
+            const groupView = document.getElementById('sch-target-group');
+            
+            if (tab === 'device') {
+                deviceTab.classList.add('text-brand-600', 'border-brand-600');
+                deviceTab.classList.remove('text-slate-500', 'border-transparent');
+                groupTab.classList.remove('text-brand-600', 'border-brand-600');
+                groupTab.classList.add('text-slate-500', 'border-transparent');
+                deviceView.classList.remove('hidden');
+                groupView.classList.add('hidden');
+                loadDeviceSchedules(document.getElementById('sch-device').value);
+            } else { // 'group'
+                groupTab.classList.add('text-brand-600', 'border-brand-600');
+                groupTab.classList.remove('text-slate-500', 'border-transparent');
+                deviceTab.classList.remove('text-brand-600', 'border-brand-600');
+                deviceTab.classList.add('text-slate-500', 'border-transparent');
+                deviceView.classList.add('hidden');
+                groupView.classList.remove('hidden');
+                loadGroupSchedules(document.getElementById('sch-group-select').value);
+            }
+        }
+
         function toggleTimeInputs(id) {
             const wrapper = document.getElementById(`times-${id}`);
             const checkbox = document.getElementById(`chk-${id}`);
@@ -843,19 +907,36 @@ async function renamePlaylist(id, old) {
         }
 
         async function saveSchedule() {
-            const deviceId = parseInt(document.getElementById('sch-device').value);
+            const isGroupTab = !document.getElementById('sch-target-group').classList.contains('hidden');
             const checkboxes = document.querySelectorAll('#sch-playlist-container input[type="checkbox"]:checked');
             const newSchedules = [];
+
+            let targetId, idColumn, deleteFilter;
+
+            if (isGroupTab) {
+                targetId = parseInt(document.getElementById('sch-group-select').value);
+                idColumn = 'group_id';
+                deleteFilter = { group_id: targetId };
+            } else {
+                targetId = parseInt(document.getElementById('sch-device').value);
+                idColumn = 'device_id';
+                deleteFilter = { device_id: targetId };
+            }
+
+            if (!targetId) return showToast('Please select a target screen or group.', 'error');
 
             for (let cb of checkboxes) {
                 const pid = cb.value;
                 const start = document.getElementById(`start-${pid}`).value;
                 const end = document.getElementById(`end-${pid}`).value;
                 if (!start || !end) return showToast(`Please define start and end times for all selected playlists.`, 'error');
-                newSchedules.push({ user_id: state.user.id, device_id: deviceId, playlist_id: parseInt(pid), start_time: start, end_time: end });
+                
+                let schedule = { user_id: state.user.id, playlist_id: parseInt(pid), start_time: start, end_time: end, device_id: null, group_id: null };
+                schedule[idColumn] = targetId;
+                newSchedules.push(schedule);
             }
 
-            await sb.from('schedules').delete().eq('device_id', deviceId);
+            await sb.from('schedules').delete().match(deleteFilter);
             if (newSchedules.length > 0) {
                 const { error } = await sb.from('schedules').insert(newSchedules);
                 if (error) return showToast(error.message, 'error');

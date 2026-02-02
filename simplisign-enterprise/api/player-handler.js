@@ -60,9 +60,9 @@ export default async function handler(req, res) {
                 .eq('code', code.toUpperCase()); // Security Check
 
             // 2. Fetch Device Data
-            const { data: device, error: devErr } = await supabase
+                const { data: device, error: devErr } = await supabase
                 .from('devices')
-                .select('id, code, playlist_id, refresh_requested, screenshot_requested')
+                .select('id, group_id, playlist_id, refresh_requested, screenshot_requested, unpair_requested') // <--- ADD group_id
                 .eq('id', deviceId)
                 .single();
 
@@ -93,11 +93,20 @@ export default async function handler(req, res) {
             const now = new Date();
             const timeStr = now.toTimeString().slice(0, 5); // "14:30"
             
-            const { data: schedules } = await supabase
-                .from('schedules')
-                .select('*')
-                .eq('device_id', deviceId);
+            // NEW LOGIC: Fetch schedules for this Device OR its Group
+            let query = supabase.from('schedules').select('*');
+            
+            if (device.group_id) {
+                // If device is in a group, get schedules for BOTH
+                query = query.or(`device_id.eq.${deviceId},group_id.eq.${device.group_id}`);
+            } else {
+                // Otherwise just get device schedules
+                query = query.eq('device_id', deviceId);
+            }
 
+            const { data: schedules } = await query;
+
+            
             if (schedules && schedules.length > 0) {
                 const match = schedules.find(s => {
                     const start = s.start_time.slice(0, 5);
