@@ -24,7 +24,12 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Server configuration error: Missing database keys." });
     }
 
-    const { code, deviceId } = req.query;
+    let { code, deviceId } = req.query;
+
+    // --- SAFETY FIX: Prevent "null" string crash ---
+    if (deviceId === 'null' || deviceId === 'undefined') {
+        deviceId = null;
+    }
 
     try {
         // --- SCENARIO A: MISSING PARAMETERS ---
