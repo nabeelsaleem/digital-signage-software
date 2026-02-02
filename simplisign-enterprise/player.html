@@ -216,12 +216,15 @@ async function checkUpdates() {
             updateStatus('Checking...');
 
             try {
+                // 1. SECURE API CALL (Now sends CODE + DEVICE ID)
                 const req = await fetch(`/api/player-handler?deviceId=${deviceId}&code=${deviceCode}`);
                 
+                // --- CRITICAL FIX: Handle Deleted Devices Safely ---
                 if (!req.ok) {
                     console.error("API Fetch Failed:", req.status);
                     
-                    // Critical Fix: Only unpair if 404. Ignore 500 (Server Glitch).
+                    // ONLY wipe memory if the server explicitly says 404 (Not Found).
+                    // If it is 500 (Server Error), we KEEP the code and retry later.
                     if (req.status === 404) {
                          console.warn("Device deleted on server. Resetting player...");
                          localStorage.removeItem('ss_device_code');
@@ -229,12 +232,14 @@ async function checkUpdates() {
                          return;
                     }
                     
-                    console.log("Connection Error - Retrying...");
+                    // For 500 errors or network glitches, just wait.
                     updateStatus('Connection Error');
                     return; 
                 }
                 
                 const response = await req.json();
+                
+                // Safety Check: Ensure response is valid
                 if (!response || !response.device) return;
 
                 const { device, playlist } = response;
@@ -248,7 +253,7 @@ async function checkUpdates() {
                     return; 
                 }
 
-                // 3. REMOTE UNPAIR LOGIC (New Feature)
+                // 3. REMOTE UNPAIR LOGIC
                 if (device.unpair_requested) {
                     updateStatus('Unpairing...');
                     localStorage.removeItem('ss_device_code');
@@ -256,10 +261,9 @@ async function checkUpdates() {
                     return;
                 }
 
-                // 4. REMOTE SCREENSHOT LOGIC (Your Request)
+                // 4. REMOTE SCREENSHOT LOGIC
                 if (device.screenshot_requested) {
                     updateStatus('Capturing Screen...');
-                    
                     try {
                         const canvas = await html2canvas(document.body, {
                             useCORS: true,
@@ -280,24 +284,18 @@ async function checkUpdates() {
                         updateStatus('Screenshot Uploaded');
                     } catch (err) {
                         console.error("Screenshot Failed:", err);
-                        // Don't crash the player if screenshot fails, just continue
                     }
                 }
 
-                // 5. SYNC PLAYLIST (With Memory Cleaning)
+                // 5. SYNC PLAYLIST
                 if (playlist && Array.isArray(playlist)) {
                     if (JSON.stringify(playlist) !== JSON.stringify(currentPlaylist)) {
                         console.log("New Playlist Received");
-                        
                         localStorage.setItem('cached_playlist', JSON.stringify(playlist));
-
-                        // Clear old memory to prevent crashes
                         imageCache = {}; 
-                        
                         currentPlaylist = playlist;
                         currentIndex = 0;
                         
-                        // Use the SAFE preloader (handles missing types)
                         if (typeof preloadMedia === "function") {
                              preloadMedia(currentPlaylist);
                         } else if (typeof preloadImages === "function") {
