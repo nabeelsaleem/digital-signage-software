@@ -108,12 +108,18 @@ export default async function handler(req, res) {
 
             
             if (schedules && schedules.length > 0) {
-                const match = schedules.find(s => {
+                // 1. Filter for currently active schedules
+                const activeSchedules = schedules.filter(s => {
                     const start = s.start_time.slice(0, 5);
                     const end = s.end_time.slice(0, 5);
                     return timeStr >= start && timeStr <= end;
                 });
-                if (match) activeId = match.playlist_id;
+
+                // 2. Sort by Priority: Device Specific > Group Schedule
+                if (activeSchedules.length > 0) {
+                    activeSchedules.sort((a, b) => (b.device_id ? 1 : 0) - (a.device_id ? 1 : 0));
+                    activeId = activeSchedules[0].playlist_id;
+                }
             }
 
             // 4. Fetch Media Items
