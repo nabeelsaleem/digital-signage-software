@@ -235,7 +235,20 @@
 
             <!-- Devices View -->
             <div id="view-devices" class="hidden max-w-6xl mx-auto fade-enter">
-                <div id="device-list" class="space-y-4"></div>
+                <!-- Tabs -->
+                <div class="flex items-center gap-6 mb-6 border-b border-slate-200">
+                    <button onclick="switchDeviceTab('list')" id="tab-devices-list" class="pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all">All Screens</button>
+                    <button onclick="switchDeviceTab('groups')" id="tab-devices-groups" class="pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all">Device Groups</button>
+                </div>
+
+                <div id="device-list-view">
+                    <div id="device-list" class="space-y-4"></div>
+                </div>
+
+                <div id="device-groups-view" class="hidden">
+                    <div class="flex justify-end mb-6"><button onclick="openCreateGroupModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-brand-500/20 flex items-center gap-2"><i class="fa-solid fa-plus"></i> Create Group</button></div>
+                    <div id="groups-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
             </div>
         </div>
     </main>
@@ -317,6 +330,48 @@
         </div>
     </div>
 
+    <!-- Group Modals -->
+    <!-- Create Group -->
+    <div id="modal-create-group" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
+            <h3 class="font-bold text-lg text-slate-800 mb-4">Create Device Group</h3>
+            <input type="text" id="new-group-name" placeholder="e.g. Lobby Screens" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none mb-6">
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('modal-create-group')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm">Cancel</button>
+                <button onclick="createGroup()" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Group Devices -->
+    <div id="modal-group-manage" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-lg text-slate-800">Manage Group Devices</h3>
+                <button onclick="closeModal('modal-group-manage')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <input type="hidden" id="manage-group-id">
+            <div id="group-device-list" class="p-5 overflow-y-auto custom-scrollbar space-y-2 flex-1"></div>
+            <div class="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button onclick="saveGroupDevices()" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Group Playlist -->
+    <div id="modal-group-playlist" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
+            <h3 class="font-bold text-lg text-slate-800 mb-2">Assign Playlist to Group</h3>
+            <p class="text-xs text-slate-500 mb-4">This will update all screens in this group.</p>
+            <input type="hidden" id="assign-group-id">
+            <select id="group-playlist-select" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-brand-500"></select>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('modal-group-playlist')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm">Cancel</button>
+                <button onclick="confirmGroupPlaylist()" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20">Assign</button>
+            </div>
+        </div>
+    </div>
+
 <!-- Custom Input Modal for Renaming -->
 <div id="custom-input-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
     <div class="modal-glass p-6">
@@ -340,7 +395,7 @@
         // Global variables accessible to all functions
         let sb = null;
 // Replace the 'let state = ...' line with:
-let state = { user: null, media: [], playlists: [], devices: [], schedules: [], draft: [] };
+let state = { user: null, media: [], playlists: [], devices: [], groups: [], schedules: [], draft: [] };
 let currentTab = localStorage.getItem('lastActiveTab') || 'media'; // Track tab for search & persistence
 let tempCallback = null; // Store callback for custom modal
         // 1. Initialize App (Fetch Keys -> Start Supabase -> Listen for Auth)
@@ -819,14 +874,22 @@ async function renamePlaylist(id, old) {
 
         // --- DEVICES ---
         async function loadDevices() {
-    if(!sb) return;
-    const { data } = await sb.from('devices').select('*').eq('user_id', state.user.id).order('id', {ascending: false});
-    state.devices = data || [];
-    if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*').eq('user_id', state.user.id); state.playlists = pl || []; }
-    
-    // Use the helper function to render
-    renderDeviceCards(state.devices);
-}
+            if(!sb) return;
+            
+            // Fetch Devices and Groups in parallel
+            const [devRes, groupRes] = await Promise.all([
+                sb.from('devices').select('*').eq('user_id', state.user.id).order('id', {ascending: false}),
+                sb.from('groups').select('*').eq('user_id', state.user.id).order('name')
+            ]);
+
+            state.devices = devRes.data || [];
+            state.groups = groupRes.data || [];
+
+            if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*').eq('user_id', state.user.id); state.playlists = pl || []; }
+            
+            renderDeviceCards(state.devices);
+            renderGroups();
+        }
 
             
 
@@ -891,7 +954,11 @@ function handleGlobalSearch(query) {
 // Helper to render devices (used by loadDevices and Search)
 function renderDeviceCards(devicesData) {
     const list = document.getElementById('device-list');
-    list.innerHTML = devicesData.map(d => `
+    list.innerHTML = devicesData.map(d => {
+        const group = state.groups.find(g => g.id === d.group_id);
+        const groupBadge = group ? `<span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 uppercase tracking-wide"><i class="fa-solid fa-users-rectangle mr-1"></i>${escapeHtml(group.name)}</span>` : '';
+        
+        return `
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 fade-enter">
             <div class="flex items-center gap-5 w-full lg:w-auto">
                 <div class="relative group">
@@ -906,6 +973,7 @@ function renderDeviceCards(devicesData) {
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <h4 class="font-bold text-lg text-slate-800">${d.name}</h4>
+                        ${groupBadge}
                         <button onclick="renameDevice(${d.id}, '${d.name}')" class="text-slate-300 hover:text-brand-600 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
                     </div>
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${d.status==='online'?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-600'}">
@@ -933,7 +1001,8 @@ function renderDeviceCards(devicesData) {
                     </div>
                 </div>
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
 async function requestRefresh(deviceId) {
@@ -973,6 +1042,117 @@ async function renameDevice(id, old) {
     });
 }
         async function deleteDevice(id) { if(confirm("Unlink this screen? It will stop showing content.")) await sb.from('devices').delete().eq('id', id); loadDevices(); }
+
+        // --- GROUPS LOGIC ---
+        function switchDeviceTab(tab) {
+            const listBtn = document.getElementById('tab-devices-list');
+            const groupBtn = document.getElementById('tab-devices-groups');
+            const listView = document.getElementById('device-list-view');
+            const groupView = document.getElementById('device-groups-view');
+
+            if(tab === 'list') {
+                listBtn.classList.add('text-brand-600', 'border-brand-600');
+                listBtn.classList.remove('text-slate-500', 'border-transparent');
+                groupBtn.classList.remove('text-brand-600', 'border-brand-600');
+                groupBtn.classList.add('text-slate-500', 'border-transparent');
+                listView.classList.remove('hidden');
+                groupView.classList.add('hidden');
+            } else {
+                groupBtn.classList.add('text-brand-600', 'border-brand-600');
+                groupBtn.classList.remove('text-slate-500', 'border-transparent');
+                listBtn.classList.remove('text-brand-600', 'border-brand-600');
+                listBtn.classList.add('text-slate-500', 'border-transparent');
+                listView.classList.add('hidden');
+                groupView.classList.remove('hidden');
+                renderGroups();
+            }
+        }
+
+        function renderGroups() {
+            const grid = document.getElementById('groups-grid');
+            if(state.groups.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl"><p>No groups created yet.</p></div>`;
+                return;
+            }
+            grid.innerHTML = state.groups.map(g => {
+                const count = state.devices.filter(d => d.group_id === g.id).length;
+                return `
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col fade-enter">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="font-bold text-lg text-slate-800">${escapeHtml(g.name)}</h3>
+                            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md mt-1 inline-block"><i class="fa-solid fa-desktop mr-1"></i> ${count} Screens</span>
+                        </div>
+                        <button onclick="deleteGroup(${g.id})" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <div class="mt-auto grid grid-cols-2 gap-3">
+                        <button onclick="openGroupManage(${g.id})" class="px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors">Manage Devices</button>
+                        <button onclick="openGroupPlaylist(${g.id})" class="px-3 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition-colors">Assign Playlist</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function openCreateGroupModal() { document.getElementById('modal-create-group').classList.remove('hidden'); document.getElementById('new-group-name').value = ''; document.getElementById('new-group-name').focus(); }
+        
+        async function createGroup() {
+            const name = document.getElementById('new-group-name').value;
+            if(!name) return;
+            const { error } = await sb.from('groups').insert({ user_id: state.user.id, name });
+            if(error) showToast(error.message, 'error');
+            else { showToast('Group created', 'success'); closeModal('modal-create-group'); loadDevices(); }
+        }
+
+        async function deleteGroup(id) {
+            if(!confirm('Delete this group? Devices will be ungrouped.')) return;
+            // Supabase set null on delete usually requires cascade or manual update, assuming manual here for safety
+            await sb.from('devices').update({ group_id: null }).eq('group_id', id);
+            await sb.from('groups').delete().eq('id', id);
+            loadDevices();
+        }
+
+        function openGroupManage(gid) {
+            document.getElementById('modal-group-manage').classList.remove('hidden');
+            document.getElementById('manage-group-id').value = gid;
+            const list = document.getElementById('group-device-list');
+            list.innerHTML = state.devices.map(d => `
+                <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                    <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" value="${d.id}" ${d.group_id === gid ? 'checked' : ''}>
+                    <span class="font-medium text-slate-700 flex-1">${d.name} <span class="text-slate-400 text-xs font-normal">(${d.code})</span></span>
+                    ${d.group_id && d.group_id !== gid ? '<span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">In other group</span>' : ''}
+                </label>
+            `).join('');
+        }
+
+        async function saveGroupDevices() {
+            const gid = parseInt(document.getElementById('manage-group-id').value);
+            const selected = Array.from(document.querySelectorAll('#group-device-list input:checked')).map(cb => parseInt(cb.value));
+            
+            // 1. Remove all devices from this group
+            await sb.from('devices').update({ group_id: null }).eq('group_id', gid);
+            // 2. Add selected devices to this group
+            if(selected.length > 0) await sb.from('devices').update({ group_id: gid }).in('id', selected);
+            
+            showToast('Group devices updated', 'success');
+            closeModal('modal-group-manage');
+            loadDevices();
+        }
+
+        function openGroupPlaylist(gid) {
+            document.getElementById('modal-group-playlist').classList.remove('hidden');
+            document.getElementById('assign-group-id').value = gid;
+            document.getElementById('group-playlist-select').innerHTML = `<option value="">Select Playlist...</option>` + state.playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        }
+
+        async function confirmGroupPlaylist() {
+            const gid = document.getElementById('assign-group-id').value;
+            const pid = document.getElementById('group-playlist-select').value;
+            if(!pid) return;
+            
+            const { error } = await sb.from('devices').update({ playlist_id: pid }).eq('group_id', gid);
+            if(error) showToast(error.message, 'error');
+            else { showToast('Playlist assigned to group', 'success'); closeModal('modal-group-playlist'); loadDevices(); }
+        }
 
         // --- UTILS ---
         // SECURITY: Prevent XSS attacks
