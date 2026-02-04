@@ -71,8 +71,12 @@ export default async function handler(req, res) {
                 .eq('id', deviceId)
                 .single();
 
-            if (devErr || !device) {
+            if (devErr) {
                 console.error("Device fetch error:", devErr);
+                return res.status(500).json({ error: 'Database error' });
+            }
+
+            if (!device) {
                 return res.status(404).json({ error: 'Device not found' });
             }
 
