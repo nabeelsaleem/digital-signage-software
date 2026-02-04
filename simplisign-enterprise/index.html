@@ -818,6 +818,105 @@ async function renamePlaylist(id, old) {
         // --- SCHEDULES ---
         // --- ADVANCED SCHEDULING WITH FULLCALENDAR ---
 
+        let currentScheduleView = 'calendar';
+
+        function switchScheduleView(view) {
+            currentScheduleView = view;
+            const calTab = document.getElementById('tab-sch-calendar');
+            const listTab = document.getElementById('tab-sch-list');
+            const calView = document.getElementById('sch-view-calendar');
+            const listView = document.getElementById('sch-view-list');
+
+            if (view === 'calendar') {
+                calTab.className = "pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all";
+                listTab.className = "pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all";
+                calView.classList.remove('hidden');
+                listView.classList.add('hidden');
+                if(calendar) setTimeout(() => calendar.render(), 100);
+            } else {
+                listTab.className = "pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all";
+                calTab.className = "pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all";
+                listView.classList.remove('hidden');
+                calView.classList.add('hidden');
+                renderScheduleList();
+            }
+        }
+
+        function renderScheduleList() {
+            const grid = document.getElementById('schedule-card-grid');
+            if (state.schedules.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 flex flex-col items-center"><i class="fa-regular fa-calendar-xmark text-4xl mb-3 opacity-50"></i><p>No active schedules.</p></div>`;
+                return;
+            }
+
+            grid.innerHTML = state.schedules.map(s => {
+                const pl = state.playlists.find(p => p.id === s.playlist_id);
+                const plName = pl ? pl.name : 'Unknown Playlist';
+                
+                let targetName = 'Unknown Target';
+                let targetIcon = 'fa-question';
+                let targetClass = 'bg-slate-100 text-slate-600';
+
+                if (s.group_id) {
+                    const g = state.groups.find(x => x.id === s.group_id);
+                    targetName = g ? g.name : 'Unknown Group';
+                    targetIcon = 'fa-users-rectangle';
+                    targetClass = 'bg-indigo-50 text-indigo-600 border-indigo-100';
+                } else if (s.device_id) {
+                    const d = state.devices.find(x => x.id === s.device_id);
+                    targetName = d ? d.name : 'Unknown Screen';
+                    targetIcon = 'fa-desktop';
+                    targetClass = 'bg-slate-100 text-slate-600 border-slate-200';
+                }
+
+                const days = ['S','M','T','W','T','F','S'];
+                const dayBadges = days.map((d, i) => {
+                    const active = s.days_of_week && s.days_of_week.includes(i);
+                    return `<span class="w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold ${active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-300'}">${d}</span>`;
+                }).join('');
+
+                return `
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all p-5 flex flex-col relative group fade-enter">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="font-bold text-slate-800 truncate pr-2" title="${escapeHtml(plName)}">${escapeHtml(plName)}</h4>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Priority ${s.priority}</span>
+                        </div>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editSchedule(${s.id})" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteSchedule(${s.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="px-2 py-1 rounded text-xs font-bold border flex items-center gap-1.5 ${targetClass}">
+                            <i class="fa-solid ${targetIcon}"></i> ${escapeHtml(targetName)}
+                        </span>
+                    </div>
+
+                    <div class="space-y-2 mb-4">
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                            <i class="fa-regular fa-clock w-4 text-center text-slate-400"></i>
+                            <span class="font-mono font-medium">${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                            <i class="fa-regular fa-calendar w-4 text-center text-slate-400"></i>
+                            <span>${s.start_date} <i class="fa-solid fa-arrow-right mx-1 text-[10px] text-slate-300"></i> ${s.end_date || 'Forever'}</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-auto pt-3 border-t border-slate-50 flex gap-1">
+                        ${dayBadges}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function editSchedule(id) {
+            const s = state.schedules.find(x => x.id === id);
+            if(s) openScheduleModal(s);
+        }
+
         async function loadSchedules() {
             if(!sb) return;
             
@@ -874,6 +973,9 @@ async function renamePlaylist(id, old) {
 
             calendar.removeAllEvents();
             calendar.addEventSource(events);
+            
+            // 4. Update List View if active
+            if (currentScheduleView === 'list') renderScheduleList();
         }
 
         // --- CALENDAR INTERACTION HANDLERS ---
@@ -939,6 +1041,7 @@ async function renamePlaylist(id, old) {
                 document.getElementById('sch-end-date').value = data.end_date || '';
                 document.getElementById('sch-priority').value = data.priority || 1;
                 document.getElementById('btn-delete-sch').classList.remove('hidden');
+                document.getElementById('btn-duplicate-sch').classList.remove('hidden');
 
                 // Target
                 const type = data.group_id ? 'group' : 'device';
@@ -953,6 +1056,7 @@ async function renamePlaylist(id, old) {
                 // Create Mode
                 document.getElementById('sch-id').value = '';
                 document.getElementById('btn-delete-sch').classList.add('hidden');
+                document.getElementById('btn-duplicate-sch').classList.add('hidden');
                 toggleTargetSelect();
             }
         }
@@ -968,6 +1072,54 @@ async function renamePlaylist(id, old) {
         }
 
         // --- SAVE LOGIC (HANDLES OVERNIGHT SPLIT) ---
+
+        function checkScheduleConflicts(payloads, currentId) {
+            for (const newSch of payloads) {
+                // 1. Identify Target Devices for the new schedule
+                let targetDevs = [];
+                if (newSch.device_id) {
+                    targetDevs.push(parseInt(newSch.device_id));
+                } else if (newSch.group_id) {
+                    // Find all devices in this group
+                    targetDevs = state.devices.filter(d => d.group_id === parseInt(newSch.group_id)).map(d => d.id);
+                }
+
+                for (const ex of state.schedules) {
+                    if (currentId && ex.id == currentId) continue; // Skip self
+
+                    // 2. Check Target Overlap
+                    let hasTargetOverlap = false;
+                    
+                    if (ex.device_id) {
+                        // Existing is specific device
+                        if (targetDevs.includes(ex.device_id)) hasTargetOverlap = true;
+                    } else if (ex.group_id) {
+                        // Existing is group
+                        const exGroupDevs = state.devices.filter(d => d.group_id === ex.group_id).map(d => d.id);
+                        if (targetDevs.some(d => exGroupDevs.includes(d))) hasTargetOverlap = true;
+                        if (newSch.group_id && newSch.group_id == ex.group_id) hasTargetOverlap = true;
+                    }
+
+                    if (!hasTargetOverlap) continue;
+
+                    // 3. Check Date Overlap
+                    const nStart = newSch.start_date;
+                    const nEnd = newSch.end_date || '9999-12-31';
+                    const eStart = ex.start_date;
+                    const eEnd = ex.end_date || '9999-12-31';
+
+                    if (nStart > eEnd || eStart > nEnd) continue;
+
+                    // 4. Check Day/Time Overlap
+                    const commonDays = newSch.days_of_week.filter(d => ex.days_of_week.includes(d));
+                    if (commonDays.length > 0 && newSch.start_time < ex.end_time && ex.start_time < newSch.end_time) {
+                        const pl = state.playlists.find(p => p.id === ex.playlist_id);
+                        return `Conflict detected with schedule for "${pl ? pl.name : 'Unknown'}"\n(${ex.start_time.slice(0,5)} - ${ex.end_time.slice(0,5)})\n\nSave anyway?`;
+                    }
+                }
+            }
+            return null;
+        }
 
         async function saveSchedule() {
             const id = document.getElementById('sch-id').value;
@@ -1031,6 +1183,10 @@ async function renamePlaylist(id, old) {
                 });
             }
 
+            // Conflict Check
+            const conflictMsg = checkScheduleConflicts(payloads, id);
+            if (conflictMsg && !confirm(conflictMsg)) return;
+
             // DB Operations
             if (id) {
                 // Update: Delete old, Insert new (simplest way to handle split changes)
@@ -1045,6 +1201,14 @@ async function renamePlaylist(id, old) {
                 closeModal('modal-schedule');
                 loadSchedules();
             }
+        }
+
+        function duplicateScheduleFromModal() {
+            document.getElementById('sch-id').value = '';
+            document.querySelector('#modal-schedule h3').innerText = 'New Schedule (Copy)';
+            document.getElementById('btn-delete-sch').classList.add('hidden');
+            document.getElementById('btn-duplicate-sch').classList.add('hidden');
+            showToast('Duplicated. Adjust details and click Save.', 'success');
         }
 
         async function deleteScheduleFromModal() {
