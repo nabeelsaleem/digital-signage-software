@@ -9,6 +9,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- FullCalendar -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Inter Font -->
@@ -229,8 +231,8 @@
             </div>
 
             <!-- Schedules View -->
-            <div id="view-schedules" class="hidden max-w-4xl mx-auto fade-enter">
-                <div id="schedule-list" class="space-y-4"></div>
+            <div id="view-schedules" class="hidden h-full flex flex-col p-4 fade-enter">
+                <div id="calendar" class="flex-1 bg-white rounded-2xl shadow-sm p-4 border border-slate-200"></div>
             </div>
 
             <!-- Devices View -->
@@ -297,49 +299,75 @@
     </div>
 
     <!-- Schedule Modal -->
-    <div id="modal-schedule" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+    <div id="modal-schedule" class="fixed inset-0 z-[60] bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
             <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-                <h3 class="font-bold text-lg text-slate-800">Manage Schedule</h3>
+                <h3 class="font-bold text-lg text-slate-800">Edit Schedule Slot</h3>
                 <button onclick="closeModal('modal-schedule')" class="text-slate-400 hover:text-slate-600 transition-colors"><i class="fa-solid fa-times"></i></button>
             </div>
             
             <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar">
-                <!-- Tabs for target type -->
-                <div class="flex items-center gap-4 border-b border-slate-200 -mt-2">
-                    <button onclick="switchScheduleTab('device')" id="tab-sch-device" class="pb-2 text-sm font-bold text-brand-600 border-b-2 border-brand-600">By Screen</button>
-                    <button onclick="switchScheduleTab('group')" id="tab-sch-group" class="pb-2 text-sm font-bold text-slate-500 border-b-2 border-transparent hover:text-slate-700">By Group</button>
-                </div>
-
-                <div id="sch-target-device">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Target Screen</label>
-                    <div class="relative">
-                        <select id="sch-device" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl appearance-none font-bold text-slate-700 focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer" onchange="loadDeviceSchedules(this.value)">
-                            <!-- Options injected by JS -->
-                        </select>
-                        <div class="absolute right-4 top-3.5 text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></div>
-                    </div>
-                </div>
-
-                <div id="sch-target-group" class="hidden">
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Target Group</label>
-                    <div class="relative">
-                        <select id="sch-group-select" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl appearance-none font-bold text-slate-700 focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer" onchange="loadGroupSchedules(this.value)">
-                            <!-- Options injected by JS -->
-                        </select>
-                        <div class="absolute right-4 top-3.5 text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></div>
-                    </div>
-                </div>
-
+                <input type="hidden" id="sch-id">
+                
+                <!-- Target Selection -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Active Playlists</label>
-                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-slate-50 p-2 max-h-[40vh] overflow-y-auto custom-scrollbar" id="sch-playlist-container">
-                        <!-- Playlist items injected by JS -->
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Target</label>
+                    <div class="flex gap-2 mb-2">
+                        <select id="sch-target-type" onchange="toggleTargetSelect()" class="p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none">
+                            <option value="device">Screen</option>
+                            <option value="group">Group</option>
+                        </select>
+                        <select id="sch-target-id" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none"></select>
                     </div>
+                </div>
+
+                <!-- Playlist Selection -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Playlist</label>
+                    <select id="sch-playlist" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none"></select>
+                </div>
+
+                <!-- Time Range -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Start Time</label>
+                        <input type="time" id="sch-start-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">End Time</label>
+                        <input type="time" id="sch-end-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                    </div>
+                </div>
+
+                <!-- Date Range -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Valid From</label>
+                        <input type="date" id="sch-start-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Valid Until</label>
+                        <input type="date" id="sch-end-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                    </div>
+                </div>
+
+                <!-- Days of Week -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Repeats On</label>
+                    <div class="flex justify-between gap-1" id="sch-days-container">
+                        <!-- Checkboxes injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Priority -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Priority (Higher Wins)</label>
+                    <input type="number" id="sch-priority" value="1" min="1" max="100" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
                 </div>
             </div>
 
             <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+                <button onclick="deleteScheduleFromModal()" id="btn-delete-sch" class="mr-auto text-red-500 hover:text-red-700 font-medium text-sm px-2">Delete</button>
                 <button onclick="closeModal('modal-schedule')" class="px-5 py-2.5 text-slate-600 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl font-medium text-sm transition-all">Close</button>
                 <button onclick="saveSchedule()" class="px-6 py-2.5 bg-brand-600 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20 hover:bg-brand-700 transition-all">Save Schedule</button>
             </div>
@@ -414,6 +442,7 @@
 let state = { user: null, media: [], playlists: [], devices: [], groups: [], schedules: [], draft: [] };
 let currentTab = localStorage.getItem('lastActiveTab') || 'media'; // Track tab for search & persistence
 let tempCallback = null; // Store callback for custom modal
+let calendar = null; // FullCalendar Instance
         // 1. Initialize App (Fetch Keys -> Start Supabase -> Listen for Auth)
 
 // 1. IMPROVED INIT APP
@@ -520,7 +549,7 @@ function nav(view) {
     } else if (view === 'schedules') {
         title.innerText = 'Schedules';
         btn.innerHTML = `<button onclick="openScheduleModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-regular fa-calendar-plus"></i> Add Schedule</button>`;
-        loadSchedules();
+        setTimeout(loadSchedules, 100); // Delay slightly to allow div to unhide
     } else {
         title.innerText = 'Screens';
         btn.innerHTML = `<button onclick="addDevice()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-plus"></i> New Screen</button>`;
@@ -752,219 +781,245 @@ async function renamePlaylist(id, old) {
         }
 
         // --- SCHEDULES ---
+        // --- ADVANCED SCHEDULING WITH FULLCALENDAR ---
+
         async function loadSchedules() {
             if(!sb) return;
-            const { data, error } = await sb.from('schedules').select('*').eq('user_id', state.user.id).order('device_id');
+            
+            // 1. Fetch Data
+            const { data, error } = await sb.from('schedules').select('*').eq('user_id', state.user.id);
             if(error) return showToast(error.message, 'error');
             state.schedules = data || [];
             
+            // Ensure dependencies are loaded
             if(!state.devices.length) await loadDevices();
             if(!state.playlists.length) await loadPlaylists();
-            
-            const list = document.getElementById('schedule-list');
-            
-            if(state.schedules.length === 0) {
-                list.innerHTML = `<div class="bg-white p-10 rounded-2xl border border-dashed border-slate-300 text-center"><i class="fa-regular fa-calendar-xmark text-3xl text-slate-300 mb-3"></i><p class="text-slate-500">No active schedules found.</p></div>`;
-                return;
+
+            // 2. Initialize Calendar if not exists
+            if (!calendar) {
+                const calendarEl = document.getElementById('calendar');
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'timeGridWeek',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'timeGridWeek,dayGridMonth'
+                    },
+                    height: '100%',
+                    selectable: true,
+                    editable: true,
+                    events: [],
+                    select: handleDateSelect,
+                    eventClick: handleEventClick,
+                    eventDrop: handleEventDropResize,
+                    eventResize: handleEventDropResize
+                });
+                calendar.render();
             }
 
-            list.innerHTML = state.schedules.map(s => {
+            // 3. Map Supabase Rows to FullCalendar Events
+            const events = state.schedules.map(s => {
                 const pl = state.playlists.find(p => p.id === s.playlist_id);
-                const start = s.start_time.slice(0, 5);
-                const end = s.end_time.slice(0, 5);
+                const title = pl ? pl.name : 'Unknown Playlist';
+                const color = s.group_id ? '#4f46e5' : '#0891b2'; // Indigo for Group, Cyan for Device
+                
+                return {
+                    id: s.id,
+                    title: title,
+                    startTime: s.start_time,
+                    endTime: s.end_time,
+                    daysOfWeek: s.days_of_week, // [0, 1, 2...]
+                    startRecur: s.start_date,
+                    endRecur: s.end_date ? new Date(new Date(s.end_date).getTime() + 86400000).toISOString().split('T')[0] : null, // FullCalendar endRecur is exclusive
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: { ...s }
+                };
+            });
 
-                let targetName, targetIcon, editButton;
-                if (s.group_id) {
-                    const group = state.groups.find(g => g.id === s.group_id);
-                    targetName = group ? escapeHtml(group.name) : 'Unknown Group';
-                    targetIcon = '<i class="fa-solid fa-users-rectangle"></i>';
-                    editButton = `<button onclick="openScheduleModal({ type: 'group', id: ${s.group_id} })" class="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors text-sm"><i class="fa-solid fa-pen-to-square"></i></button>`;
-                } else {
-                    const dev = state.devices.find(d => d.id === s.device_id);
-                    targetName = dev ? escapeHtml(dev.name) : 'Unknown Device';
-                    targetIcon = '<i class="fa-solid fa-desktop"></i>';
-                    editButton = `<button onclick="openScheduleModal({ type: 'device', id: ${s.device_id} })" class="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors text-sm"><i class="fa-solid fa-pen-to-square"></i></button>`;
-                }
-
-                return `
-                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div class="flex items-center gap-4 min-w-0">
-                        <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
-                            ${targetIcon}
-                        </div>
-                        <div class="min-w-0">
-                            <div class="flex items-center gap-2 mb-1 truncate">
-                                <span class="font-bold text-slate-800 text-sm">${targetName}</span>
-                                <i class="fa-solid fa-arrow-right text-slate-300 text-[10px] mx-1"></i>
-                                <span class="font-bold text-brand-600 text-sm truncate">${pl ? escapeHtml(pl.name) : 'Unknown Playlist'}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-mono font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100">
-                                    ${start} — ${end}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        ${editButton}
-                        <button onclick="deleteSchedule(${s.id})" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors text-sm"><i class="fa-solid fa-trash-can"></i></button>
-                    </div>
-                </div>`;
-            }).join('');
+            calendar.removeAllEvents();
+            calendar.addEventSource(events);
         }
 
-        function openScheduleModal(target = null) {
+        // --- CALENDAR INTERACTION HANDLERS ---
+
+        function handleDateSelect(selectInfo) {
+            openScheduleModal();
+            
+            // Pre-fill Date/Time from selection
+            const start = new Date(selectInfo.startStr);
+            const end = new Date(selectInfo.endStr);
+            
+            document.getElementById('sch-start-date').value = start.toISOString().split('T')[0];
+            // Default validity: 1 year
+            const nextYear = new Date(); nextYear.setFullYear(nextYear.getFullYear() + 1);
+            document.getElementById('sch-end-date').value = nextYear.toISOString().split('T')[0];
+
+            // Time
+            document.getElementById('sch-start-time').value = start.toTimeString().slice(0,5);
+            document.getElementById('sch-end-time').value = end.toTimeString().slice(0,5);
+
+            // Auto-check the day of week clicked
+            const day = start.getDay();
+            document.getElementById(`day-${day}`).checked = true;
+        }
+
+        function handleEventClick(clickInfo) {
+            const props = clickInfo.event.extendedProps;
+            openScheduleModal(props);
+        }
+
+        // Handle Drag & Drop (Update Time Only)
+        async function handleEventDropResize(info) {
+            const e = info.event;
+            const s = e.extendedProps;
+            
+            // We only update time, not recurrence rules via drag (too complex for auto-save)
+            // Just open modal to confirm
+            handleEventClick(info);
+        }
+
+        // --- MODAL LOGIC ---
+
+        function openScheduleModal(data = null) {
             document.getElementById('modal-schedule').classList.remove('hidden');
+            document.getElementById('sch-playlist').innerHTML = state.playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
             
-            // Populate both dropdowns
-            document.getElementById('sch-device').innerHTML = state.devices.map(d => `<option value="${d.id}">${d.name} <span class="text-slate-400 font-normal">(${d.code})</span></option>`).join('');
-            document.getElementById('sch-group-select').innerHTML = state.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+            // Render Days Checkboxes
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            document.getElementById('sch-days-container').innerHTML = days.map((d, i) => `
+                <label class="flex flex-col items-center gap-1 cursor-pointer">
+                    <input type="checkbox" id="day-${i}" value="${i}" class="w-4 h-4 accent-brand-600">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">${d}</span>
+                </label>
+            `).join('');
 
-            if (target && target.id) {
-                if (target.type === 'group') {
-                    switchScheduleTab('group');
-                    document.getElementById('sch-group-select').value = target.id;
-                    loadGroupSchedules(target.id);
-                } else { // device
-                    switchScheduleTab('device');
-                    document.getElementById('sch-device').value = target.id;
-                    loadDeviceSchedules(target.id);
-                }
+            if (data) {
+                // Edit Mode
+                document.getElementById('sch-id').value = data.id;
+                document.getElementById('sch-playlist').value = data.playlist_id;
+                document.getElementById('sch-start-time').value = data.start_time.slice(0,5);
+                document.getElementById('sch-end-time').value = data.end_time.slice(0,5);
+                document.getElementById('sch-start-date').value = data.start_date;
+                document.getElementById('sch-end-date').value = data.end_date || '';
+                document.getElementById('sch-priority').value = data.priority || 1;
+                document.getElementById('btn-delete-sch').classList.remove('hidden');
+
+                // Target
+                const type = data.group_id ? 'group' : 'device';
+                document.getElementById('sch-target-type').value = type;
+                toggleTargetSelect();
+                document.getElementById('sch-target-id').value = data.group_id || data.device_id;
+
+                // Days
+                if(data.days_of_week) data.days_of_week.forEach(d => document.getElementById(`day-${d}`).checked = true);
+
             } else {
-                // Default view
-                switchScheduleTab('device');
-                const currentDevId = document.getElementById('sch-device').value;
-                if(currentDevId) loadDeviceSchedules(currentDevId);
+                // Create Mode
+                document.getElementById('sch-id').value = '';
+                document.getElementById('btn-delete-sch').classList.add('hidden');
+                toggleTargetSelect();
             }
         }
 
-        function loadDeviceSchedules(deviceId) {
-            deviceId = parseInt(deviceId);
-            const existing = state.schedules.filter(s => s.device_id === deviceId);
-            const container = document.getElementById('sch-playlist-container');
-            renderSchedulePlaylistItems(existing, container);
-        }
-
-        function loadGroupSchedules(groupId) {
-            groupId = parseInt(groupId);
-            const existing = state.schedules.filter(s => s.group_id === groupId);
-            const container = document.getElementById('sch-playlist-container');
-            renderSchedulePlaylistItems(existing, container);
-        }
-
-        // Helper to render playlist items for schedule modal
-        function renderSchedulePlaylistItems(existingSchedules, container) {
-            if (!container) return;
-            container.innerHTML = state.playlists.map(p => {
-                const match = existingSchedules.find(s => s.playlist_id === p.id);
-                const isChecked = !!match;
-                const start = match ? match.start_time : '';
-                const end = match ? match.end_time : '';
-
-                return `
-                <div class="bg-white border border-slate-200 rounded-lg p-4 transition-all mb-2 last:mb-0 ${isChecked ? 'border-brand-200 ring-1 ring-brand-100 bg-brand-50/30' : 'hover:bg-white'}">
-                    <div class="flex items-center gap-3 mb-0">
-                        <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer" value="${p.id}" id="chk-${p.id}" onchange="toggleTimeInputs(${p.id})" ${isChecked ? 'checked' : ''}>
-                        <label for="chk-${p.id}" class="flex-1 font-medium text-slate-700 cursor-pointer select-none text-sm">
-                            ${p.name}
-                            <span class="text-slate-400 font-normal ml-2 text-xs">(${p.items ? p.items.length : 0} items)</span>
-                        </label>
-                    </div>
-                    <div id="times-${p.id}" class="${isChecked ? 'flex grid grid-cols-2 gap-4 mt-4 pl-8 fade-enter' : 'hidden'} items-center">
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Start Time</label>
-                            <input type="time" id="start-${p.id}" value="${start}" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-brand-500 outline-none">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">End Time</label>
-                            <input type="time" id="end-${p.id}" value="${end}" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-brand-500 outline-none">
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
-        }
-
-        function switchScheduleTab(tab) {
-            const deviceTab = document.getElementById('tab-sch-device');
-            const groupTab = document.getElementById('tab-sch-group');
-            const deviceView = document.getElementById('sch-target-device');
-            const groupView = document.getElementById('sch-target-group');
-            
-            if (tab === 'device') {
-                deviceTab.classList.add('text-brand-600', 'border-brand-600');
-                deviceTab.classList.remove('text-slate-500', 'border-transparent');
-                groupTab.classList.remove('text-brand-600', 'border-brand-600');
-                groupTab.classList.add('text-slate-500', 'border-transparent');
-                deviceView.classList.remove('hidden');
-                groupView.classList.add('hidden');
-                loadDeviceSchedules(document.getElementById('sch-device').value);
-            } else { // 'group'
-                groupTab.classList.add('text-brand-600', 'border-brand-600');
-                groupTab.classList.remove('text-slate-500', 'border-transparent');
-                deviceTab.classList.remove('text-brand-600', 'border-brand-600');
-                deviceTab.classList.add('text-slate-500', 'border-transparent');
-                deviceView.classList.add('hidden');
-                groupView.classList.remove('hidden');
-                loadGroupSchedules(document.getElementById('sch-group-select').value);
+        function toggleTargetSelect() {
+            const type = document.getElementById('sch-target-type').value;
+            const select = document.getElementById('sch-target-id');
+            if (type === 'device') {
+                select.innerHTML = state.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            } else {
+                select.innerHTML = state.groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
             }
         }
 
-        function toggleTimeInputs(id) {
-            const wrapper = document.getElementById(`times-${id}`);
-            const checkbox = document.getElementById(`chk-${id}`);
-            if(checkbox.checked) { 
-                wrapper.classList.remove('hidden'); 
-                wrapper.classList.add('grid', 'fade-enter');
-            }
-            else { 
-                wrapper.classList.add('hidden'); 
-                wrapper.classList.remove('grid', 'fade-enter'); 
-            }
-        }
+        // --- SAVE LOGIC (HANDLES OVERNIGHT SPLIT) ---
 
         async function saveSchedule() {
-            const isGroupTab = !document.getElementById('sch-target-group').classList.contains('hidden');
-            const checkboxes = document.querySelectorAll('#sch-playlist-container input[type="checkbox"]:checked');
-            const newSchedules = [];
+            const id = document.getElementById('sch-id').value;
+            const playlist_id = document.getElementById('sch-playlist').value;
+            const targetType = document.getElementById('sch-target-type').value;
+            const targetId = document.getElementById('sch-target-id').value;
+            const startTime = document.getElementById('sch-start-time').value;
+            const endTime = document.getElementById('sch-end-time').value;
+            const startDate = document.getElementById('sch-start-date').value;
+            const endDate = document.getElementById('sch-end-date').value || null;
+            const priority = document.getElementById('sch-priority').value;
+            
+            // Get Selected Days
+            const days = [];
+            for(let i=0; i<7; i++) {
+                if(document.getElementById(`day-${i}`).checked) days.push(i);
+            }
 
-            let targetId, idColumn, deleteFilter;
+            if (!days.length) return showToast('Select at least one day', 'error');
+            if (!startTime || !endTime || !startDate) return showToast('Missing required fields', 'error');
 
-            if (isGroupTab) {
-                targetId = parseInt(document.getElementById('sch-group-select').value);
-                idColumn = 'group_id';
-                deleteFilter = { group_id: targetId };
+            // Base Object
+            const base = {
+                user_id: state.user.id,
+                playlist_id,
+                start_date: startDate,
+                end_date: endDate,
+                priority,
+                device_id: targetType === 'device' ? targetId : null,
+                group_id: targetType === 'group' ? targetId : null
+            };
+
+            const payloads = [];
+
+            // OVERNIGHT LOGIC CHECK
+            if (endTime < startTime) {
+                // Split into two
+                // Part 1: StartTime -> 23:59:59 on selected days
+                payloads.push({
+                    ...base,
+                    start_time: startTime,
+                    end_time: '23:59:59',
+                    days_of_week: days
+                });
+
+                // Part 2: 00:00:00 -> EndTime on (selected days + 1)
+                const nextDays = days.map(d => (d + 1) % 7);
+                payloads.push({
+                    ...base,
+                    start_time: '00:00:00',
+                    end_time: endTime,
+                    days_of_week: nextDays
+                });
             } else {
-                targetId = parseInt(document.getElementById('sch-device').value);
-                idColumn = 'device_id';
-                deleteFilter = { device_id: targetId };
+                // Normal
+                payloads.push({
+                    ...base,
+                    start_time: startTime,
+                    end_time: endTime,
+                    days_of_week: days
+                });
             }
 
-            if (!targetId) return showToast('Please select a target screen or group.', 'error');
-
-            for (let cb of checkboxes) {
-                const pid = cb.value;
-                const start = document.getElementById(`start-${pid}`).value;
-                const end = document.getElementById(`end-${pid}`).value;
-                if (!start || !end) return showToast(`Please define start and end times for all selected playlists.`, 'error');
-                
-                let schedule = { user_id: state.user.id, playlist_id: parseInt(pid), start_time: start, end_time: end, device_id: null, group_id: null };
-                schedule[idColumn] = targetId;
-                newSchedules.push(schedule);
+            // DB Operations
+            if (id) {
+                // Update: Delete old, Insert new (simplest way to handle split changes)
+                await sb.from('schedules').delete().eq('id', id);
             }
 
-            await sb.from('schedules').delete().match(deleteFilter);
-            if (newSchedules.length > 0) {
-                const { error } = await sb.from('schedules').insert(newSchedules);
-                if (error) return showToast(error.message, 'error');
+            const { error } = await sb.from('schedules').insert(payloads);
+            
+            if (error) showToast(error.message, 'error');
+            else {
+                showToast('Schedule saved', 'success');
+                closeModal('modal-schedule');
+                loadSchedules();
             }
+        }
 
-            showToast('Schedule updated successfully', 'success');
+        async function deleteScheduleFromModal() {
+            const id = document.getElementById('sch-id').value;
+            if(id) await deleteSchedule(id);
             closeModal('modal-schedule');
-            loadSchedules();
         }
 
         async function deleteSchedule(id) {
-            if(!confirm("Are you sure you want to remove this schedule?")) return;
+            if(!confirm("Remove this schedule slot?")) return;
             const { error } = await sb.from('schedules').delete().eq('id', id);
             if(error) showToast(error.message, 'error'); else { showToast('Schedule removed', 'success'); loadSchedules(); }
         }

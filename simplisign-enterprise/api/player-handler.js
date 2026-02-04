@@ -100,7 +100,14 @@ export default async function handler(req, res) {
             // 3. Determine Active Playlist
             let activeId = device.playlist_id;
             const now = new Date();
-            const timeStr = now.toTimeString().slice(0, 5); // "14:30"
+            const timeStr = now.toTimeString().slice(0, 5); // "14:30" (Server Local Time)
+            
+            // Construct local YYYY-MM-DD to match timeStr's timezone
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            const dayOfWeek = now.getDay(); // 0=Sun, 6=Sat
             
             // NEW LOGIC: Fetch schedules for this Device OR its Group
             let query = supabase.from('schedules').select('*');
@@ -119,14 +126,44 @@ export default async function handler(req, res) {
             if (schedules && schedules.length > 0) {
                 // 1. Filter for currently active schedules
                 const activeSchedules = schedules.filter(s => {
+                    // Date Range Check
+                    if (s.start_date && dateStr < s.start_date) return false;
+                    if (s.end_date && dateStr > s.end_date) return false;
+
+                    // Day of Week Check
+                    if (s.days_of_week && Array.isArray(s.days_of_week)) {
+                        if (!s.days_of_week.includes(dayOfWeek)) return false;
+                    }
+
+                    // Time Match
                     const start = s.start_time.slice(0, 5);
                     const end = s.end_time.slice(0, 5);
-                    return timeStr >= start && timeStr <= end;
+
+                    if (start <= end) {
+                        return timeStr >= start && timeStr <= end;
+                    } else {
+                        // Overnight (e.g. 23:00 to 02:00)
+                        return timeStr >= start || timeStr <= end;
+                    }
                 });
 
-                // 2. Sort by Priority: Device Specific > Group Schedule
+                // 2. Sort by Priority > Specificity > Start Time
                 if (activeSchedules.length > 0) {
-                    activeSchedules.sort((a, b) => (b.device_id ? 1 : 0) - (a.device_id ? 1 : 0));
+                    activeSchedules.sort((a, b) => {
+                        // Priority (Higher wins)
+                        const pA = a.priority || 1;
+                        const pB = b.priority || 1;
+                        if (pA !== pB) return pB - pA;
+
+                        // Specificity (Device > Group)
+                        const specA = a.device_id ? 1 : 0;
+                        const specB = b.device_id ? 1 : 0;
+                        if (specA !== specB) return specB - specA;
+
+                        // Start Time (Latest wins)
+                        return b.start_time.localeCompare(a.start_time);
+                    });
+                    
                     activeId = activeSchedules[0].playlist_id;
                 }
             }
