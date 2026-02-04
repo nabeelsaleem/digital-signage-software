@@ -143,6 +143,8 @@
                 <input type="email" id="email" placeholder="work@company.com" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all placeholder:text-slate-400 text-sm">
                 <input type="password" id="password" placeholder="••••••••" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all placeholder:text-slate-400 text-sm">
                 <button onclick="handleEmailAuth()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98]">Access Dashboard</button>
+                <button onclick="handleEmailAuth()" id="auth-action-btn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98]">Sign In</button>
+                <p class="text-xs text-center text-slate-400 cursor-pointer hover:text-brand-600 transition-colors" onclick="toggleAuthMode()" id="auth-toggle-msg">New here? Create an account</p>
             </div>
         </div>
     </div>
@@ -443,6 +445,7 @@ let state = { user: null, media: [], playlists: [], devices: [], groups: [], sch
 let currentTab = localStorage.getItem('lastActiveTab') || 'media'; // Track tab for search & persistence
 let tempCallback = null; // Store callback for custom modal
 let calendar = null; // FullCalendar Instance
+let isSignUpMode = false; // Track Auth Mode
         // 1. Initialize App (Fetch Keys -> Start Supabase -> Listen for Auth)
 
 // 1. IMPROVED INIT APP
@@ -497,6 +500,38 @@ let calendar = null; // FullCalendar Instance
                     redirectTo: window.location.origin 
                 } 
             }); 
+        }
+
+        // 3a. EMAIL AUTH HANDLER
+        function toggleAuthMode() {
+            isSignUpMode = !isSignUpMode;
+            const btn = document.getElementById('auth-action-btn');
+            const msg = document.getElementById('auth-toggle-msg');
+            
+            if (isSignUpMode) {
+                btn.innerText = 'Create Account';
+                msg.innerText = 'Already have an account? Sign In';
+            } else {
+                btn.innerText = 'Sign In';
+                msg.innerText = 'New here? Create an account';
+            }
+        }
+
+        async function handleEmailAuth() {
+            if(!sb) return;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) return showToast('Please enter email and password', 'error');
+
+            if (isSignUpMode) {
+                const { data, error } = await sb.auth.signUp({ email, password });
+                if (error) showToast(error.message, 'error');
+                else showToast('Registration successful! Check email to confirm.', 'success');
+            } else {
+                const { data, error } = await sb.auth.signInWithPassword({ email, password });
+                if (error) showToast(error.message, 'error');
+            }
         }
 
         // 3. SECURE LOGOUT

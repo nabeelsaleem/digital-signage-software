@@ -216,8 +216,12 @@ async function checkUpdates() {
             updateStatus('Checking...');
 
             try {
-                // 1. SECURE API CALL (Now sends CODE + DEVICE ID)
-                const req = await fetch(`/api/player-handler?deviceId=${deviceId}&code=${deviceCode}`);
+                // 1. SECURE API CALL (Now sends CODE + DEVICE ID + TIMEZONE)
+                // Detect browser's timezone (e.g., "America/New_York")
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                
+                // Append it to the URL
+                const req = await fetch(`/api/player-handler?deviceId=${deviceId}&code=${deviceCode}&timezone=${encodeURIComponent(tz)}`);
                 
                 // --- CRITICAL FIX: Handle Deleted Devices Safely ---
                 if (!req.ok) {

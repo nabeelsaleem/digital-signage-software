@@ -24,7 +24,11 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Server configuration error: Missing database keys." });
     }
 
-    let { code, deviceId } = req.query;
+    // 1. Read the Timezone from the request (Default to UTC if missing)
+    let { code, deviceId, timezone } = req.query;
+    
+    // Safety check for timezone
+    if (!timezone || timezone === 'undefined') timezone = 'UTC';
 
     // --- SAFETY FIX: Prevent "null" string crash ---
     if (deviceId === 'null' || deviceId === 'undefined') {
@@ -99,10 +103,24 @@ export default async function handler(req, res) {
 
             // 3. Determine Active Playlist
             let activeId = device.playlist_id;
-            const now = new Date();
-            const timeStr = now.toTimeString().slice(0, 5); // "14:30" (Server Local Time)
             
-            // Construct local YYYY-MM-DD to match timeStr's timezone
+            // --- GLOBAL TIMEZONE LOGIC ---
+            // Create a date object for the current time
+            const utcDate = new Date();
+            
+            // Convert server time to the DEVICE'S Reported Timezone
+            let localDateString;
+            try {
+                localDateString = utcDate.toLocaleString('en-US', { timeZone: timezone });
+            } catch (e) {
+                // Fallback if device sent garbage data
+                console.error("Invalid timezone:", timezone);
+                localDateString = utcDate.toLocaleString('en-US', { timeZone: 'UTC' });
+            }
+            
+            const now = new Date(localDateString); 
+            
+            const timeStr = now.toTimeString().slice(0, 5); // "14:30" (In Device's Local Time)
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
