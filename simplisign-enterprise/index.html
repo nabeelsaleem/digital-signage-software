@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +7,8 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- DaisyUI (Adds consistent UI components) -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- FullCalendar -->
@@ -18,6 +20,7 @@
     
     <script>
         tailwind.config = {
+            // DaisyUI Theme Config (Optional: Matches your Brand Blue)
             theme: {
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
@@ -32,14 +35,16 @@
                         }
                     }
                 }
+            },
+            daisyui: {
+                themes: ["light", "dark"]
             }
         }
     </script>
 
     <style type="text/tailwindcss">
         body { 
-            background-color: #f1f5f9; /* Slate 100 */
-            color: #0f172a; /* Slate 900 */
+            @apply bg-base-200 text-base-content;
         }
         
         /* Custom Scrollbar */
@@ -63,45 +68,13 @@
     
     /* Add these styles to the <style> block */
 
-/* Search Bar */
-.search-wrapper {
-    position: relative;
-    width: 300px;
-}
-.search-wrapper i {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #94a3b8;
-}
-.search-input {
-    width: 100%;
-    padding-left: 36px;
-    padding-right: 12px;
-    background-color: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    transition: all 0.2s;
-}
-.search-input:focus {
-    background-color: #fff;
-    border-color: #3b82f6;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
 /* Custom Input Modal */
 #custom-input-modal {
-    background-color: rgba(15, 23, 42, 0.6);
+    background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
 }
 .modal-glass {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
+    @apply modal-box bg-base-100 shadow-2xl;
     width: 90%;
     max-width: 400px;
     animation: modalPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -113,7 +86,7 @@
     
     </style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex text-slate-800 antialiased selection:bg-brand-100 selection:text-brand-900">
+<body class="h-screen w-screen overflow-hidden flex antialiased selection:bg-primary selection:text-primary-content">
     <input type="file" id="replace-file-input" style="display: none;" accept="image/*,video/*">
 
     <!-- ================= AUTH VIEW ================= -->
@@ -150,64 +123,77 @@
     </div>
 
     <!-- ================= SIDEBAR ================= -->
-    <aside id="sidebar" class="w-72 bg-slate-900 text-slate-400 flex-col hidden md:flex shrink-0 transition-all duration-300">
+    <aside id="sidebar" class="w-72 bg-base-300 text-base-content flex-col hidden md:flex shrink-0 transition-all duration-300 border-r border-base-content/10">
         <!-- Logo -->
-        <div class="h-16 flex items-center px-6 border-b border-slate-800 shrink-0">
-            <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white mr-3 shadow-lg shadow-brand-500/20">
+        <div class="h-16 flex items-center px-6 border-b border-base-content/10 shrink-0">
+            <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-content mr-3 shadow-lg shadow-primary/20">
                 <i class="fa-solid fa-tv text-sm"></i>
             </div>
-            <span class="font-bold text-lg text-white tracking-tight">SimpliSign</span>
+            <span class="font-bold text-lg tracking-tight">SimpliSign</span>
         </div>
 
         <!-- Navigation -->
-        <nav class="flex-1 py-6 space-y-1 px-3 overflow-y-auto">
-            <button onclick="nav('media')" class="sidebar-link w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-slate-800 hover:text-white transition-all group">
-                <div class="w-5 flex justify-center group-hover:text-brand-400 transition-colors"><i class="fa-regular fa-images"></i></div> 
-                <span class="font-medium text-sm">Media Library</span>
-            </button>
-            <button onclick="nav('playlists')" class="sidebar-link w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-slate-800 hover:text-white transition-all group">
-                <div class="w-5 flex justify-center group-hover:text-brand-400 transition-colors"><i class="fa-solid fa-layer-group"></i></div> 
-                <span class="font-medium text-sm">Playlists</span>
-            </button>
-            <button onclick="nav('schedules')" class="sidebar-link w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-slate-800 hover:text-white transition-all group">
-                <div class="w-5 flex justify-center group-hover:text-brand-400 transition-colors"><i class="fa-regular fa-clock"></i></div> 
-                <span class="font-medium text-sm">Schedules</span>
-            </button>
-            <button onclick="nav('devices')" class="sidebar-link w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 hover:bg-slate-800 hover:text-white transition-all group">
-                <div class="w-5 flex justify-center group-hover:text-brand-400 transition-colors"><i class="fa-solid fa-desktop"></i></div> 
-                <span class="font-medium text-sm">Screens & Devices</span>
-            </button>
+        <nav class="flex-1 py-6 px-3 overflow-y-auto">
+            <ul class="menu w-full gap-2">
+                <li>
+                    <button onclick="nav('media')" class="sidebar-link active">
+                        <i class="fa-regular fa-images w-5"></i> Media Library
+                    </button>
+                </li>
+                <li>
+                    <button onclick="nav('playlists')" class="sidebar-link">
+                        <i class="fa-solid fa-layer-group w-5"></i> Playlists
+                    </button>
+                </li>
+                <li>
+                    <button onclick="nav('schedules')" class="sidebar-link">
+                        <i class="fa-regular fa-clock w-5"></i> Schedules
+                    </button>
+                </li>
+                <li>
+                    <button onclick="nav('devices')" class="sidebar-link">
+                        <i class="fa-solid fa-desktop w-5"></i> Screens & Devices
+                    </button>
+                </li>
+            </ul>
         </nav>
 
         <!-- User Profile -->
-        <div class="p-4 border-t border-slate-800 bg-slate-900/50">
-            <div class="flex items-center gap-3 mb-4 p-2 rounded-lg bg-slate-800/50">
-                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-inner">U</div>
+        <div class="p-4 border-t border-base-content/10 bg-base-300/50">
+            <!-- Dark Mode Toggle -->
+            <label class="flex cursor-pointer gap-2 items-center mb-4 px-2">
+                <i class="fa-regular fa-sun text-xs"></i>
+                <input type="checkbox" value="dark" class="toggle toggle-sm theme-controller"/>
+                <i class="fa-regular fa-moon text-xs"></i>
+            </label>
+
+            <div class="flex items-center gap-3 mb-4 p-2 rounded-lg bg-base-100/10">
+                <div class="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-content font-bold text-xs shadow-inner">U</div>
                 <div class="overflow-hidden">
-                    <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Signed in as</p>
-                    <p class="text-sm font-semibold text-slate-200 truncate" id="user-email">...</p>
+                    <p class="text-xs opacity-60 font-medium uppercase tracking-wider">Signed in as</p>
+                    <p class="text-sm font-semibold truncate" id="user-email">...</p>
                 </div>
             </div>
-            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 text-xs font-medium text-slate-400 hover:text-white hover:bg-red-500/10 py-2 rounded-lg transition-colors">
+            <button onclick="logout()" class="btn btn-sm btn-ghost w-full text-error">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
             </button>
         </div>
     </aside>
 
     <!-- ================= MAIN CONTENT ================= -->
-    <main id="main-content" class="flex-1 flex flex-col h-screen overflow-hidden hidden bg-slate-50/50">
+    <main id="main-content" class="flex-1 flex flex-col h-screen overflow-hidden hidden bg-base-200">
         
         <!-- Header -->
         <!-- Replace the content inside <header> with this: -->
-<header class="bg-white border-b h-16 flex items-center justify-between px-8 shadow-sm shrink-0">
+<header class="navbar bg-base-100 border-b border-base-content/10 h-16 px-8 shadow-sm shrink-0 z-10">
     <div class="flex items-center gap-6 flex-1">
-        <h2 id="page-title" class="text-lg font-bold text-slate-800 whitespace-nowrap">Overview</h2>
+        <h2 id="page-title" class="text-lg font-bold whitespace-nowrap">Overview</h2>
         
         <!-- Universal Search Bar -->
-        <div class="search-wrapper hidden md:block">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="global-search" class="search-input" placeholder="Search media, screens, playlists..." oninput="handleGlobalSearch(this.value)">
-        </div>
+        <label class="input input-bordered input-sm flex items-center gap-2 w-80 hidden md:flex">
+            <i class="fa-solid fa-magnifying-glass opacity-60"></i>
+            <input type="text" id="global-search" class="grow" placeholder="Search..." oninput="handleGlobalSearch(this.value)">
+        </label>
     </div>
     
     <div id="header-actions" class="flex items-center gap-3"></div>
@@ -218,10 +204,10 @@
             
             <!-- Media View -->
             <div id="view-media" class="hidden max-w-7xl mx-auto fade-enter">
-                <div class="flex items-center gap-2 mb-8">
-                    <button onclick="filterMedia('all')" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-slate-900 text-white shadow-md">All Files</button>
-                    <button onclick="filterMedia('image')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all">Images</button>
-                    <button onclick="filterMedia('video')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all">Videos</button>
+                <div class="join mb-8 shadow-sm">
+                    <button onclick="filterMedia('all')" class="join-item btn btn-sm btn-active">All Files</button>
+                    <button onclick="filterMedia('image')" class="join-item btn btn-sm">Images</button>
+                    <button onclick="filterMedia('video')" class="join-item btn btn-sm">Videos</button>
                 </div>
                 <input type="file" id="media-upload-input" class="hidden" multiple onchange="processUpload()">
                 <div id="media-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
@@ -235,13 +221,14 @@
             <!-- Schedules View -->
            <div id="view-schedules" class="hidden h-full flex flex-col p-8 fade-enter max-w-7xl mx-auto w-full">
                 
-                <div class="flex items-center gap-6 mb-6 border-b border-slate-200 shrink-0">
-                    <button onclick="switchScheduleView('calendar')" id="tab-sch-calendar" class="pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all">Calendar View</button>
-                    <button onclick="switchScheduleView('list')" id="tab-sch-list" class="pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all">List View</button>
+                <!-- DaisyUI Tabs -->
+                <div role="tablist" class="tabs tabs-bordered mb-6">
+                    <a onclick="switchScheduleView('calendar')" id="tab-sch-calendar" role="tab" class="tab tab-active font-bold text-primary border-primary">Calendar View</a>
+                    <a onclick="switchScheduleView('list')" id="tab-sch-list" role="tab" class="tab font-bold">List View</a>
                 </div>
 
-                <div id="sch-view-calendar" class="flex-1 bg-white rounded-2xl shadow-sm p-4 border border-slate-200 overflow-hidden relative">
-                    <div id="calendar" class="h-full"></div>
+                <div id="sch-view-calendar" class="flex-1 bg-base-100 rounded-box shadow-sm p-4 border border-base-content/10 overflow-hidden relative">
+                    <div id="calendar" class="h-full text-base-content"></div>
                 </div>
 
                 <div id="sch-view-list" class="hidden flex-1 overflow-y-auto custom-scrollbar">
@@ -253,9 +240,9 @@
             <!-- Devices View -->
             <div id="view-devices" class="hidden max-w-6xl mx-auto fade-enter">
                 <!-- Tabs -->
-                <div class="flex items-center gap-6 mb-6 border-b border-slate-200">
-                    <button onclick="switchDeviceTab('list')" id="tab-devices-list" class="pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all">All Screens</button>
-                    <button onclick="switchDeviceTab('groups')" id="tab-devices-groups" class="pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all">Device Groups</button>
+                <div role="tablist" class="tabs tabs-bordered mb-6">
+                    <a onclick="switchDeviceTab('list')" id="tab-devices-list" role="tab" class="tab tab-active font-bold text-primary border-primary">All Screens</a>
+                    <a onclick="switchDeviceTab('groups')" id="tab-devices-groups" role="tab" class="tab font-bold">Device Groups</a>
                 </div>
 
                 <div id="device-list-view">
@@ -263,7 +250,7 @@
                 </div>
 
                 <div id="device-groups-view" class="hidden">
-                    <div class="flex justify-end mb-6"><button onclick="openCreateGroupModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-brand-500/20 flex items-center gap-2"><i class="fa-solid fa-plus"></i> Create Group</button></div>
+                    <div class="flex justify-end mb-6"><button onclick="openCreateGroupModal()" class="btn btn-primary btn-sm gap-2"><i class="fa-solid fa-plus"></i> Create Group</button></div>
                     <div id="groups-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
             </div>
@@ -273,52 +260,52 @@
     <!-- ================= MODALS ================= -->
 
     <!-- Playlist Editor Modal -->
-    <div id="modal-playlist" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/10">
-            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
+    <div id="modal-playlist" class="fixed inset-0 z-50 bg-black/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-base-100 w-full max-w-6xl h-[85vh] rounded-box shadow-2xl flex flex-col overflow-hidden">
+            <div class="p-5 border-b border-base-content/10 flex justify-between items-center bg-base-100">
                 <div>
-                    <h3 class="font-bold text-lg text-slate-800">Playlist Editor</h3>
-                    <p class="text-xs text-slate-500">Drag items or click to add to timeline</p>
+                    <h3 class="font-bold text-lg">Playlist Editor</h3>
+                    <p class="text-xs opacity-60">Drag items or click to add to timeline</p>
                 </div>
-                <button onclick="closeModal('modal-playlist')" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors"><i class="fa-solid fa-times"></i></button>
+                <button onclick="closeModal('modal-playlist')" class="btn btn-sm btn-circle btn-ghost"><i class="fa-solid fa-times"></i></button>
             </div>
             <div class="flex-1 flex overflow-hidden">
                 <!-- Left: Library -->
-                <div class="w-1/3 border-r border-slate-100 bg-slate-50 flex flex-col">
-                    <div class="p-5 border-b border-slate-200 space-y-4 bg-white">
+                <div class="w-1/3 border-r border-base-content/10 bg-base-200/50 flex flex-col">
+                    <div class="p-5 border-b border-base-content/10 space-y-4 bg-base-100">
                         <input type="hidden" id="pl-id">
                         <div>
-                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 block">Playlist Name</label>
-                            <input type="text" id="pl-name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all font-medium text-slate-700" placeholder="e.g. Morning Promos">
+                            <label class="label-text text-xs font-bold uppercase tracking-wider mb-1 block opacity-60">Playlist Name</label>
+                            <input type="text" id="pl-name" class="input input-bordered w-full" placeholder="e.g. Morning Promos">
                         </div>
                     </div>
                     <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">Media Library</h4>
+                        <h4 class="text-xs font-bold opacity-60 uppercase tracking-wider mb-4 px-2">Media Library</h4>
                         <div id="pl-source-list" class="space-y-2"></div>
                     </div>
                 </div>
                 <!-- Right: Timeline -->
-                <div class="w-2/3 bg-slate-50 flex flex-col relative">
-                    <div class="p-4 border-b border-slate-200 flex justify-between items-center bg-white/80 backdrop-blur sticky top-0 z-10">
-                        <span class="text-sm font-bold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-film text-slate-400"></i> Timeline</span>
-                        <span id="pl-count" class="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full">0 Items</span>
+                <div class="w-2/3 bg-base-200 flex flex-col relative">
+                    <div class="p-4 border-b border-base-content/10 flex justify-between items-center bg-base-100/80 backdrop-blur sticky top-0 z-10">
+                        <span class="text-sm font-bold flex items-center gap-2"><i class="fa-solid fa-film opacity-60"></i> Timeline</span>
+                        <span id="pl-count" class="badge badge-neutral">0 Items</span>
                     </div>
                     <div id="pl-target-list" class="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar"></div>
                 </div>
             </div>
-            <div class="p-5 border-t border-slate-100 bg-white flex justify-end gap-3">
-                <button onclick="closeModal('modal-playlist')" class="px-5 py-2.5 text-slate-600 hover:bg-slate-50 rounded-lg font-medium text-sm transition-colors">Cancel</button>
-                <button onclick="savePlaylist()" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20 transition-all">Save Playlist</button>
+            <div class="p-5 border-t border-base-content/10 bg-base-100 flex justify-end gap-3">
+                <button onclick="closeModal('modal-playlist')" class="btn btn-ghost">Cancel</button>
+                <button onclick="savePlaylist()" class="btn btn-primary">Save Playlist</button>
             </div>
         </div>
     </div>
 
     <!-- Schedule Modal -->
-    <div id="modal-schedule" class="fixed inset-0 z-[60] bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
-            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
-                <h3 class="font-bold text-lg text-slate-800">Edit Schedule Slot</h3>
-                <button onclick="closeModal('modal-schedule')" class="text-slate-400 hover:text-slate-600 transition-colors"><i class="fa-solid fa-times"></i></button>
+    <div id="modal-schedule" class="fixed inset-0 z-[60] bg-black/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-base-100 w-full max-w-lg rounded-box shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
+            <div class="p-6 border-b border-base-content/10 flex justify-between items-center bg-base-100">
+                <h3 class="font-bold text-lg">Edit Schedule Slot</h3>
+                <button onclick="closeModal('modal-schedule')" class="btn btn-sm btn-circle btn-ghost"><i class="fa-solid fa-times"></i></button>
             </div>
             
             <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar">
@@ -326,49 +313,49 @@
                 
                 <!-- Target Selection -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Target</label>
+                    <label class="label-text text-xs font-bold opacity-60 uppercase tracking-wider mb-2 block">Target</label>
                     <div class="flex gap-2 mb-2">
-                        <select id="sch-target-type" onchange="toggleTargetSelect()" class="p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none">
+                        <select id="sch-target-type" onchange="toggleTargetSelect()" class="select select-bordered select-sm">
                             <option value="device">Screen</option>
                             <option value="group">Group</option>
                         </select>
-                        <select id="sch-target-id" class="flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none"></select>
+                        <select id="sch-target-id" class="select select-bordered select-sm flex-1"></select>
                     </div>
                 </div>
 
                 <!-- Playlist Selection -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Playlist</label>
-                    <select id="sch-playlist" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none"></select>
+                    <label class="label-text text-xs font-bold opacity-60 uppercase tracking-wider mb-2 block">Playlist</label>
+                    <select id="sch-playlist" class="select select-bordered w-full"></select>
                 </div>
 
                 <!-- Time Range -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Start Time</label>
-                        <input type="time" id="sch-start-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                        <label class="label-text text-xs font-bold opacity-60 uppercase tracking-wider mb-2 block">Start Time</label>
+                        <input type="time" id="sch-start-time" class="input input-bordered w-full">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">End Time</label>
-                        <input type="time" id="sch-end-time" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                        <label class="label-text text-xs font-bold opacity-60 uppercase tracking-wider mb-2 block">End Time</label>
+                        <input type="time" id="sch-end-time" class="input input-bordered w-full">
                     </div>
                 </div>
 
                 <!-- Date Range -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Valid From</label>
-                        <input type="date" id="sch-start-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                        <label class="label-text text-xs font-bold opacity-60 uppercase tracking-wider mb-2 block">Valid From</label>
+                        <input type="date" id="sch-start-date" class="input input-bordered w-full">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Valid Until</label>
-                        <input type="date" id="sch-end-date" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                        <label class="label-text text-xs font-bold opacity-60 uppercase tracking-wider mb-2 block">Valid Until</label>
+                        <input type="date" id="sch-end-date" class="input input-bordered w-full">
                     </div>
                 </div>
 
                 <!-- Days of Week -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Repeats On</label>
+                    <label class="label-text text-xs font-bold opacity-60 uppercase tracking-wider mb-3 block">Repeats On</label>
                     <div class="flex justify-between gap-1" id="sch-days-container">
                         <!-- Checkboxes injected by JS -->
                     </div>
@@ -376,57 +363,58 @@
 
                 <!-- Priority -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Priority (Higher Wins)</label>
-                    <input type="number" id="sch-priority" value="1" min="1" max="100" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none">
+                    <label class="label-text text-xs font-bold opacity-60 uppercase tracking-wider mb-2 block">Priority (Higher Wins)</label>
+                    <input type="number" id="sch-priority" value="1" min="1" max="100" class="input input-bordered w-full">
                 </div>
             </div>
 
-            <div class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                <button onclick="deleteScheduleFromModal()" id="btn-delete-sch" class="mr-auto text-red-500 hover:text-red-700 font-medium text-sm px-2">Delete</button>
-                <button onclick="closeModal('modal-schedule')" class="px-5 py-2.5 text-slate-600 hover:bg-white border border-transparent hover:border-slate-200 rounded-xl font-medium text-sm transition-all">Close</button>
-                <button onclick="saveSchedule()" class="px-6 py-2.5 bg-brand-600 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20 hover:bg-brand-700 transition-all">Save Schedule</button>
+            <div class="p-6 border-t border-base-content/10 bg-base-200/50 flex justify-end gap-3">
+                <button onclick="deleteScheduleFromModal()" id="btn-delete-sch" class="btn btn-ghost text-error btn-sm">Delete</button>
+                <button onclick="duplicateScheduleFromModal()" id="btn-duplicate-sch" class="mr-auto btn btn-ghost text-primary btn-sm hidden"><i class="fa-regular fa-copy mr-1"></i> Duplicate</button>
+                <button onclick="closeModal('modal-schedule')" class="btn btn-ghost">Close</button>
+                <button onclick="saveSchedule()" class="btn btn-primary">Save Schedule</button>
             </div>
         </div>
     </div>
 
     <!-- Group Modals -->
     <!-- Create Group -->
-    <div id="modal-create-group" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
-            <h3 class="font-bold text-lg text-slate-800 mb-4">Create Device Group</h3>
-            <input type="text" id="new-group-name" placeholder="e.g. Lobby Screens" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none mb-6">
+    <div id="modal-create-group" class="fixed inset-0 z-50 bg-black/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-4">Create Device Group</h3>
+            <input type="text" id="new-group-name" placeholder="e.g. Lobby Screens" class="input input-bordered w-full mb-6">
             <div class="flex justify-end gap-3">
-                <button onclick="closeModal('modal-create-group')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm">Cancel</button>
-                <button onclick="createGroup()" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20">Create</button>
+                <button onclick="closeModal('modal-create-group')" class="btn btn-ghost">Cancel</button>
+                <button onclick="createGroup()" class="btn btn-primary">Create</button>
             </div>
         </div>
     </div>
 
     <!-- Manage Group Devices -->
-    <div id="modal-group-manage" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[80vh]">
-            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="font-bold text-lg text-slate-800">Manage Group Devices</h3>
-                <button onclick="closeModal('modal-group-manage')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-times"></i></button>
+    <div id="modal-group-manage" class="fixed inset-0 z-50 bg-black/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-base-100 w-full max-w-lg rounded-box shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="p-5 border-b border-base-content/10 flex justify-between items-center">
+                <h3 class="font-bold text-lg">Manage Group Devices</h3>
+                <button onclick="closeModal('modal-group-manage')" class="btn btn-sm btn-circle btn-ghost"><i class="fa-solid fa-times"></i></button>
             </div>
             <input type="hidden" id="manage-group-id">
             <div id="group-device-list" class="p-5 overflow-y-auto custom-scrollbar space-y-2 flex-1"></div>
-            <div class="p-5 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-                <button onclick="saveGroupDevices()" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20">Save Changes</button>
+            <div class="p-5 border-t border-base-content/10 bg-base-200/50 flex justify-end gap-3">
+                <button onclick="saveGroupDevices()" class="btn btn-primary">Save Changes</button>
             </div>
         </div>
     </div>
 
     <!-- Assign Group Playlist -->
-    <div id="modal-group-playlist" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
-            <h3 class="font-bold text-lg text-slate-800 mb-2">Assign Playlist to Group</h3>
-            <p class="text-xs text-slate-500 mb-4">This will update all screens in this group.</p>
+    <div id="modal-group-playlist" class="fixed inset-0 z-50 bg-black/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="modal-box">
+            <h3 class="font-bold text-lg mb-2">Assign Playlist to Group</h3>
+            <p class="text-xs opacity-60 mb-4">This will update all screens in this group.</p>
             <input type="hidden" id="assign-group-id">
-            <select id="group-playlist-select" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-6 outline-none focus:ring-2 focus:ring-brand-500"></select>
+            <select id="group-playlist-select" class="select select-bordered w-full mb-6"></select>
             <div class="flex justify-end gap-3">
-                <button onclick="closeModal('modal-group-playlist')" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm">Cancel</button>
-                <button onclick="confirmGroupPlaylist()" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20">Assign</button>
+                <button onclick="closeModal('modal-group-playlist')" class="btn btn-ghost">Cancel</button>
+                <button onclick="confirmGroupPlaylist()" class="btn btn-primary">Assign</button>
             </div>
         </div>
     </div>
@@ -434,11 +422,11 @@
 <!-- Custom Input Modal for Renaming -->
 <div id="custom-input-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center">
     <div class="modal-glass p-6">
-        <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-4">Rename Item</h3>
-        <input type="text" id="modal-input" class="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none mb-6 bg-slate-50">
+        <h3 id="modal-title" class="text-lg font-bold mb-4">Rename Item</h3>
+        <input type="text" id="modal-input" class="input input-bordered w-full mb-6">
         <div class="flex justify-end gap-3">
-            <button onclick="closeCustomModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium text-sm transition-colors">Cancel</button>
-            <button id="modal-save-btn" class="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium text-sm shadow-lg shadow-brand-500/20">Save</button>
+            <button onclick="closeCustomModal()" class="btn btn-ghost">Cancel</button>
+            <button id="modal-save-btn" class="btn btn-primary">Save</button>
         </div>
     </div>
 </div>
@@ -571,16 +559,14 @@ function nav(view) {
 
     // 3. Update Active State in Sidebar
     document.querySelectorAll('.sidebar-link').forEach(el => {
-        el.classList.remove('bg-slate-800', 'text-white');
-        el.classList.add('text-slate-400');
-        el.querySelector('div').classList.remove('text-brand-400'); 
+        el.classList.remove('active');
+        el.classList.add('text-base-content/60');
     });
 
     const activeBtn = document.querySelector(`button[onclick="nav('${view}')"]`);
     if(activeBtn) {
-        activeBtn.classList.remove('text-slate-400');
-        activeBtn.classList.add('bg-slate-800', 'text-white');
-        activeBtn.querySelector('div').classList.add('text-brand-400');
+        activeBtn.classList.remove('text-base-content/60');
+        activeBtn.classList.add('active');
     }
 
     const btn = document.getElementById('header-actions');
@@ -588,19 +574,19 @@ function nav(view) {
     
     if (view === 'media') {
         title.innerText = 'Media Library';
-        btn.innerHTML = `<button onclick="document.getElementById('media-upload-input').click()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Media</button>`;
+        btn.innerHTML = `<button onclick="document.getElementById('media-upload-input').click()" class="btn btn-primary gap-2"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Media</button>`;
         loadMedia();
     } else if (view === 'playlists') {
         title.innerText = 'Playlists';
-        btn.innerHTML = `<button onclick="openPlaylistBuilder()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-plus"></i> New Playlist</button>`;
+        btn.innerHTML = `<button onclick="openPlaylistBuilder()" class="btn btn-primary gap-2"><i class="fa-solid fa-plus"></i> New Playlist</button>`;
         loadPlaylists();
     } else if (view === 'schedules') {
         title.innerText = 'Schedules';
-        btn.innerHTML = `<button onclick="openScheduleModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-regular fa-calendar-plus"></i> Add Schedule</button>`;
+        btn.innerHTML = `<button onclick="openScheduleModal()" class="btn btn-primary gap-2"><i class="fa-regular fa-calendar-plus"></i> Add Schedule</button>`;
         setTimeout(loadSchedules, 100); // Delay slightly to allow div to unhide
     } else {
         title.innerText = 'Screens';
-        btn.innerHTML = `<button onclick="addDevice()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold shadow-lg shadow-brand-500/20 flex items-center gap-2 transition-all"><i class="fa-solid fa-plus"></i> New Screen</button>`;
+        btn.innerHTML = `<button onclick="addDevice()" class="btn btn-primary gap-2"><i class="fa-solid fa-plus"></i> New Screen</button>`;
         loadDevices();
     }
 }
@@ -623,43 +609,43 @@ function nav(view) {
             const buttons = document.querySelectorAll('#view-media button');
             buttons.forEach(b => {
                 if(b.textContent.toLowerCase().includes(type) || (type === 'all' && b.textContent.includes('All'))) {
-                    b.className = "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-slate-900 text-white shadow-md";
+                    b.className = "join-item btn btn-sm btn-active";
                 } else {
-                    b.className = "px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all";
+                    b.className = "join-item btn btn-sm";
                 }
             });
 
             if(filtered.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 flex flex-col items-center"><i class="fa-regular fa-folder-open text-4xl mb-3 opacity-50"></i><p>No media found.</p></div>`;
+                grid.innerHTML = `<div class="col-span-full py-12 text-center opacity-50 flex flex-col items-center"><i class="fa-regular fa-folder-open text-4xl mb-3"></i><p>No media found.</p></div>`;
                 return;
             }
 
             filtered.forEach(m => {
                 const isVideo = m.type.includes('video');
                 const thumbnail = isVideo 
-                    ? `<div class="flex items-center justify-center h-full text-slate-400 bg-slate-100"><i class="fa-solid fa-play text-2xl opacity-50"></i></div>`
+                    ? `<div class="flex items-center justify-center h-full bg-base-200"><i class="fa-solid fa-play text-2xl opacity-50"></i></div>`
                     : `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">`;
 
                 grid.innerHTML += `
-                    <div class="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 flex flex-col">
-                        <div class="aspect-video bg-slate-100 relative overflow-hidden">
+                    <div class="card card-compact bg-base-100 shadow-xl group relative overflow-hidden transition-all duration-300 hover:scale-[1.02]">
+                        <div class="aspect-video bg-base-200 relative overflow-hidden">
                             ${thumbnail}
-                            <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors"></div>
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
                             <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
-                                <button onclick="deleteMedia(${m.id})" class="p-2 bg-white/90 backdrop-blur text-red-500 rounded-lg shadow-lg hover:bg-white hover:text-red-600 hover:scale-105 transition-all"><i class="fa-solid fa-trash-can text-xs"></i></button>
-<button onclick="openReplaceDialog('${m.id}')" data-id="${m.id}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm ml-2">   
+                                <button onclick="deleteMedia(${m.id})" class="btn btn-xs btn-circle btn-error text-white"><i class="fa-solid fa-trash-can"></i></button>
+<button onclick="openReplaceDialog('${m.id}')" data-id="${m.id}" class="btn btn-xs btn-primary ml-2">   
 REPLACE
     </button>
                             </div>
                             <div class="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
-                                <span class="px-2 py-1 bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold uppercase rounded">${isVideo ? 'Video' : 'Image'}</span>
+                                <span class="badge badge-neutral text-xs">${isVideo ? 'Video' : 'Image'}</span>
                             </div>
                         </div>
-                        <div class="p-4 border-t border-slate-50 bg-white">
+                        <div class="card-body">
                             <div class="flex items-start justify-between gap-2">
                                 <div class="overflow-hidden">
-                                    <p class="text-sm font-bold text-slate-700 truncate group-hover:text-brand-600 transition-colors" title="${m.name}">${m.name}</p>
-                                    <p class="text-[10px] text-slate-400 mt-1 font-mono">${new Date().toLocaleDateString()}</p>
+                                    <p class="font-bold truncate" title="${m.name}">${m.name}</p>
+                                    <p class="text-xs opacity-60 font-mono">${new Date().toLocaleDateString()}</p>
                                 </div>
                             </div>
                         </div>
@@ -704,27 +690,28 @@ REPLACE
             
             const list = document.getElementById('playlist-list');
             if(state.playlists.length === 0) {
-                 list.innerHTML = `<div class="col-span-full py-16 text-center border-2 border-dashed border-slate-200 rounded-2xl"><p class="text-slate-400 mb-2">No playlists yet</p><button onclick="openPlaylistBuilder()" class="text-brand-600 font-medium text-sm hover:underline">Create your first playlist</button></div>`;
+                 list.innerHTML = `<div class="col-span-full py-16 text-center border-2 border-dashed border-base-content/20 rounded-box"><p class="opacity-60 mb-2">No playlists yet</p><button onclick="openPlaylistBuilder()" class="link link-primary">Create your first playlist</button></div>`;
                  return;
             }
 
             list.innerHTML = state.playlists.map(p => `
-                <div class="group bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col h-full relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-slate-100 group-hover:bg-brand-500 transition-colors"></div>
+                <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-full">
+                    <div class="card-body p-6">
                     <div class="flex justify-between items-start mb-4 pl-3">
                         <div class="flex-1">
-                            <h3 class="font-bold text-lg text-slate-800 group-hover:text-brand-600 transition-colors">${escapeHtml(p.name)}</h3>
+                            <h3 class="card-title">${escapeHtml(p.name)}</h3>
                             <div class="flex items-center gap-2 mt-2">
-                                <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-md"><i class="fa-solid fa-layer-group mr-1"></i> ${p.items ? p.items.length : 0} items</span>
+                                <span class="badge badge-ghost"><i class="fa-solid fa-layer-group mr-1"></i> ${p.items ? p.items.length : 0} items</span>
                             </div>
                         </div>
                         <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
-                            <button onclick="renamePlaylist(${p.id}, '${p.name}')" class="p-2 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"><i class="fa-solid fa-pen text-xs"></i></button>
-                            <button onclick="deletePlaylist(${p.id})" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i class="fa-solid fa-trash text-xs"></i></button>
+                            <button onclick="renamePlaylist(${p.id}, '${p.name}')" class="btn btn-xs btn-ghost"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deletePlaylist(${p.id})" class="btn btn-xs btn-ghost text-error"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                    <div class="mt-auto pt-4 pl-3">
-                        <button onclick="editPlaylist(${p.id})" class="w-full py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition-all">Edit Content</button>
+                    <div class="card-actions mt-auto">
+                        <button onclick="editPlaylist(${p.id})" class="btn btn-outline btn-sm w-full">Edit Content</button>
+                    </div>
                     </div>
                 </div>
             `).join('');
@@ -733,12 +720,12 @@ REPLACE
         function openPlaylistBuilder(pl = null) {
             document.getElementById('modal-playlist').classList.remove('hidden');
             document.getElementById('pl-source-list').innerHTML = state.media.map(m => `
-                <div onclick="addToDraft(${m.id})" class="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:border-brand-500 hover:shadow-md cursor-pointer transition-all group">
-                    <div class="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden shrink-0">
+                <div onclick="addToDraft(${m.id})" class="flex items-center gap-3 p-3 bg-base-100 border border-base-content/10 rounded-box hover:border-primary hover:shadow-md cursor-pointer transition-all group">
+                    <div class="w-10 h-10 rounded-lg bg-base-200 overflow-hidden shrink-0">
                         <img src="${m.url}" class="w-full h-full object-cover">
                     </div>
-                    <p class="text-xs font-bold text-slate-700 truncate flex-1 group-hover:text-brand-600">${m.name}</p>
-                    <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-brand-500 group-hover:text-white transition-all">
+                    <p class="text-xs font-bold truncate flex-1 group-hover:text-primary">${m.name}</p>
+                    <div class="w-6 h-6 rounded-full bg-base-200 flex items-center justify-center text-base-content/50 group-hover:bg-primary group-hover:text-primary-content transition-all">
                         <i class="fa-solid fa-plus text-[10px]"></i>
                     </div>
                 </div>`).join('');
@@ -765,7 +752,7 @@ REPLACE
             document.getElementById('pl-count').innerText = `${state.draft.length} Items`;
             
             if(state.draft.length === 0) {
-                list.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-slate-400 opacity-50"><i class="fa-regular fa-clock text-4xl mb-2"></i><p class="text-sm">Timeline is empty</p></div>`;
+                list.innerHTML = `<div class="h-full flex flex-col items-center justify-center opacity-50"><i class="fa-regular fa-clock text-4xl mb-2"></i><p class="text-sm">Timeline is empty</p></div>`;
                 return;
             }
 
@@ -773,17 +760,17 @@ REPLACE
                 const m = state.media.find(x => x.id === item.id);
                 if(!m) return '';
                 return `
-                <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 hover:border-brand-300 transition-all">
-                    <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-500 font-bold text-xs flex items-center justify-center shrink-0 font-mono">${i+1}</span>
-                    <div class="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden shrink-0 border border-slate-100">
+                <div class="bg-base-100 p-3 rounded-box border border-base-content/10 shadow-sm flex items-center gap-4 hover:border-primary transition-all">
+                    <span class="w-6 h-6 rounded-full bg-base-200 font-bold text-xs flex items-center justify-center shrink-0 font-mono">${i+1}</span>
+                    <div class="w-12 h-12 rounded-lg bg-base-200 overflow-hidden shrink-0 border border-base-content/10">
                         <img src="${m.url}" class="w-full h-full object-cover">
                     </div>
-                    <p class="text-xs font-bold text-slate-700 truncate flex-1 pr-4">${m.name}</p>
-                    <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Duration</span>
-                        <input type="number" value="${item.duration}" onchange="state.draft[${i}].duration=parseInt(this.value)" class="w-10 bg-transparent text-right font-bold text-slate-700 focus:outline-none text-sm">
+                    <p class="text-xs font-bold truncate flex-1 pr-4">${m.name}</p>
+                    <div class="flex items-center gap-2 bg-base-200 px-3 py-1.5 rounded-lg border border-base-content/10">
+                        <span class="text-[10px] font-bold opacity-60 uppercase">Duration</span>
+                        <input type="number" value="${item.duration}" onchange="state.draft[${i}].duration=parseInt(this.value)" class="w-10 bg-transparent text-right font-bold focus:outline-none text-sm">
                     </div>
-                    <button onclick="state.draft.splice(${i},1); renderDraft()" class="w-8 h-8 rounded-lg text-slate-300 hover:bg-red-50 hover:text-red-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="state.draft.splice(${i},1); renderDraft()" class="btn btn-xs btn-circle btn-ghost text-error"><i class="fa-solid fa-xmark"></i></button>
                 </div>`;
             }).join('');
         }
@@ -841,14 +828,14 @@ async function renamePlaylist(id, old) {
             const listView = document.getElementById('sch-view-list');
 
             if (view === 'calendar') {
-                calTab.className = "pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all";
-                listTab.className = "pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all";
+                calTab.className = "tab tab-active font-bold text-primary border-primary";
+                listTab.className = "tab font-bold";
                 calView.classList.remove('hidden');
                 listView.classList.add('hidden');
                 if(calendar) setTimeout(() => calendar.render(), 100);
             } else {
-                listTab.className = "pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all";
-                calTab.className = "pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all";
+                listTab.className = "tab tab-active font-bold text-primary border-primary";
+                calTab.className = "tab font-bold";
                 listView.classList.remove('hidden');
                 calView.classList.add('hidden');
                 renderScheduleList();
@@ -858,7 +845,7 @@ async function renamePlaylist(id, old) {
         function renderScheduleList() {
             const grid = document.getElementById('schedule-card-grid');
             if (state.schedules.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 flex flex-col items-center"><i class="fa-regular fa-calendar-xmark text-4xl mb-3 opacity-50"></i><p>No active schedules.</p></div>`;
+                grid.innerHTML = `<div class="col-span-full py-12 text-center opacity-50 flex flex-col items-center"><i class="fa-regular fa-calendar-xmark text-4xl mb-3"></i><p>No active schedules.</p></div>`;
                 return;
             }
 
@@ -868,57 +855,57 @@ async function renamePlaylist(id, old) {
                 
                 let targetName = 'Unknown Target';
                 let targetIcon = 'fa-question';
-                let targetClass = 'bg-slate-100 text-slate-600';
+                let targetClass = 'badge-ghost';
 
                 if (s.group_id) {
                     const g = state.groups.find(x => x.id === s.group_id);
                     targetName = g ? g.name : 'Unknown Group';
                     targetIcon = 'fa-users-rectangle';
-                    targetClass = 'bg-indigo-50 text-indigo-600 border-indigo-100';
+                    targetClass = 'badge-primary';
                 } else if (s.device_id) {
                     const d = state.devices.find(x => x.id === s.device_id);
                     targetName = d ? d.name : 'Unknown Screen';
                     targetIcon = 'fa-desktop';
-                    targetClass = 'bg-slate-100 text-slate-600 border-slate-200';
+                    targetClass = 'badge-neutral';
                 }
 
                 const days = ['S','M','T','W','T','F','S'];
                 const dayBadges = days.map((d, i) => {
                     const active = s.days_of_week && s.days_of_week.includes(i);
-                    return `<span class="w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold ${active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-300'}">${d}</span>`;
+                    return `<span class="w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold ${active ? 'bg-primary text-primary-content' : 'bg-base-200 text-base-content/30'}">${d}</span>`;
                 }).join('');
 
                 return `
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-all p-5 flex flex-col relative group fade-enter">
+                <div class="card bg-base-100 shadow-sm hover:shadow-md transition-all p-5 flex flex-col relative group fade-enter border border-base-content/10">
                     <div class="flex justify-between items-start mb-3">
                         <div>
-                            <h4 class="font-bold text-slate-800 truncate pr-2" title="${escapeHtml(plName)}">${escapeHtml(plName)}</h4>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Priority ${s.priority}</span>
+                            <h4 class="font-bold truncate pr-2" title="${escapeHtml(plName)}">${escapeHtml(plName)}</h4>
+                            <span class="text-[10px] font-bold uppercase tracking-wider opacity-60">Priority ${s.priority}</span>
                         </div>
                         <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="editSchedule(${s.id})" class="p-1.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded transition-colors"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteSchedule(${s.id})" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="editSchedule(${s.id})" class="btn btn-ghost btn-xs"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteSchedule(${s.id})" class="btn btn-ghost btn-xs text-error"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
                     
                     <div class="flex items-center gap-2 mb-4">
-                        <span class="px-2 py-1 rounded text-xs font-bold border flex items-center gap-1.5 ${targetClass}">
+                        <span class="badge ${targetClass} gap-1.5">
                             <i class="fa-solid ${targetIcon}"></i> ${escapeHtml(targetName)}
                         </span>
                     </div>
 
                     <div class="space-y-2 mb-4">
-                        <div class="flex items-center gap-2 text-xs text-slate-600">
-                            <i class="fa-regular fa-clock w-4 text-center text-slate-400"></i>
+                        <div class="flex items-center gap-2 text-xs opacity-80">
+                            <i class="fa-regular fa-clock w-4 text-center opacity-60"></i>
                             <span class="font-mono font-medium">${s.start_time.slice(0,5)} - ${s.end_time.slice(0,5)}</span>
                         </div>
-                        <div class="flex items-center gap-2 text-xs text-slate-600">
-                            <i class="fa-regular fa-calendar w-4 text-center text-slate-400"></i>
-                            <span>${s.start_date} <i class="fa-solid fa-arrow-right mx-1 text-[10px] text-slate-300"></i> ${s.end_date || 'Forever'}</span>
+                        <div class="flex items-center gap-2 text-xs opacity-80">
+                            <i class="fa-regular fa-calendar w-4 text-center opacity-60"></i>
+                            <span>${s.start_date} <i class="fa-solid fa-arrow-right mx-1 text-[10px] opacity-40"></i> ${s.end_date || 'Forever'}</span>
                         </div>
                     </div>
 
-                    <div class="mt-auto pt-3 border-t border-slate-50 flex gap-1">
+                    <div class="mt-auto pt-3 border-t border-base-content/10 flex gap-1">
                         ${dayBadges}
                     </div>
                 </div>`;
@@ -1039,8 +1026,8 @@ async function renamePlaylist(id, old) {
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             document.getElementById('sch-days-container').innerHTML = days.map((d, i) => `
                 <label class="flex flex-col items-center gap-1 cursor-pointer">
-                    <input type="checkbox" id="day-${i}" value="${i}" class="w-4 h-4 accent-brand-600">
-                    <span class="text-[10px] font-bold text-slate-500 uppercase">${d}</span>
+                    <input type="checkbox" id="day-${i}" value="${i}" class="checkbox checkbox-xs checkbox-primary">
+                    <span class="text-[10px] font-bold opacity-60 uppercase">${d}</span>
                 </label>
             `).join('');
 
@@ -1271,18 +1258,18 @@ function handleGlobalSearch(query) {
         grid.innerHTML = '';
         filtered.forEach(m => {
              const isVideo = m.type.includes('video');
-             const thumbnail = isVideo ? `<div class="flex items-center justify-center h-full text-slate-400 bg-slate-100"><i class="fa-solid fa-play text-2xl opacity-50"></i></div>` : `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">`;
+             const thumbnail = isVideo ? `<div class="flex items-center justify-center h-full bg-base-200"><i class="fa-solid fa-play text-2xl opacity-50"></i></div>` : `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">`;
              grid.innerHTML += `
-                <div class="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-slate-100 transition-all duration-300 flex flex-col fade-enter">
-                    <div class="aspect-video bg-slate-100 relative overflow-hidden">
+                <div class="card card-compact bg-base-100 shadow-xl group relative overflow-hidden transition-all duration-300 flex flex-col fade-enter">
+                    <div class="aspect-video bg-base-200 relative overflow-hidden">
                         ${thumbnail}
-                        <div class="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-colors"></div>
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors"></div>
                         <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
-                            <button onclick="deleteMedia(${m.id})" class="p-2 bg-white/90 backdrop-blur text-red-500 rounded-lg shadow-lg hover:bg-white hover:text-red-600 hover:scale-105 transition-all"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                            <button onclick="deleteMedia(${m.id})" class="btn btn-xs btn-circle btn-error text-white"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>
-                    <div class="p-4 border-t border-slate-50 bg-white">
-                        <p class="text-sm font-bold text-slate-700 truncate group-hover:text-brand-600 transition-colors">${m.name}</p>
+                    <div class="card-body">
+                        <p class="font-bold truncate group-hover:text-primary transition-colors">${m.name}</p>
                     </div>
                 </div>`;
         });
@@ -1292,18 +1279,19 @@ function handleGlobalSearch(query) {
         const list = document.getElementById('playlist-list');
         const filtered = state.playlists.filter(p => p.name.toLowerCase().includes(lowerQuery));
         list.innerHTML = filtered.map(p => `
-            <div class="group bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col h-full relative overflow-hidden fade-enter">
-                <div class="absolute top-0 left-0 w-1 h-full bg-slate-100 group-hover:bg-brand-500 transition-colors"></div>
+            <div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 h-full fade-enter">
+                <div class="card-body p-6">
                 <div class="flex justify-between items-start mb-4 pl-3">
                     <div class="flex-1">
-                        <h3 class="font-bold text-lg text-slate-800 group-hover:text-brand-600 transition-colors">${p.name}</h3>
+                        <h3 class="card-title group-hover:text-primary transition-colors">${p.name}</h3>
                         <div class="flex items-center gap-2 mt-2">
-                            <span class="bg-slate-100 text-slate-600 text-xs font-bold px-2 py-1 rounded-md"><i class="fa-solid fa-layer-group mr-1"></i> ${p.items ? p.items.length : 0} items</span>
+                            <span class="badge badge-ghost"><i class="fa-solid fa-layer-group mr-1"></i> ${p.items ? p.items.length : 0} items</span>
                         </div>
                     </div>
                 </div>
-                <div class="mt-auto pl-3">
-                    <button onclick="editPlaylist(${p.id})" class="w-full py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:border-brand-500 hover:text-brand-600 hover:bg-brand-50 transition-all">Edit Content</button>
+                <div class="card-actions mt-auto">
+                    <button onclick="editPlaylist(${p.id})" class="btn btn-outline btn-sm w-full">Edit Content</button>
+                </div>
                 </div>
             </div>`).join('');
     }
@@ -1320,48 +1308,48 @@ function renderDeviceCards(devicesData) {
     const list = document.getElementById('device-list');
     list.innerHTML = devicesData.map(d => {
         const group = state.groups.find(g => g.id === d.group_id);
-        const groupBadge = group ? `<span class="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200 uppercase tracking-wide"><i class="fa-solid fa-users-rectangle mr-1"></i>${escapeHtml(group.name)}</span>` : '';
+        const groupBadge = group ? `<span class="badge badge-primary badge-outline gap-1 ml-2"><i class="fa-solid fa-users-rectangle"></i>${escapeHtml(group.name)}</span>` : '';
         
         return `
-        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:border-brand-200 transition-all duration-300 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 fade-enter">
+        <div class="card card-side bg-base-100 shadow-sm hover:shadow-md border border-base-content/10 p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 fade-enter">
             <div class="flex items-center gap-5 w-full lg:w-auto">
                 <div class="relative group">
-                    <div class="w-16 h-12 bg-slate-900 rounded-lg flex items-center justify-center font-mono text-white text-sm font-bold tracking-widest shadow-lg shadow-slate-200 select-all overflow-hidden whitespace-nowrap px-2">
+                    <div class="w-16 h-12 bg-neutral text-neutral-content rounded-lg flex items-center justify-center font-mono text-sm font-bold tracking-widest shadow-lg select-all overflow-hidden whitespace-nowrap px-2">
                         ${d.code}
                     </div>
                     <!-- Copy Button Overlay -->
-                    <button onclick="copyToClipboard('${d.code}')" class="absolute inset-0 bg-slate-900/90 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs gap-1 rounded-lg">
+                    <button onclick="copyToClipboard('${d.code}')" class="absolute inset-0 bg-neutral/90 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity text-xs gap-1 rounded-lg">
                         <i class="fa-regular fa-copy"></i> Copy
                     </button>
                 </div>
                 <div>
                     <div class="flex items-center gap-2 mb-1">
-                        <h4 class="font-bold text-lg text-slate-800">${d.name}</h4>
+                        <h4 class="font-bold text-lg">${d.name}</h4>
                         ${groupBadge}
-                        <button onclick="renameDevice(${d.id}, '${d.name}')" class="text-slate-300 hover:text-brand-600 transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="renameDevice(${d.id}, '${d.name}')" class="btn btn-ghost btn-xs btn-circle"><i class="fa-solid fa-pen-to-square"></i></button>
                     </div>
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${d.status==='online'?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-600'}">
-                        <span class="w-1.5 h-1.5 rounded-full ${d.status==='online'?'bg-emerald-500':'bg-red-500'} animate-pulse"></span> ${d.status}
+                    <span class="badge ${d.status==='online'?'badge-success':'badge-error'} gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> ${d.status}
                     </span>
                 </div>
             </div>
             
             <div class="flex flex-col lg:flex-row items-start lg:items-center gap-4 w-full lg:w-auto flex-1 lg:justify-end">
                 <div class="w-full lg:w-64">
-                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Fallback Content</label>
-                    <select onchange="assignPlaylist(${d.id}, this.value)" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-600 focus:ring-2 focus:ring-brand-500 outline-none cursor-pointer">
+                    <label class="label-text text-[10px] font-bold opacity-60 uppercase mb-1 block">Fallback Content</label>
+                    <select onchange="assignPlaylist(${d.id}, this.value)" class="select select-bordered select-sm w-full">
                         <option value="">Select Playlist...</option>
                         ${state.playlists.map(p => `<option value="${p.id}" ${d.playlist_id === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}
                     </select>
                 </div>
 
                 <div class="flex items-center gap-2 mt-4 lg:mt-5 w-full lg:w-auto justify-between lg:justify-end">
-                    <button onclick="requestScreenshot(${d.id})" class="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Capture Screenshot"><i class="fa-solid fa-camera"></i></button>
-                    <button onclick="requestRefresh(${d.id})" class="p-2.5 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors" title="Force Player Refresh"><i class="fa-solid fa-rotate-right"></i></button>
-                    <button onclick="deleteDevice(${d.id})" class="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Unlink Device"><i class="fa-solid fa-trash-can"></i></button>
+                    <button onclick="requestScreenshot(${d.id})" class="btn btn-square btn-sm btn-ghost" title="Capture Screenshot"><i class="fa-solid fa-camera"></i></button>
+                    <button onclick="requestRefresh(${d.id})" class="btn btn-square btn-sm btn-ghost" title="Force Player Refresh"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button onclick="deleteDevice(${d.id})" class="btn btn-square btn-sm btn-ghost text-error" title="Unlink Device"><i class="fa-solid fa-trash-can"></i></button>
                     
-                    <div class="w-12 h-8 bg-slate-100 rounded border border-slate-200 overflow-hidden relative group cursor-pointer" onclick="${d.screenshot_url ? `window.open('${d.screenshot_url}')` : `requestScreenshot(${d.id})`}">
-                        ${d.screenshot_url ? `<img src="${d.screenshot_url}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">` : `<div class="w-full h-full flex items-center justify-center text-slate-300"><i class="fa-solid fa-image text-xs"></i></div>`}
+                    <div class="w-12 h-8 bg-base-200 rounded border border-base-content/10 overflow-hidden relative group cursor-pointer" onclick="${d.screenshot_url ? `window.open('${d.screenshot_url}')` : `requestScreenshot(${d.id})`}">
+                        ${d.screenshot_url ? `<img src="${d.screenshot_url}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">` : `<div class="w-full h-full flex items-center justify-center opacity-30"><i class="fa-solid fa-image text-xs"></i></div>`}
                     </div>
                 </div>
             </div>
@@ -1415,17 +1403,13 @@ async function renameDevice(id, old) {
             const groupView = document.getElementById('device-groups-view');
 
             if(tab === 'list') {
-                listBtn.classList.add('text-brand-600', 'border-brand-600');
-                listBtn.classList.remove('text-slate-500', 'border-transparent');
-                groupBtn.classList.remove('text-brand-600', 'border-brand-600');
-                groupBtn.classList.add('text-slate-500', 'border-transparent');
+                listBtn.classList.add('tab-active', 'text-primary', 'border-primary');
+                groupBtn.classList.remove('tab-active', 'text-primary', 'border-primary');
                 listView.classList.remove('hidden');
                 groupView.classList.add('hidden');
             } else {
-                groupBtn.classList.add('text-brand-600', 'border-brand-600');
-                groupBtn.classList.remove('text-slate-500', 'border-transparent');
-                listBtn.classList.remove('text-brand-600', 'border-brand-600');
-                listBtn.classList.add('text-slate-500', 'border-transparent');
+                groupBtn.classList.add('tab-active', 'text-primary', 'border-primary');
+                listBtn.classList.remove('tab-active', 'text-primary', 'border-primary');
                 listView.classList.add('hidden');
                 groupView.classList.remove('hidden');
                 renderGroups();
@@ -1435,23 +1419,25 @@ async function renameDevice(id, old) {
         function renderGroups() {
             const grid = document.getElementById('groups-grid');
             if(state.groups.length === 0) {
-                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl"><p>No groups created yet.</p></div>`;
+                grid.innerHTML = `<div class="col-span-full py-12 text-center opacity-60 border-2 border-dashed border-base-content/20 rounded-box"><p>No groups created yet.</p></div>`;
                 return;
             }
             grid.innerHTML = state.groups.map(g => {
                 const count = state.devices.filter(d => d.group_id === g.id).length;
                 return `
-                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col fade-enter">
+                <div class="card bg-base-100 shadow-sm hover:shadow-md transition-all flex flex-col fade-enter border border-base-content/10">
+                    <div class="card-body p-6">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h3 class="font-bold text-lg text-slate-800">${escapeHtml(g.name)}</h3>
-                            <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-md mt-1 inline-block"><i class="fa-solid fa-desktop mr-1"></i> ${count} Screens</span>
+                            <h3 class="card-title">${escapeHtml(g.name)}</h3>
+                            <span class="badge badge-ghost mt-1"><i class="fa-solid fa-desktop mr-1"></i> ${count} Screens</span>
                         </div>
-                        <button onclick="deleteGroup(${g.id})" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash-can"></i></button>
+                        <button onclick="deleteGroup(${g.id})" class="btn btn-ghost btn-sm btn-circle text-error"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
-                    <div class="mt-auto grid grid-cols-2 gap-3">
-                        <button onclick="openGroupManage(${g.id})" class="px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors">Manage Devices</button>
-                        <button onclick="openGroupPlaylist(${g.id})" class="px-3 py-2 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg shadow-sm transition-colors">Assign Playlist</button>
+                    <div class="card-actions mt-auto grid grid-cols-2 gap-3">
+                        <button onclick="openGroupManage(${g.id})" class="btn btn-outline btn-sm">Manage Devices</button>
+                        <button onclick="openGroupPlaylist(${g.id})" class="btn btn-primary btn-sm">Assign Playlist</button>
+                    </div>
                     </div>
                 </div>`;
             }).join('');
@@ -1480,10 +1466,10 @@ async function renameDevice(id, old) {
             document.getElementById('manage-group-id').value = gid;
             const list = document.getElementById('group-device-list');
             list.innerHTML = state.devices.map(d => `
-                <label class="flex items-center gap-3 p-3 border border-slate-100 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
-                    <input type="checkbox" class="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-500" value="${d.id}" ${d.group_id === gid ? 'checked' : ''}>
-                    <span class="font-medium text-slate-700 flex-1">${d.name} <span class="text-slate-400 text-xs font-normal">(${d.code})</span></span>
-                    ${d.group_id && d.group_id !== gid ? '<span class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">In other group</span>' : ''}
+                <label class="label cursor-pointer justify-start gap-3 border border-base-content/10 rounded-box p-3 hover:bg-base-200">
+                    <input type="checkbox" class="checkbox checkbox-primary checkbox-sm" value="${d.id}" ${d.group_id === gid ? 'checked' : ''}>
+                    <span class="label-text font-medium flex-1">${d.name} <span class="opacity-60 text-xs font-normal">(${d.code})</span></span>
+                    ${d.group_id && d.group_id !== gid ? '<span class="badge badge-warning badge-xs">In other group</span>' : ''}
                 </label>
             `).join('');
         }
@@ -1532,13 +1518,13 @@ async function renameDevice(id, old) {
 
         function showToast(msg, type = 'info') {
             const div = document.createElement('div');
-            let bgClass = 'bg-slate-800';
+            let bgClass = 'alert-info';
             let icon = '<i class="fa-solid fa-circle-info"></i>';
             
-            if(type === 'error') { bgClass = 'bg-red-600'; icon = '<i class="fa-solid fa-circle-exclamation"></i>'; }
-            if(type === 'success') { bgClass = 'bg-emerald-600'; icon = '<i class="fa-solid fa-circle-check"></i>'; }
+            if(type === 'error') { bgClass = 'alert-error'; icon = '<i class="fa-solid fa-circle-exclamation"></i>'; }
+            if(type === 'success') { bgClass = 'alert-success'; icon = '<i class="fa-solid fa-circle-check"></i>'; }
 
-            div.className = `toast ${bgClass} text-white px-5 py-4 rounded-xl shadow-2xl flex items-center gap-3 text-sm font-medium min-w-[300px] border border-white/10`;
+            div.className = `alert ${bgClass} shadow-lg w-auto min-w-[300px]`;
             div.innerHTML = `<span class="text-lg">${icon}</span><span>${msg}</span>`;
             
             const container = document.getElementById('toast-container');
@@ -1579,14 +1565,14 @@ function showCustomPrompt(title, initialValue, onSave) {
             onSave(input.value.trim());
             closeCustomModal();
         } else {
-            input.classList.add('border-red-500');
+            input.classList.add('input-error');
         }
     });
     
     // Allow Enter key
     input.onkeydown = (e) => {
         if(e.key === 'Enter') newBtn.click();
-        input.classList.remove('border-red-500');
+        input.classList.remove('input-error');
     };
 }
 
