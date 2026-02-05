@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpliSign Enterprise</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,19 +21,6 @@
                         brand: { 500: '#3b82f6', 600: '#2563eb' }
                     }
                 }
-            },
-            daisyui: {
-                themes: [
-                    {
-                        light: {
-                            primary: "#2563eb", 
-                            "primary-content": "#ffffff",
-                            "base-100": "#ffffff",
-                            "base-200": "#f1f5f9",
-                            "base-300": "#e2e8f0",
-                        }
-                    }
-                ]
             }
         }
     </script>
@@ -43,6 +30,15 @@
         img, svg, video, canvas, audio, iframe, embed, object {
             display: inline-block; 
             vertical-align: middle;
+        }
+        
+        /* Manual Theme Override for CDN (DaisyUI Config is ignored in CDN) */
+        :root {
+            --p: 0.546 0.245 262.88;  /* Primary: #2563eb */
+            --pc: 1 0 0;              /* Primary Content: #ffffff */
+            --b1: 1 0 0;              /* Base-100: #ffffff */
+            --b2: 0.967 0.003 264.5;  /* Base-200: #f1f5f9 */
+            --b3: 0.929 0.013 255.5;  /* Base-300: #e2e8f0 */
         }
         
         body { 
