@@ -26,7 +26,6 @@
                 themes: [
                     {
                         light: {
-                            ...require("daisyui/src/theming/themes")["light"],
                             primary: "#2563eb", 
                             "primary-content": "#ffffff",
                             "base-100": "#ffffff",
@@ -550,7 +549,7 @@
         // --- 4. MEDIA ---
         async function loadMedia() {
             if(!sb) return;
-            const { data, error } = await sb.from('media').select('*').eq('user_id', state.user.id).order('id', {ascending: false});
+            const { data, error } = await sb.from('media').select('*, created_at').eq('user_id', state.user.id).order('id', {ascending: false});
             if(error) return showToast(error.message, 'error');
             state.media = data || [];
             filterMedia('all');
@@ -683,7 +682,7 @@
                 document.getElementById('pl-name').value = pl.name;
                 state.draft = pl.items ? JSON.parse(JSON.stringify(pl.items)) : [];
             } else {
-                document.getElementById('pl-id').value = '';
+                document.getElementById('pl-id').value = ''; 
                 document.getElementById('pl-name').value = '';
                 state.draft = [];
             }
@@ -963,8 +962,51 @@
         }
 
         function checkScheduleConflicts(payloads, currentId) {
-            // (Keeping logic brief for this snippet, same as before)
-            return null; 
+            for (const newSch of payloads) {
+                // 1. Identify Target Devices for the new schedule
+                let targetDevs = [];
+                if (newSch.device_id) {
+                    targetDevs.push(parseInt(newSch.device_id));
+                } else if (newSch.group_id) {
+                    // Find all devices in this group
+                    targetDevs = state.devices.filter(d => d.group_id === parseInt(newSch.group_id)).map(d => d.id);
+                }
+
+                for (const ex of state.schedules) {
+                    if (currentId && ex.id == currentId) continue; // Skip self
+
+                    // 2. Check Target Overlap
+                    let hasTargetOverlap = false;
+                    
+                    if (ex.device_id) {
+                        // Existing is specific device
+                        if (targetDevs.includes(ex.device_id)) hasTargetOverlap = true;
+                    } else if (ex.group_id) {
+                        // Existing is group
+                        const exGroupDevs = state.devices.filter(d => d.group_id === ex.group_id).map(d => d.id);
+                        if (targetDevs.some(d => exGroupDevs.includes(d))) hasTargetOverlap = true;
+                        if (newSch.group_id && newSch.group_id == ex.group_id) hasTargetOverlap = true;
+                    }
+
+                    if (!hasTargetOverlap) continue;
+
+                    // 3. Check Date Overlap
+                    const nStart = newSch.start_date;
+                    const nEnd = newSch.end_date || '9999-12-31';
+                    const eStart = ex.start_date;
+                    const eEnd = ex.end_date || '9999-12-31';
+
+                    if (nStart > eEnd || eStart > nEnd) continue;
+
+                    // 4. Check Day/Time Overlap
+                    const commonDays = newSch.days_of_week.filter(d => ex.days_of_week.includes(d));
+                    if (commonDays.length > 0 && newSch.start_time < ex.end_time && ex.start_time < newSch.end_time) {
+                        const pl = state.playlists.find(p => p.id === ex.playlist_id);
+                        return `Conflict detected with schedule for "${pl ? pl.name : 'Unknown'}"\n(${ex.start_time.slice(0,5)} - ${ex.end_time.slice(0,5)})\n\nSave anyway?`;
+                    }
+                }
+            }
+            return null;
         }
 
         async function saveSchedule() {
@@ -994,6 +1036,9 @@
             } else {
                 payloads.push({ ...base, start_time: startTime, end_time: endTime, days_of_week: days });
             }
+
+            const conflictMsg = checkScheduleConflicts(payloads, id);
+            if (conflictMsg && !confirm(conflictMsg)) return;
 
             if (id) await sb.from('schedules').delete().eq('id', id);
             const { error } = await sb.from('schedules').insert(payloads);
@@ -1193,7 +1238,7 @@
         function openGroupPlaylist(gid) {
             document.getElementById('modal-group-playlist').showModal();
             document.getElementById('assign-group-id').value = gid;
-            document.getElementById('group-playlist-select').innerHTML = `<option value="">Select...</option>` + state.playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            document.getElementById('group-playlist-select').innerHTML = `&lt;option value=""&gt;Select...&lt;/option&gt;` + state.playlists.map(p =&gt; `&lt;option value="${p.id}"&gt;${escapeHtml(p.name)}&lt;/option&gt;`).join('');
         }
         async function confirmGroupPlaylist() {
             const gid = document.getElementById('assign-group-id').value;
