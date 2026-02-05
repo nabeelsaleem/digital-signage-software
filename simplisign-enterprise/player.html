@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpliSign Player</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- DaisyUI -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -41,18 +39,14 @@
 </head>
 <body class="h-screen w-screen">
 
-    <div id="pairing-screen" class="hero min-h-screen bg-base-200 z-50 absolute inset-0 pairing-mode">
-        <div class="hero-content text-center">
-            <div class="max-w-md">
-                <h1 class="text-2xl font-bold tracking-widest opacity-60 mb-8">ENTER PAIRING CODE</h1>
-                <input id="pairing-code" type="text" maxlength="6" placeholder="------" 
-                    class="input input-bordered input-lg w-full max-w-xs text-4xl text-center h-24 uppercase tracking-[1rem] mb-8 font-mono">
-                <button onclick="pairDevice()" class="btn btn-primary btn-lg btn-wide rounded-full text-xl shadow-lg">
-                    CONNECT
-                </button>
-                <p id="status-msg" class="text-error mt-4 h-6 font-bold"></p>
-            </div>
-        </div>
+    <div id="pairing-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center pairing-mode text-white">
+        <h1 class="text-xl tracking-widest text-slate-400 mb-8">ENTER PAIRING CODE</h1>
+        <input id="pairing-code" type="text" maxlength="6" placeholder="------" 
+            class="bg-slate-800 border-2 border-slate-700 text-6xl text-center py-6 w-96 uppercase tracking-[1rem] rounded-xl outline-none focus:border-blue-500 mb-8">
+        <button onclick="pairDevice()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-full text-xl transition shadow-lg shadow-blue-900/50">
+            CONNECT
+        </button>
+        <p id="status-msg" class="text-red-500 mt-4 h-6"></p>
     </div>
 
     <div id="player-canvas" class="absolute inset-0 bg-black hidden">
