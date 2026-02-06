@@ -212,9 +212,9 @@
                 <div id="view-media" class="hidden max-w-7xl mx-auto fade-enter">
                     <div class="flex items-center gap-2 mb-6">
                         <div class="bg-gray-900 p-1 rounded-lg border border-gray-800 inline-flex">
-                            <button onclick="filterMedia('all')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-gray-800 text-white shadow-sm transition-all border border-gray-700">All</button>
-                            <button onclick="filterMedia('image')" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all">Images</button>
-                            <button onclick="filterMedia('video')" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all">Videos</button>
+                            <button onclick="filterMedia('all')" id="btn-filter-all" class="px-3 py-1.5 rounded-md text-xs font-medium bg-gray-800 text-white shadow-sm transition-all border border-gray-700">All</button>
+                            <button onclick="filterMedia('image')" id="btn-filter-image" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all">Images</button>
+                            <button onclick="filterMedia('video')" id="btn-filter-video" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all">Videos</button>
                         </div>
                     </div>
                     <input type="file" id="media-upload-input" class="hidden" multiple onchange="processUpload()">
@@ -580,13 +580,17 @@
         }
 
         function filterMedia(type) {
+            // Update Buttons Active State
+            ['all', 'image', 'video'].forEach(t => {
+                const btn = document.getElementById(`btn-filter-${t}`);
+                if (t === type) btn.className = "px-3 py-1.5 rounded-md text-xs font-medium bg-gray-800 text-white shadow-sm transition-all border border-gray-700";
+                else btn.className = "px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all";
+            });
+
             const grid = document.getElementById('media-grid');
             grid.innerHTML = '';
             const filtered = type === 'all' ? state.media : state.media.filter(m => m.type.includes(type));
             
-            // Buttons logic reused from original but simpler
-            // (Skipping complexity for brevity, buttons work fine)
-
             if(filtered.length === 0) {
                 grid.innerHTML = `<div class="col-span-full py-20 text-center opacity-50 flex flex-col items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-12 h-12 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
@@ -597,6 +601,7 @@
 
             filtered.forEach(m => {
                 const isVideo = m.type.includes('video');
+                const tagColor = isVideo ? 'bg-indigo-600' : 'bg-emerald-600';
                 const thumbnail = isVideo 
                     ? `<div class="flex items-center justify-center h-full bg-gray-800 text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-8 h-8"><path d="M8 5v14l11-7z"/></svg></div>`
                     : `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">`;
@@ -609,7 +614,7 @@
                                 <button onclick="openReplaceDialog('${m.id}')" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded">REPLACE</button>
                                 <button onclick="deleteMedia(${m.id})" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-full"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button>
                             </div>
-                            <span class="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur text-white text-[10px] font-bold uppercase rounded">${isVideo ? 'VIDEO' : 'IMG'}</span>
+                            <span class="absolute bottom-2 left-2 px-2 py-0.5 ${tagColor} backdrop-blur text-white text-[10px] font-bold uppercase rounded">${isVideo ? 'VIDEO' : 'IMG'}</span>
                         </div>
                         <div class="p-3 border-t border-gray-800">
                             <p class="text-sm font-medium text-gray-300 truncate" title="${m.name}">${m.name}</p>
@@ -1089,14 +1094,19 @@
 
         async function deleteScheduleFromModal() {
             const id = document.getElementById('sch-id').value;
-            if(id) await deleteSchedule(id);
-            closeModal('modal-schedule');
+            if(id) {
+                const success = await deleteSchedule(id);
+                if(success) closeModal('modal-schedule');
+            } else {
+                closeModal('modal-schedule');
+            }
         }
 
         async function deleteSchedule(id) {
-            if(!confirm("Remove this schedule slot?")) return;
+            if(!confirm("Remove this schedule slot?")) return false;
             const { error } = await sb.from('schedules').delete().eq('id', id);
-            if(error) showToast(error.message, 'error'); else { showToast('Removed', 'success'); loadSchedules(); }
+            if(error) { showToast(error.message, 'error'); return false; }
+            else { showToast('Removed', 'success'); loadSchedules(); return true; }
         }
 
         // --- DEVICES ---
