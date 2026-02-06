@@ -6,8 +6,13 @@
     <title>SimpliSign Enterprise</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- FullCalendar -->
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
@@ -17,11 +22,6 @@
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        gray: {
-                            850: '#1f2937',
-                            900: '#111827',
-                            950: '#030712',
-                        },
                         brand: {
                             500: '#6366f1', // Indigo
                             600: '#4f46e5',
@@ -101,10 +101,11 @@
 <body onload="document.body.classList.remove('opacity-0')" class="opacity-0 transition-opacity duration-500">
     <input type="file" id="replace-file-input" style="display: none;" accept="image/*,video/*">
 
-    <!-- AUTH VIEW -->
-    <div id="auth-view" class="fixed inset-0 z-[999] bg-gray-950 flex items-center justify-center hidden">
-        <div class="w-full max-w-md bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-8 relative overflow-hidden">
-            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-brand-500 shadow-[0_0_30px_5px_rgba(99,102,241,0.5)]"></div>
+    <!-- ================= AUTH VIEW ================= -->
+    <div id="auth-view" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center hidden">
+        <div class="bg-white w-full max-w-md p-8 rounded-2xl shadow-2xl border border-slate-100 text-center relative overflow-hidden">
+            <!-- Decorative Blob -->
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-500 to-indigo-600"></div>
             
             <div class="text-center mb-8">
                 <div class="w-14 h-14 bg-gray-800 rounded-xl flex items-center justify-center mx-auto mb-4 border border-gray-700 shadow-inner">
@@ -140,19 +141,15 @@
         </div>
     </div>
 
-    <!-- APP LAYOUT -->
-    <div class="flex h-screen w-full bg-gray-950">
-        
-        <!-- SIDEBAR -->
-        <aside id="sidebar" class="w-64 bg-gray-900 border-r border-gray-800 flex-col hidden md:flex shrink-0">
-            <div class="h-16 flex items-center px-6 border-b border-gray-800">
-                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white mr-3 shadow-lg shadow-brand-500/20">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125z" />
-                    </svg>
-                </div>
-                <span class="font-bold text-white tracking-tight">SimpliSign</span>
+    <!-- ================= SIDEBAR ================= -->
+    <aside id="sidebar" class="w-72 bg-slate-900 text-slate-400 flex-col hidden md:flex shrink-0 transition-all duration-300">
+        <!-- Logo -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-800 shrink-0">
+            <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white mr-3 shadow-lg shadow-brand-500/20">
+                <i class="fa-solid fa-tv text-sm"></i>
             </div>
+            <span class="font-bold text-lg text-white tracking-tight">SimpliSign</span>
+        </div>
 
             <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
                 <button onclick="nav('media')" class="nav-item w-full">
@@ -188,51 +185,51 @@
             </div>
         </aside>
 
-        <!-- MAIN CONTENT -->
-        <main id="main-content" class="flex-1 flex flex-col overflow-hidden hidden bg-gray-950 relative">
+    <!-- ================= MAIN CONTENT ================= -->
+    <main id="main-content" class="flex-1 flex flex-col h-screen overflow-hidden hidden bg-slate-50/50">
+        
+        <!-- Header -->
+        <!-- Replace the content inside <header> with this: -->
+<header class="bg-white border-b h-16 flex items-center justify-between px-8 shadow-sm shrink-0">
+    <div class="flex items-center gap-6 flex-1">
+        <h2 id="page-title" class="text-lg font-bold text-slate-800 whitespace-nowrap">Overview</h2>
+        
+        <!-- Universal Search Bar -->
+        <div class="search-wrapper hidden md:block">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="global-search" class="search-input" placeholder="Search media, screens, playlists..." oninput="handleGlobalSearch(this.value)">
+        </div>
+    </div>
+    
+    <div id="header-actions" class="flex items-center gap-3"></div>
+</header>
+
+        <!-- Dynamic Content Area -->
+        <div class="flex-1 overflow-auto p-8 relative">
             
-            <header class="h-16 border-b border-gray-800 flex items-center justify-between px-8 bg-gray-900/50 backdrop-blur-sm shrink-0 z-10">
-                <div class="flex items-center gap-6 flex-1">
-                    <h2 id="page-title" class="text-lg font-semibold text-white">Overview</h2>
-                    
-                    <!-- Search -->
-                    <div class="relative w-80 group hidden md:block">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-500 transition-colors">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                        <input type="text" id="global-search" class="w-full bg-gray-800 border border-gray-700 rounded-lg pl-9 pr-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-brand-500 focus:border-brand-500 transition-all" placeholder="Search anything..." oninput="handleGlobalSearch(this.value)">
-                    </div>
+            <!-- Media View -->
+            <div id="view-media" class="hidden max-w-7xl mx-auto fade-enter">
+                <div class="flex items-center gap-2 mb-8">
+                    <button onclick="filterMedia('all')" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-slate-900 text-white shadow-md">All Files</button>
+                    <button onclick="filterMedia('image')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all">Images</button>
+                    <button onclick="filterMedia('video')" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all">Videos</button>
                 </div>
+                <input type="file" id="media-upload-input" class="hidden" multiple onchange="processUpload()">
+                <div id="media-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+            </div>
+
+            <!-- Playlists View -->
+            <div id="view-playlists" class="hidden max-w-7xl mx-auto fade-enter">
+                <div id="playlist-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            </div>
+
+            <!-- Schedules View -->
+           <div id="view-schedules" class="hidden h-full flex flex-col p-8 fade-enter max-w-7xl mx-auto w-full">
                 
-                <div id="header-actions" class="flex items-center gap-3"></div>
-            </header>
-
-            <div class="flex-1 overflow-auto p-8 relative">
-                
-                <!-- MEDIA VIEW -->
-                <div id="view-media" class="hidden max-w-7xl mx-auto fade-enter">
-                    <div class="flex items-center gap-2 mb-6">
-                        <div class="bg-gray-900 p-1 rounded-lg border border-gray-800 inline-flex">
-                            <button onclick="filterMedia('all')" class="px-3 py-1.5 rounded-md text-xs font-medium bg-gray-800 text-white shadow-sm transition-all border border-gray-700">All</button>
-                            <button onclick="filterMedia('image')" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all">Images</button>
-                            <button onclick="filterMedia('video')" class="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-all">Videos</button>
-                        </div>
-                    </div>
-                    <input type="file" id="media-upload-input" class="hidden" multiple onchange="processUpload()">
-                    <div id="media-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+                <div class="flex items-center gap-6 mb-6 border-b border-slate-200 shrink-0">
+                    <button onclick="switchScheduleView('calendar')" id="tab-sch-calendar" class="pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all">Calendar View</button>
+                    <button onclick="switchScheduleView('list')" id="tab-sch-list" class="pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all">List View</button>
                 </div>
-
-                <!-- PLAYLISTS VIEW -->
-                <div id="view-playlists" class="hidden max-w-7xl mx-auto fade-enter">
-                    <div id="playlist-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
-                </div>
-
-                <!-- SCHEDULES VIEW -->
-                <div id="view-schedules" class="hidden h-full flex flex-col fade-enter max-w-full">
-                    <div class="flex items-center gap-6 mb-4 border-b border-gray-800 shrink-0">
-                        <button onclick="switchScheduleView('calendar')" id="tab-sch-calendar" class="pb-3 text-sm font-medium text-brand-500 border-b-2 border-brand-500 transition-all">Calendar</button>
-                        <button onclick="switchScheduleView('list')" id="tab-sch-list" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-300 border-b-2 border-transparent transition-all">List</button>
-                    </div>
 
                     <div id="sch-view-calendar" class="flex-1 bg-gray-900 rounded-xl border border-gray-800 p-4 relative overflow-hidden">
                         <div id="calendar" class="h-full"></div>
@@ -243,38 +240,32 @@
                     </div>
                 </div>
 
-                <!-- DEVICES VIEW -->
-                <div id="view-devices" class="hidden max-w-6xl mx-auto fade-enter">
-                    <div class="flex items-center gap-6 mb-6 border-b border-gray-800">
-                        <button onclick="switchDeviceTab('list')" id="tab-devices-list" class="pb-3 text-sm font-medium text-brand-500 border-b-2 border-brand-500 transition-all">All Screens</button>
-                        <button onclick="switchDeviceTab('groups')" id="tab-devices-groups" class="pb-3 text-sm font-medium text-gray-500 hover:text-gray-300 border-b-2 border-transparent transition-all">Device Groups</button>
-                    </div>
+            <!-- Devices View -->
+            <div id="view-devices" class="hidden max-w-6xl mx-auto fade-enter">
+                <!-- Tabs -->
+                <div class="flex items-center gap-6 mb-6 border-b border-slate-200">
+                    <button onclick="switchDeviceTab('list')" id="tab-devices-list" class="pb-3 text-sm font-bold text-brand-600 border-b-2 border-brand-600 transition-all">All Screens</button>
+                    <button onclick="switchDeviceTab('groups')" id="tab-devices-groups" class="pb-3 text-sm font-bold text-slate-500 hover:text-slate-700 border-b-2 border-transparent transition-all">Device Groups</button>
+                </div>
 
                     <div id="device-list-view">
                         <div id="device-list" class="space-y-4"></div>
                     </div>
 
-                    <div id="device-groups-view" class="hidden">
-                        <div class="flex justify-end mb-6">
-                            <button onclick="openCreateGroupModal()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg shadow-brand-500/20 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                                Create Group
-                            </button>
-                        </div>
-                        <div id="groups-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-                    </div>
+                <div id="device-groups-view" class="hidden">
+                    <div class="flex justify-end mb-6"><button onclick="openCreateGroupModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg shadow-brand-500/20 flex items-center gap-2"><i class="fa-solid fa-plus"></i> Create Group</button></div>
+                    <div id="groups-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
 
-    <!-- MODALS -->
-    <div id="modal-backdrop" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden transition-opacity"></div>
+    <!-- ================= MODALS ================= -->
 
-    <!-- Playlist Editor -->
-    <div id="modal-playlist" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-900 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl flex flex-col border border-gray-800 overflow-hidden">
-            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900">
+    <!-- Playlist Editor Modal -->
+    <div id="modal-playlist" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-white/10">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
                 <div>
                     <h3 class="font-bold text-lg text-white">Playlist Editor</h3>
                     <p class="text-xs text-gray-500">Drag & drop content</p>
@@ -314,11 +305,11 @@
     </div>
 
     <!-- Schedule Modal -->
-    <div id="modal-schedule" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-900 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[90vh] border border-gray-800">
-            <div class="p-5 border-b border-gray-800 flex justify-between items-center">
-                <h3 class="font-bold text-lg text-white">Edit Schedule</h3>
-                <button onclick="closeModal('modal-schedule')" class="text-gray-500 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+    <div id="modal-schedule" class="fixed inset-0 z-[60] bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl flex flex-col max-h-[95vh] overflow-hidden">
+            <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                <h3 class="font-bold text-lg text-slate-800">Edit Schedule Slot</h3>
+                <button onclick="closeModal('modal-schedule')" class="text-slate-400 hover:text-slate-600 transition-colors"><i class="fa-solid fa-times"></i></button>
             </div>
             
             <div class="p-6 space-y-5 overflow-y-auto custom-scrollbar">
@@ -382,10 +373,11 @@
     </div>
 
     <!-- Group Modals -->
-    <div id="modal-create-group" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-900 w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-gray-800">
-            <h3 class="font-bold text-lg text-white mb-4">Create Group</h3>
-            <input type="text" id="new-group-name" placeholder="e.g. Lobby Screens" class="input-dark mb-6">
+    <!-- Create Group -->
+    <div id="modal-create-group" class="fixed inset-0 z-50 bg-slate-900/60 hidden flex items-center justify-center backdrop-blur-sm p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6">
+            <h3 class="font-bold text-lg text-slate-800 mb-4">Create Device Group</h3>
+            <input type="text" id="new-group-name" placeholder="e.g. Lobby Screens" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none mb-6">
             <div class="flex justify-end gap-3">
                 <button onclick="closeModal('modal-create-group')" class="text-gray-400 hover:text-white text-sm">Cancel</button>
                 <button onclick="createGroup()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium">Create</button>
@@ -444,6 +436,16 @@
         // --- 1. INIT APP ---
         async function initApp() {
             try {
+                // LOCALHOST BYPASS (Uncomment for testing)
+                /*
+                const config = {
+                    supabaseUrl: "YOUR_URL",
+                    supabaseKey: "YOUR_KEY" 
+                };
+                sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
+                */
+
+                // PRODUCTION (Comment out if using bypass above)
                 const response = await fetch('/api/config');
                 if (!response.ok) throw new Error('API Security Error');
                 const config = await response.json();
@@ -582,6 +584,16 @@
             grid.innerHTML = '';
             const filtered = type === 'all' ? state.media : state.media.filter(m => m.type.includes(type));
             
+            // Toggle Filter Button Styles
+            const buttons = document.querySelectorAll('#view-media button');
+            buttons.forEach(b => {
+                if(b.textContent.toLowerCase().includes(type) || (type === 'all' && b.textContent.includes('All'))) {
+                    b.className = "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-slate-900 text-white shadow-md";
+                } else {
+                    b.className = "px-4 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all";
+                }
+            });
+
             if(filtered.length === 0) {
                 grid.innerHTML = `<div class="col-span-full py-20 text-center opacity-50 flex flex-col items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor" class="w-12 h-12 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
@@ -1404,95 +1416,18 @@
                 showToast('Replaced Successfully!', 'success');
                 if (typeof loadMedia === 'function') loadMedia(); 
 
-            } catch (err) {
-                console.error(err);
-                showToast('Replace Failed', 'error');
-            } finally {
-                replaceTargetId = null;
-                e.target.value = '';
-            }
-        });
+    } catch (err) {
+        console.error(err);
+        alert('Replace Failed: ' + err.message);
+    } finally {
+        replaceTargetId = null;
+        e.target.value = ''; // Reset input
+    }
+});
 
-        // --- SEARCH ---
-        function handleGlobalSearch(query) {
-            const lowerQuery = query.toLowerCase();
-            
-            if (currentTab === 'media') {
-                if (!lowerQuery) { filterMedia('all'); return; }
-                const filtered = state.media.filter(m => m.name.toLowerCase().includes(lowerQuery));
-                
-                // Re-render full grid for search results so actions work
-                const grid = document.getElementById('media-grid');
-                grid.innerHTML = '';
-                
-                if (filtered.length === 0) {
-                    grid.innerHTML = `<p class="text-gray-500 col-span-full text-center">No matches.</p>`;
-                    return;
-                }
 
-                filtered.forEach(m => {
-                    const isVideo = m.type.includes('video');
-                    const thumbnail = isVideo 
-                        ? `<div class="flex items-center justify-center h-full bg-gray-800 text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-8 h-8"><path d="M8 5v14l11-7z"/></svg></div>`
-                        : `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">`;
 
-                    grid.innerHTML += `
-                        <div class="group relative bg-gray-900 rounded-xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-800 transition-all duration-300">
-                            <div class="aspect-video relative bg-gray-800 overflow-hidden">
-                                ${thumbnail}
-                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <button onclick="openReplaceDialog('${m.id}')" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded">REPLACE</button>
-                                    <button onclick="deleteMedia(${m.id})" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-full"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button>
-                                </div>
-                                <span class="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur text-white text-[10px] font-bold uppercase rounded">${isVideo ? 'VIDEO' : 'IMG'}</span>
-                            </div>
-                            <div class="p-3 border-t border-gray-800">
-                                <p class="text-sm font-medium text-gray-300 truncate" title="${m.name}">${m.name}</p>
-                                <p class="text-[10px] text-gray-500 font-mono mt-0.5">${new Date().toLocaleDateString()}</p>
-                            </div>
-                        </div>`;
-                });
-            } 
-            else if (currentTab === 'playlists') {
-                if (!lowerQuery) { loadPlaylists(); return; }
-                
-                const list = document.getElementById('playlist-list');
-                const filtered = state.playlists.filter(p => p.name.toLowerCase().includes(lowerQuery));
-                
-                if (filtered.length === 0) {
-                    list.innerHTML = `<p class="text-gray-500 col-span-full text-center">No matches.</p>`;
-                    return;
-                }
-
-                // Render filtered playlists
-                list.innerHTML = filtered.map(p => `
-                    <div class="group bg-gray-900 p-5 rounded-2xl border border-gray-800 hover:border-brand-500/50 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full relative overflow-hidden">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-lg text-white group-hover:text-brand-400 transition-colors">${escapeHtml(p.name)}</h3>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <span class="bg-gray-800 text-gray-400 text-xs font-bold px-2 py-1 rounded-md border border-gray-700">${p.items ? p.items.length : 0} items</span>
-                                </div>
-                            </div>
-                            <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="renamePlaylist(${p.id}, '${p.name}')" class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" /></svg></button>
-                                <button onclick="deletePlaylist(${p.id})" class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button>
-                            </div>
-                        </div>
-                        <div class="mt-auto pt-4 border-t border-gray-800">
-                            <button onclick="editPlaylist(${p.id})" class="w-full py-2 border border-gray-700 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:border-gray-500 transition-all">Edit Content</button>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            else if (currentTab === 'devices') {
-                if (!lowerQuery) { loadDevices(); return; }
-                const filtered = state.devices.filter(d => d.name.toLowerCase().includes(lowerQuery) || d.code.toLowerCase().includes(lowerQuery));
-                renderDeviceCards(filtered);
-            }
-        }
-
-        // Start
+        // Start the engine
         initApp();
     </script>   
 </body>
