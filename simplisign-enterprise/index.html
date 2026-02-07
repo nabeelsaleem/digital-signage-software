@@ -225,15 +225,8 @@
                     <div id="playlist-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                 </div>
 
-                <div id="view-schedules" class="hidden h-full flex flex-col fade-enter max-w-full">
-                    <div class="flex items-center justify-between mb-6 shrink-0">
-                        <h3 class="text-2xl font-bold text-white">All Schedules</h3>
-                        <button onclick="openScheduleModal()" class="bg-brand-600 hover:bg-brand-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-lg shadow-brand-500/20 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                            Add Schedule
-                        </button>
-                    </div>
-                    <div id="sch-view-list" class="flex-1 overflow-y-auto custom-scrollbar">
+                <div id="view-schedules" class="hidden max-w-7xl mx-auto fade-enter">
+                    <div id="sch-view-list" class="mt-14">
                         <div id="schedule-card-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20"></div>
                     </div>
                 </div>
@@ -568,7 +561,7 @@
                 loadPlaylists();
             } else if (view === 'schedules') {
                 title.innerText = 'Schedules';
-                btn.innerHTML = ''; // Button moved to view header
+                btn.innerHTML = `<button onclick="openScheduleModal()" class="${baseBtnClass}">${iconCal} Add Schedule</button>`;
                 setTimeout(loadSchedules, 100);
             } else {
                 title.innerText = 'Screens';
