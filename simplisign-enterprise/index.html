@@ -106,7 +106,8 @@
             @apply btn bg-brand-600 text-white hover:bg-brand-500 shadow-lg shadow-brand-500/20;
         }
         .btn-secondary {
-            @apply btn text-white hover:text-white;
+            @apply btn;
+            color: var(--text-primary);
             background-color: var(--bg-tertiary);
             border: 1px solid var(--border-color);
         }
@@ -291,12 +292,8 @@
         
         <aside id="sidebar" class="w-64 flex-col hidden md:flex shrink-0" style="background-color: var(--sidebar-bg); border-right: 1px solid var(--border-color);">
             <div class="h-16 flex items-center px-6" style="border-bottom: 1px solid var(--border-color);">
-                <div class="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white mr-3 shadow-lg shadow-brand-500/20">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 20.25h12m-7.5-3v3m3-3v3m-10.125-3h17.25c.621 0 1.125-.504 1.125-1.125V4.875c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125z" />
-                    </svg>
-                </div>
-                <span class="font-bold text-white tracking-tight">SimpliSign</span>
+                <img src="https://raw.githubusercontent.com/nabeelsaleem/digital-signage-software/edf98040c6518e4e89997f88b9ca4e3c1877b1d0/simplisign-enterprise/images/FOR%20LIGHT%20MODE.svg" class="h-8 dark:hidden block" alt="SimpliSign">
+                <img src="https://raw.githubusercontent.com/nabeelsaleem/digital-signage-software/edf98040c6518e4e89997f88b9ca4e3c1877b1d0/simplisign-enterprise/images/FOR%20DARK%20MODE.svg" class="h-8 hidden dark:block" alt="SimpliSign">
             </div>
 
             <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -340,10 +337,7 @@
                     <h2 id="page-title" class="text-2xl font-bold" style="color: var(--text-primary);">Overview</h2>
                     
                     <div class="relative w-80 group hidden md:block">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-brand-500 transition-colors">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                        </svg>
-                        <input type="text" id="global-search" class="input-field pl-9" placeholder="Search anything..." oninput="handleGlobalSearch(this.value)">
+                         <input type="text" id="global-search" class="input-field pl-9" placeholder="Search anything..." oninput="handleGlobalSearch(this.value)">
                     </div>
                 </div>
                 
@@ -380,7 +374,7 @@
                 </div>
 
                 <div id="view-schedules" class="hidden max-w-7xl mx-auto fade-enter">
-                    <div id="sch-view-list" class="mt-14">
+                    <div id="sch-view-list">
                         <div id="schedule-card-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20"></div>
                     </div>
                 </div>
