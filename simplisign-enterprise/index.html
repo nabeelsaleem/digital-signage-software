@@ -716,16 +716,27 @@
                     }, 500);
                 }
 
+                // Track recovery state to prevent auto-redirect
+                let isRecoveryMode = false;
                 // Auth Listener
                 sb.auth.onAuthStateChange(async (event, session) => {
                     console.log("Auth Event:", event);
+                    
+                    // 1. Handle Recovery Trigger
                     if (event === 'PASSWORD_RECOVERY') {
                         console.log("🔄 Recovery mode active");
+                        isRecoveryMode = true;
                         document.getElementById('auth-view').classList.remove('hidden');
                         switchAuthView('update-pass');
-                        return; // Stop normal login flow
+                        return; 
                     }
+
+                    // 2. Handle Standard Login (BUT ignore if in recovery mode)
                     if (session) {
+                        if (isRecoveryMode) {
+                            console.log("⚠️ Ignoring redirect (Recovery Mode Active)");
+                            return; 
+                        }
                         state.user = session.user;
                         document.getElementById('auth-view').classList.add('hidden');
                         document.getElementById('sidebar').classList.remove('hidden');
@@ -734,7 +745,10 @@
                         document.getElementById('user-email').innerText = state.user.email;
                         nav(currentTab);
                     } else {
+
+                        // 3. Handle Logout
                         state.user = null;
+                        isRecoveryMode = false; // Reset flag
                         document.getElementById('auth-view').classList.remove('hidden');
                         document.getElementById('sidebar').classList.add('hidden');
                         document.getElementById('main-content').classList.add('hidden');
@@ -877,10 +891,13 @@
             if (error) showToast(error.message, 'error');
             else {
                 showToast('Password updated successfully!', 'success');
-                // Clear URL hash
+                
+                // Clear URL hash to clean up the token
                 window.history.replaceState(null, document.title, window.location.pathname);
-                // Redirect to main app view handled by listener
-                switchAuthView('login'); // Just in case
+                
+                // MANUALLY Force Redirect to Dashboard
+                // We reload to clear the "isRecoveryMode" state and ensure a fresh session
+                setTimeout(() => window.location.reload(), 1000);
             }
         }
 
