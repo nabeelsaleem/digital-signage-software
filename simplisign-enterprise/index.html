@@ -327,6 +327,15 @@
                 </div>
             </div>
 
+            <div id="view-forgot-success" class="auth-step hidden">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-green-600"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white">Check Your Email</h1>
+                    <p class="text-sm mt-2 text-slate-500">We have sent a password recover link to your email.</p>
+                </div>
+                <button onclick="switchAuthView('login')" class="w-full btn-ghost py-2.5">Back to Login</button>
+            </div>
+
             <div id="view-update-pass" class="auth-step hidden">
                 <div class="text-center mb-6">
                     <h1 class="text-xl font-bold text-slate-900 dark:text-white">Set New Password</h1>
@@ -690,12 +699,21 @@
                 // Initialize Validation Listeners
                 setupValidation();
 
-                // Check for OAuth errors in URL
-                const params = new URLSearchParams(window.location.search);
-                if (params.has('error')) {
-                    const errorMsg = params.get('error_description') || params.get('error');
-                    showToast(`Login Failed: ${errorMsg}`, 'error');
-                    window.history.replaceState({}, document.title, window.location.pathname);
+                // Check for OAuth errors in URL (Hash or Query)
+                const hashParams = new URLSearchParams(window.location.hash.substring(1)); // Remove the #
+                const queryParams = new URLSearchParams(window.location.search);
+                
+                const errorDesc = hashParams.get('error_description') || queryParams.get('error_description');
+                const errorCode = hashParams.get('error_code') || queryParams.get('error_code');
+                if (errorDesc) {
+                    console.error("Auth Error:", errorDesc);
+                    // Clear URL to prevent loop
+                    window.history.replaceState(null, document.title, window.location.pathname);
+                    
+                    // Show error to user
+                    setTimeout(() => {
+                        showToast(errorDesc.replace(/\+/g, ' '), 'error');
+                    }, 500);
                 }
 
                 // Auth Listener
@@ -836,15 +854,17 @@
         async function handleForgotPassword() {
             const email = document.getElementById('forgot-email').value;
             if(!email) return showToast('Enter your email', 'error');
-
+            const btn = document.querySelector('#view-forgot button.btn-primary');
+            btn.innerText = 'Sending...';
             const { error } = await sb.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin // Returns user to this page
+                redirectTo: window.location.origin
             });
-
-            if (error) showToast(error.message, 'error');
-            else {
-                showToast('Password reset link sent to your email', 'success');
-                switchAuthView('login');
+            btn.innerText = 'Send Reset Link';
+            if (error) {
+                showToast(error.message, 'error');
+            } else {
+                // Show the success confirmation view instead of login
+                switchAuthView('forgot-success');
             }
         }
 
