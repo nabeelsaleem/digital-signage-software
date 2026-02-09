@@ -192,6 +192,9 @@
         .toast-error {
             @apply toast bg-red-600 border-l-4 border-red-400 text-white border-red-400/20;
         }
+        .toast-warning {
+            @apply toast bg-amber-500 border-l-4 border-amber-300 text-white border-amber-300/20;
+        }
         .toast-info {
             @apply toast border-l-4 border-brand-500;
             background-color: var(--bg-tertiary);
@@ -669,6 +672,9 @@
                 const config = await response.json();
                 sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
 
+                // Initialize Validation Listeners
+                setupValidation();
+
                 // Check for OAuth errors in URL
                 const params = new URLSearchParams(window.location.search);
                 if (params.has('error')) {
@@ -736,15 +742,19 @@
             if(!email || !password) return showToast('Please fill in all fields', 'error');
 
             const btn = document.querySelector('#view-login button.btn-primary');
+            const originalText = btn.innerText;
             btn.innerText = 'Signing In...';
+            btn.disabled = true;
             
             const { error } = await sb.auth.signInWithPassword({ email, password });
             
             if (error) {
                 showToast(error.message, 'error');
-                btn.innerText = 'Sign In';
+                btn.innerText = originalText;
+                btn.disabled = false;
             } else {
-                // Success handled by onAuthStateChange in initApp
+                showToast('Welcome back!', 'success');
+                // Success handled by onAuthStateChange
             }
         }
 
@@ -756,7 +766,9 @@
             if(!email || !password || !name) return showToast('All fields required', 'error');
 
             const btn = document.querySelector('#view-signup button.btn-primary');
+            const originalText = btn.innerText;
             btn.innerText = 'Creating Account...';
+            btn.disabled = true;
 
             // SignUp with Metadata
             const { data, error } = await sb.auth.signUp({
@@ -767,18 +779,20 @@
 
             if (error) {
                 showToast(error.message, 'error');
-                btn.innerText = 'Sign Up';
+                btn.innerText = originalText;
+                btn.disabled = false;
             } else {
                 // Check if session exists (Auto-login) or if OTP is required
                 if (data.session) {
-                    showToast('Account created!', 'success');
+                    showToast('Account created successfully!', 'success');
                 } else {
                     // Show OTP View
                     document.getElementById('otp-email-display').innerText = email;
                     switchAuthView('otp');
-                    showToast('Verification code sent to email', 'success');
+                    showToast('OTP code sent to your email', 'warning');
                 }
-                btn.innerText = 'Sign Up';
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -787,10 +801,18 @@
             const token = document.getElementById('otp-code').value;
             if(!token) return showToast('Enter the 6-digit code', 'error');
 
+            const btn = document.querySelector('#view-otp button.btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Verifying...';
+            btn.disabled = true;
+
             const { data, error } = await sb.auth.verifyOtp({ email, token, type: 'signup' });
             
-            if (error) showToast(error.message, 'error');
-            else {
+            if (error) {
+                showToast(error.message, 'error');
+                btn.innerText = originalText;
+                btn.disabled = false;
+            } else {
                 showToast('Verified! Logging in...', 'success');
                 // Session listener will handle the rest
             }
@@ -1572,9 +1594,16 @@
         }
 
         function showToast(msg, type = 'info') {
+            const icons = {
+                success: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`,
+                error: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+                warning: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+                info: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+            };
+
             const div = document.createElement('div');
             div.className = `toast-anim toast-${type}`;
-            div.innerHTML = `<span>${msg}</span>`;
+            div.innerHTML = `${icons[type] || icons.info}<span>${msg}</span>`;
             
             const container = document.getElementById('toast-container');
             container.appendChild(div);
@@ -1585,6 +1614,31 @@
                 div.style.transform = 'translateY(100%)';
                 setTimeout(() => div.remove(), 300);
             }, 4000);
+        }
+
+        function setupValidation() {
+            const validateEmail = (e) => {
+                const el = e.target;
+                const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(el.value);
+                updateInputState(el, valid);
+            };
+
+            const validatePassword = (e) => {
+                const el = e.target;
+                const valid = el.value.length >= 6;
+                updateInputState(el, valid);
+            };
+
+            const updateInputState = (el, isValid) => {
+                el.classList.remove('ring-2', 'ring-green-500', 'border-green-500', 'ring-red-500', 'border-red-500');
+                if (el.value.length === 0) return;
+                if (isValid) el.classList.add('ring-2', 'ring-green-500', 'border-green-500');
+                else el.classList.add('ring-2', 'ring-red-500', 'border-red-500');
+            };
+
+            document.getElementById('login-email')?.addEventListener('input', validateEmail);
+            document.getElementById('signup-email')?.addEventListener('input', validateEmail);
+            document.getElementById('signup-password')?.addEventListener('input', validatePassword);
         }
 
         function closeModal(id) { 
