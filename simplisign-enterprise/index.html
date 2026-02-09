@@ -630,6 +630,14 @@
                 const config = await response.json();
                 sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
 
+                // Check for OAuth errors in URL
+                const params = new URLSearchParams(window.location.search);
+                if (params.has('error')) {
+                    const errorMsg = params.get('error_description') || params.get('error');
+                    showToast(`Login Failed: ${errorMsg}`, 'error');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
                 // Auth Listener
                 sb.auth.onAuthStateChange(async (event, session) => {
                     console.log("Auth Event:", event);
