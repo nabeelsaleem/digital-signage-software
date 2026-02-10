@@ -699,44 +699,45 @@
                 // 3. Auth Listener
                 sb.auth.onAuthStateChange(async (event, session) => {
                     console.log("Auth Event:", event);
-
-                    // Update flag if event fires (just in case URL check missed it)
+                    // CRITICAL FIX: Ignore background token refreshes to prevent 429 errors
+                    if (event === 'TOKEN_REFRESHED') {
+                        if(session) state.user = session.user; // Just update state
+                        return; // Do NOT re-run navigation logic
+                    }
+                    // Update flag if recovery event fires
                     if (event === 'PASSWORD_RECOVERY') isRecoveryMode = true;
-
                     // --- SCENARIO A: RECOVERY (Block Dashboard) ---
                     if (isRecoveryMode) {
-                        console.log("🔒 Recovery Mode Active - Blocking Redirect");
+                        console.log("🔒 Recovery Mode Active - Blocking Dashboard Redirect");
                         document.getElementById('auth-view').classList.remove('hidden');
                         switchAuthView('update-pass');
-                        return; // STOP HERE. Do not load dashboard.
+                        return; 
                     }
-
-                    // --- SCENARIO B: NORMAL LOGIN ---
+                    // --- SCENARIO B: LOGGED IN ---
                     if (session) {
                         state.user = session.user;
                         
-                        // UI: Show App
                         document.getElementById('auth-view').classList.add('hidden');
                         document.getElementById('sidebar').classList.remove('hidden');
                         document.getElementById('main-content').classList.remove('hidden');
                         document.getElementById('sidebar').classList.add('flex');
                         
-                        // Update User Info
                         const emailEl = document.getElementById('user-email');
                         if(emailEl) emailEl.innerText = state.user.email;
                         
+                        // Only load data if we aren't already on a tab (prevents double-fetch)
                         nav(currentTab);
                     } 
                     // --- SCENARIO C: LOGGED OUT ---
                     else {
                         state.user = null;
-                        isRecoveryMode = false; // Reset flag
+                        isRecoveryMode = false;
                         
-                        // UI: Show Login
                         document.getElementById('auth-view').classList.remove('hidden');
                         document.getElementById('sidebar').classList.add('hidden');
                         document.getElementById('main-content').classList.add('hidden');
                         document.getElementById('sidebar').classList.remove('flex');
+                        if(!isRecoveryMode) switchAuthView('login');
                     }
                 });
 
@@ -938,7 +939,7 @@
 
         // --- 4. MEDIA ---
         async function loadMedia() {
-            if(!sb) return;
+            if(!sb || !state.user) return;
             const { data, error } = await sb.from('media').select('*').eq('user_id', state.user.id).order('id', {ascending: false});
             if(error) return showToast(error.message, 'error');
             state.media = data || [];
@@ -1022,7 +1023,7 @@
 
         // --- 5. PLAYLISTS ---
         async function loadPlaylists() {
-            if(!sb) return;
+            if(!sb || !state.user) return;
             const { data, error } = await sb.from('playlists').select('*').eq('user_id', state.user.id).order('id', {ascending: false});
             if(error) return showToast(error.message, 'error');
             state.playlists = data || [];
@@ -1223,7 +1224,7 @@
         }
 
         async function loadSchedules() {
-            if(!sb) return;
+            if(!sb || !state.user) return;
             const { data, error } = await sb.from('schedules').select('*').eq('user_id', state.user.id);
             if(error) return showToast(error.message, 'error');
             state.schedules = data || [];
@@ -1420,7 +1421,7 @@
 
         // --- DEVICES ---
         async function loadDevices() {
-            if(!sb) return;
+            if(!sb || !state.user) return;
             
             const [devRes, groupRes] = await Promise.all([
                 sb.from('devices').select('*').eq('user_id', state.user.id).order('id', {ascending: false}),
