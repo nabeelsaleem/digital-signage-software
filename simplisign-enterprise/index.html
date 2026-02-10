@@ -681,74 +681,58 @@
         // --- 1. INIT APP ---
         async function initApp() {
             try {
-                // LOCALHOST BYPASS (Uncomment for testing)
-                /*
-                const config = {
-                    supabaseUrl: "YOUR_URL",
-                    supabaseKey: "YOUR_KEY" 
-                };
-                sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
-                */
-
-                // PRODUCTION (Comment out if using bypass above)
+                // 1. Fetch Config
+                // Note: Ensure this points to your actual API or use hardcoded keys for testing
                 const response = await fetch('/api/config');
                 if (!response.ok) throw new Error('API Security Error');
                 const config = await response.json();
+                
                 sb = supabase.createClient(config.supabaseUrl, config.supabaseKey);
 
                 // Initialize Validation Listeners
                 setupValidation();
 
-                // Check for OAuth errors in URL (Hash or Query)
-                const hashParams = new URLSearchParams(window.location.hash.substring(1)); // Remove the #
-                const queryParams = new URLSearchParams(window.location.search);
-                
-                const errorDesc = hashParams.get('error_description') || queryParams.get('error_description');
-                const errorCode = hashParams.get('error_code') || queryParams.get('error_code');
-                if (errorDesc) {
-                    console.error("Auth Error:", errorDesc);
-                    // Clear URL to prevent loop
-                    window.history.replaceState(null, document.title, window.location.pathname);
-                    
-                    // Show error to user
-                    setTimeout(() => {
-                        showToast(errorDesc.replace(/\+/g, ' '), 'error');
-                    }, 500);
-                }
+                // 2. DETECT RECOVERY MODE IMMEDIATELY (Fixes Race Condition)
+                // If the URL contains "type=recovery", we MUST block the dashboard redirect
+                let isRecoveryMode = window.location.hash && window.location.hash.includes('type=recovery');
 
-                // Track recovery state to prevent auto-redirect
-                let isRecoveryMode = false;
-                // Auth Listener
+                // 3. Auth Listener
                 sb.auth.onAuthStateChange(async (event, session) => {
                     console.log("Auth Event:", event);
-                    
-                    // 1. Handle Recovery Trigger
-                    if (event === 'PASSWORD_RECOVERY') {
-                        console.log("🔄 Recovery mode active");
-                        isRecoveryMode = true;
+
+                    // Update flag if event fires (just in case URL check missed it)
+                    if (event === 'PASSWORD_RECOVERY') isRecoveryMode = true;
+
+                    // --- SCENARIO A: RECOVERY (Block Dashboard) ---
+                    if (isRecoveryMode) {
+                        console.log("🔒 Recovery Mode Active - Blocking Redirect");
                         document.getElementById('auth-view').classList.remove('hidden');
                         switchAuthView('update-pass');
-                        return; 
+                        return; // STOP HERE. Do not load dashboard.
                     }
 
-                    // 2. Handle Standard Login (BUT ignore if in recovery mode)
+                    // --- SCENARIO B: NORMAL LOGIN ---
                     if (session) {
-                        if (isRecoveryMode) {
-                            console.log("⚠️ Ignoring redirect (Recovery Mode Active)");
-                            return; 
-                        }
                         state.user = session.user;
+                        
+                        // UI: Show App
                         document.getElementById('auth-view').classList.add('hidden');
                         document.getElementById('sidebar').classList.remove('hidden');
                         document.getElementById('main-content').classList.remove('hidden');
                         document.getElementById('sidebar').classList.add('flex');
-                        document.getElementById('user-email').innerText = state.user.email;
+                        
+                        // Update User Info
+                        const emailEl = document.getElementById('user-email');
+                        if(emailEl) emailEl.innerText = state.user.email;
+                        
                         nav(currentTab);
-                    } else {
-
-                        // 3. Handle Logout
+                    } 
+                    // --- SCENARIO C: LOGGED OUT ---
+                    else {
                         state.user = null;
                         isRecoveryMode = false; // Reset flag
+                        
+                        // UI: Show Login
                         document.getElementById('auth-view').classList.remove('hidden');
                         document.getElementById('sidebar').classList.add('hidden');
                         document.getElementById('main-content').classList.add('hidden');
@@ -757,8 +741,7 @@
                 });
 
             } catch (error) {
-                console.error("Critical Load Error:", error);
-                alert("Server Connection Failed. Please try again later.");
+                console.error("Critical Init Error:", error);
             }
         }
 
