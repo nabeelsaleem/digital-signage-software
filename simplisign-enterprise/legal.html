@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal - SimpliSign Enterprise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-btn.active { border-bottom: 2px solid #4f46e5; color: #4f46e5; font-weight: 600; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2 font-bold text-xl text-slate-900">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-lg">S</div>
+                SimpliSign
+            </div>
+            <a href="/" class="text-sm font-medium text-slate-500 hover:text-indigo-600">Back to Home</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-12">
+        <h1 class="text-3xl font-bold mb-8 text-slate-900">Legal Center</h1>
+
+        <div class="flex border-b border-slate-200 mb-8 overflow-x-auto">
+            <button onclick="switchTab('terms')" id="btn-terms" class="tab-btn active px-6 py-3 text-sm text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Terms of Service</button>
+            <button onclick="switchTab('privacy')" id="btn-privacy" class="tab-btn px-6 py-3 text-sm text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Privacy Policy</button>
+            <button onclick="switchTab('refunds')" id="btn-refunds" class="tab-btn px-6 py-3 text-sm text-slate-500 hover:text-slate-700 transition-colors whitespace-nowrap">Refund Policy</button>
+        </div>
+
+        <div id="tab-terms" class="tab-content active space-y-6">
+            <h2 class="text-2xl font-bold text-slate-900">Terms of Service</h2>
+            <p class="text-sm text-slate-500">Last updated: February 11, 2026</p>
+            
+            <section class="prose prose-slate max-w-none">
+                <h3 class="text-lg font-bold mt-6 mb-2">1. Introduction</h3>
+                <p>Welcome to SimpliSign Enterprise ("Company", "we", "our", "us"). By accessing or using our digital signage software (the "Service"), you agree to be bound by these Terms of Service.</p>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">2. Use of Service</h3>
+                <p>You are granted a non-exclusive, non-transferable, revocable license to use the Service strictly in accordance with these Terms. You agree not to use the Service for any unlawful purpose.</p>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">3. Subscriptions & Billing</h3>
+                <p>The Service is billed on a subscription basis ("Subscription(s)"). You will be billed in advance on a recurring and periodic basis (monthly or annually). Payments are processed securely via our Merchant of Record, Paddle.</p>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">4. User Content</h3>
+                <p>You retain ownership of any media, images, or videos ("Content") you upload to the Service. By uploading Content, you grant us a license to use, display, and distribute it solely for the purpose of providing the Service to you.</p>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">5. Termination</h3>
+                <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">6. Governing Law</h3>
+                <p>These Terms shall be governed and construed in accordance with the laws of Pakistan, without regard to its conflict of law provisions.</p>
+            </section>
+        </div>
+
+        <div id="tab-privacy" class="tab-content space-y-6">
+            <h2 class="text-2xl font-bold text-slate-900">Privacy Policy</h2>
+            <p class="text-sm text-slate-500">Last updated: February 11, 2026</p>
+
+            <section class="prose prose-slate max-w-none">
+                <h3 class="text-lg font-bold mt-6 mb-2">1. Information We Collect</h3>
+                <p>We collect information you provide directly to us, such as when you create an account, subscribe to a plan, or contact support. This includes:</p>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                    <li>Account Information (Name, Email address)</li>
+                    <li>Payment Information (Processed securely by Paddle; we do not store full credit card details)</li>
+                    <li>Usage Data (Log files, device information, and activity on the platform)</li>
+                </ul>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">2. How We Use Your Information</h3>
+                <p>We use the information we collect to:</p>
+                <ul class="list-disc pl-5 mt-2 space-y-1">
+                    <li>Provide, maintain, and improve our Service.</li>
+                    <li>Process transactions and send related information, including confirmations and invoices.</li>
+                    <li>Send you technical notices, updates, security alerts, and support messages.</li>
+                </ul>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">3. Data Storage & Security</h3>
+                <p>We use industry-standard security measures to protect your data. Your data is stored securely on cloud servers provided by Supabase (AWS architecture).</p>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">4. Contact Us</h3>
+                <p>If you have any questions about this Privacy Policy, please contact us at: <a href="mailto:nabeelsaleemshaikh@gmail.com" class="text-indigo-600 hover:underline">nabeelsaleemshaikh@gmail.com</a></p>
+            </section>
+        </div>
+
+        <div id="tab-refunds" class="tab-content space-y-6">
+            <h2 class="text-2xl font-bold text-slate-900">Refund Policy</h2>
+            <p class="text-sm text-slate-500">Last updated: February 11, 2026</p>
+
+            <section class="prose prose-slate max-w-none">
+                <h3 class="text-lg font-bold mt-6 mb-2">1. 14-Day Money-Back Guarantee</h3>
+                <p>We want you to be completely satisfied with SimpliSign. If you are not satisfied with your subscription, you may request a full refund within 14 days of your initial purchase.</p>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">2. How to Request a Refund</h3>
+                <p>To request a refund, please email our support team at <a href="mailto:nabeelsaleemshaikh@gmail.com" class="text-indigo-600 hover:underline">nabeelsaleemshaikh@gmail.com</a> with your order details. We will process your request within 5-7 business days.</p>
+
+                <h3 class="text-lg font-bold mt-6 mb-2">3. Cancellations</h3>
+                <p>You may cancel your subscription at any time. Upon cancellation, your access to premium features will continue until the end of your current billing cycle. No partial refunds are provided for the remaining time in a billing cycle after the 14-day window.</p>
+            </section>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-50 border-t border-slate-200 mt-12 py-8 text-center text-sm text-slate-500">
+        <p>&copy; 2026 SimpliSign Enterprise. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById('tab-' + tabId).classList.add('active');
+            document.getElementById('btn-' + tabId).classList.add('active');
+
+            // Update URL hash without scrolling
+            history.pushState(null, null, '#' + tabId);
+        }
+
+        // Handle initial load based on URL hash
+        window.addEventListener('load', () => {
+            const hash = window.location.hash.replace('#', '');
+            if (hash && ['terms', 'privacy', 'refunds'].includes(hash)) {
+                switchTab(hash);
+            }
+        });
+    </script>
+</body>
+</html>

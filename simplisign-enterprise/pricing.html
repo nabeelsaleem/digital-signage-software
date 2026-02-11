@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - SimpliSign Enterprise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #4f46e5;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #4f46e5;
+        }
+        .check-icon { color: #10b981; } /* Emerald 500 */
+        .cross-icon { color: #ef4444; } /* Red 500 */
+        
+        /* Smooth fade for price change */
+        .price-text { transition: all 0.3s ease; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="/" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors text-sm flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                Back to Dashboard
+            </a>
+
+            <div class="flex items-center gap-2 font-bold text-2xl text-slate-900">
+                SimpliSign
+                <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white text-xl">S</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="py-20 px-6">
+        
+        <div class="text-center max-w-3xl mx-auto mb-16">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6">Simple Pricing, Powerful Screens</h1>
+            <p class="text-lg text-slate-600 mb-10">Choose the plan that fits your business needs. Scale as you grow.</p>
+
+            <div class="flex items-center justify-center gap-4">
+                <span class="text-slate-600 font-medium" id="label-monthly">Monthly</span>
+                
+                <div class="relative inline-block w-14 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="billing-toggle" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 border-slate-200 appearance-none cursor-pointer transition-all duration-300 left-0 top-0"/>
+                    <label for="billing-toggle" class="toggle-label block overflow-hidden h-7 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
+                </div>
+                
+                <span class="text-slate-900 font-bold" id="label-yearly">Yearly <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full ml-1">-17%</span></span>
+            </div>
+        </div>
+
+        <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
+            
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-slate-900">Supacms Standard</h3>
+                    <p class="text-slate-500 text-sm mt-2">Perfect for getting started with digital signage.</p>
+                </div>
+                
+                <div class="mb-8">
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-slate-900 price-amount" data-monthly="7" data-yearly="70">$7</span>
+                        <span class="text-slate-500 font-medium price-interval">/mo</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1 price-billed-text">per screen, billed monthly</p>
+                </div>
+
+                <a href="/" class="block w-full py-3 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-center rounded-xl transition-colors mb-8">Get Started</a>
+
+                <ul class="space-y-4 text-sm text-slate-600">
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 check-icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Unlimited Media Uploads</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 check-icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Playlist Management</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 check-icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Advanced Scheduling</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 check-icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Group Screen Control</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 check-icon shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> 99.9% Uptime SLA</li>
+                </ul>
+            </div>
+
+            <div class="bg-slate-900 rounded-2xl shadow-2xl border border-indigo-500/50 p-8 hover:shadow-indigo-500/20 transition-all duration-300 hover:-translate-y-1 relative text-white">
+                <div class="absolute top-0 right-0 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">RECOMMENDED</div>
+                
+                <div class="mb-6">
+                    <h3 class="text-xl font-bold text-white">Supacms PRO</h3>
+                    <p class="text-slate-400 text-sm mt-2">Advanced tools for professional displays.</p>
+                </div>
+                
+                <div class="mb-8">
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-4xl font-extrabold text-white price-amount" data-monthly="14" data-yearly="140">$14</span>
+                        <span class="text-slate-400 font-medium price-interval">/mo</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1 price-billed-text">per screen, billed monthly</p>
+                </div>
+
+                <a href="/" class="block w-full py-3 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-center rounded-xl transition-colors mb-8 shadow-lg shadow-indigo-600/30">Upgrade to PRO</a>
+
+                <ul class="space-y-4 text-sm text-slate-300">
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> <strong>Everything in Standard</strong></li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Live Weather Widget</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> HTML5 / Web Embeds</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Scrolling News Ticker</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Zone Layouts (Multi-content)</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Sticky Logo / Branding</li>
+                    <li class="flex items-center gap-3"><svg class="w-5 h-5 text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Priority Support</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-3xl font-bold text-center text-slate-900 mb-12">Detailed Comparison</h2>
+            
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200">
+                            <th class="p-4 md:p-6 text-sm font-bold text-slate-500 uppercase tracking-wider w-1/2">Feature</th>
+                            <th class="p-4 md:p-6 text-center w-1/4 text-slate-900 font-bold">Standard</th>
+                            <th class="p-4 md:p-6 text-center w-1/4 text-indigo-600 font-bold bg-indigo-50/50">PRO</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Images & Video Support</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Remote Scheduling</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Device Groups</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Live Weather App</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto cross-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">HTML5 / Website Embeds</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto cross-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Scrolling Text Ticker</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto cross-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Text Slides</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto cross-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Sticky Logo / Branding</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto cross-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Bulletin Board</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto cross-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                        <tr class="hover:bg-slate-50 transition-colors"><td class="p-4 md:px-6 text-slate-700 font-medium">Screen Zones (Layouts)</td><td class="text-center p-4"><svg class="w-6 h-6 mx-auto cross-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></td><td class="text-center p-4 bg-indigo-50/30"><svg class="w-6 h-6 mx-auto check-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-20">
+        <div class="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2 font-bold text-lg text-slate-900">
+                <div class="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center text-white text-sm">S</div>
+                SimpliSign Enterprise
+            </div>
+            
+            <div class="flex gap-8 text-sm text-slate-600">
+                <a href="/legal.html#terms" class="hover:text-indigo-600 transition-colors">Terms of Service</a>
+                <a href="/legal.html#privacy" class="hover:text-indigo-600 transition-colors">Privacy Policy</a>
+                <a href="/legal.html#refunds" class="hover:text-indigo-600 transition-colors">Refund Policy</a>
+            </div>
+
+            <div class="text-sm text-slate-400">
+                &copy; 2026 SimpliSign. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const toggle = document.getElementById('billing-toggle');
+        const prices = document.querySelectorAll('.price-amount');
+        const intervals = document.querySelectorAll('.price-interval');
+        const billedTexts = document.querySelectorAll('.price-billed-text');
+
+        toggle.addEventListener('change', () => {
+            const isYearly = toggle.checked;
+
+            prices.forEach(el => {
+                // Smooth fade out
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    // Change text
+                    el.innerText = '$' + (isYearly ? el.dataset.yearly : el.dataset.monthly);
+                    // Smooth fade in
+                    el.style.opacity = '1';
+                }, 150);
+            });
+
+            intervals.forEach(el => {
+                el.innerText = isYearly ? '/year' : '/mo';
+            });
+
+            billedTexts.forEach(el => {
+                el.innerText = isYearly ? 'per screen, billed annually' : 'per screen, billed monthly';
+            });
+
+            // Styling active labels
+            if(isYearly) {
+                document.getElementById('label-yearly').classList.add('text-indigo-600');
+                document.getElementById('label-monthly').classList.remove('text-indigo-600');
+            } else {
+                document.getElementById('label-monthly').classList.add('text-indigo-600');
+                document.getElementById('label-yearly').classList.remove('text-indigo-600');
+            }
+        });
+    </script>
+</body>
+</html>
