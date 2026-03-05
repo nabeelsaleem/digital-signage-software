@@ -139,11 +139,15 @@
         </div>
     </div>
 
-    <div id="player-canvas" class="absolute inset-0 bg-black hidden">
+    <div id="player-canvas" class="absolute inset-0 bg-black hidden overflow-hidden">
         <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter transition-opacity duration-1000">
-        
         <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
         
+        <iframe id="active-iframe" class="w-full h-full absolute inset-0 hidden border-0" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+        
+        <div id="active-widget" class="w-full h-full absolute inset-0 hidden flex items-center justify-center flex-col p-12 transition-opacity duration-1000"></div>
+        
+        <img id="sticky-logo" class="absolute hidden z-[60] max-w-[200px] max-h-[200px] object-contain drop-shadow-2xl">
         <div id="status-pill" class="status-dot status-orange"></div>
     </div>
 
@@ -336,6 +340,21 @@ async function checkUpdates() {
 
                 const { device, playlist } = response;
 
+                // --- STICKY LOGO LOGIC ---
+                const logoEl = document.getElementById('sticky-logo');
+                if (device.logo_url) {
+                    logoEl.src = device.logo_url;
+                    logoEl.className = 'absolute z-[60] max-w-[200px] max-h-[200px] object-contain transition-all duration-500 ';
+                    if (device.logo_position === 'top-left') logoEl.classList.add('top-8', 'left-8');
+                    else if (device.logo_position === 'top-right') logoEl.classList.add('top-8', 'right-8');
+                    else if (device.logo_position === 'bottom-left') logoEl.classList.add('bottom-8', 'left-8');
+                    else if (device.logo_position === 'bottom-right') logoEl.classList.add('bottom-8', 'right-8');
+                    else logoEl.classList.add('top-8', 'right-8'); // Default
+                    logoEl.classList.remove('hidden');
+                } else {
+                    logoEl.classList.add('hidden');
+                }
+
                 // 2. REMOTE REFRESH LOGIC
                 if (device.refresh_requested) {
                     updateStatus('Updating...');
@@ -457,39 +476,79 @@ async function checkUpdates() {
     }); 
 }
 
-       function runLoop() {
+        function runLoop() {
             if (!currentPlaylist.length) return;
             isPlaying = true;
             
             const item = currentPlaylist[currentIndex];
             const imgEl = document.getElementById('active-slide');
             const vidEl = document.getElementById('active-video');
+            const iframeEl = document.getElementById('active-iframe');
+            const widgetEl = document.getElementById('active-widget');
             
             // Determine Duration (Default to item duration or 10s)
             let duration = (item.duration || 10) * 1000;
 
+            // Hide everything first
+            imgEl.classList.add('hidden');
+            vidEl.classList.add('hidden');
+            iframeEl.classList.add('hidden');
+            widgetEl.classList.add('hidden');
+            vidEl.pause();
+            iframeEl.src = ''; // Clear iframe memory
+
             if (item.type.includes('video')) {
                 // --- VIDEO MODE ---
-                imgEl.classList.add('hidden');    // Hide Image
-                vidEl.classList.remove('hidden'); // Show Video
-                
+                vidEl.classList.remove('hidden');
                 vidEl.src = item.url;
                 vidEl.play().catch(e => console.error("Video Play Error:", e));
-
-                // If duration is set to 0 in CMS, play full video length
-                // Otherwise, cut it off at the specific duration
-                vidEl.onended = () => {
-                   // If we are relying on natural video end
-                   if (item.duration === 0) nextSlide();
-                };
+                vidEl.onended = () => { if (item.duration === 0) nextSlide(); };
                 
+            } else if (item.type === 'web') {
+                // --- WEB EMBED MODE ---
+                iframeEl.src = item.url;
+                iframeEl.classList.remove('hidden');
+                
+            } else if (item.type === 'widget_ticker') {
+                // --- TICKER MODE ---
+                const meta = item.metadata || {};
+                widgetEl.style.backgroundColor = meta.bgColor || '#0a0a0a';
+                widgetEl.style.color = meta.textColor || '#d4ff00';
+                widgetEl.innerHTML = `
+                    <div style="font-size: ${meta.fontSize || 48}px; width: 100%; overflow: hidden; white-space: nowrap; font-weight: bold;">
+                        <marquee scrollamount="20">${meta.message || 'Scrolling Ticker...'}</marquee>
+                    </div>`;
+                widgetEl.classList.remove('hidden');
+                
+            } else if (item.type === 'widget_weather') {
+                // --- WEATHER MODE ---
+                const city = item.metadata?.city || 'Local Area';
+                widgetEl.style.backgroundColor = '#111827'; // Dark slate
+                widgetEl.style.color = '#ffffff';
+                
+                // Show loading state first
+                widgetEl.innerHTML = `
+                    <svg class="w-32 h-32 mb-8 text-sky-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"></path></svg>
+                    <h1 class="text-5xl font-bold tracking-tight">${city}</h1>
+                `;
+                widgetEl.classList.remove('hidden');
+                
+                // Fetch Live Weather from free wttr.in JSON API
+                fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`)
+                    .then(r => r.json())
+                    .then(data => {
+                        const temp = data.current_condition[0].temp_C;
+                        const desc = data.current_condition[0].weatherDesc[0].value;
+                        widgetEl.innerHTML = `
+                            <h1 class="text-[12rem] font-black tracking-tighter text-white leading-none">${temp}°</h1>
+                            <h2 class="text-6xl font-semibold mt-4 text-sky-400">${desc}</h2>
+                            <p class="text-3xl mt-8 text-gray-500 uppercase tracking-[0.3em] font-bold">${city}</p>
+                        `;
+                    }).catch(e => console.log('Weather fetch failed', e));
+                    
             } else {
                 // --- IMAGE MODE ---
-                vidEl.classList.add('hidden');      // Hide Video
-                vidEl.pause();                      // Stop Video
-                imgEl.classList.remove('hidden');   // Show Image
-                
-                // Fade Effect
+                imgEl.classList.remove('hidden');
                 imgEl.classList.remove('fade-enter-active');
                 setTimeout(() => {
                     imgEl.src = item.url;
@@ -497,11 +556,10 @@ async function checkUpdates() {
                 }, 100);
             }
 
-            // Schedule Next Slide
-            // If it's a video with duration 0, we wait for 'onended' event above.
-            // Otherwise, we use the timer.
             if (!item.type.includes('video') || item.duration > 0) {
-                setTimeout(nextSlide, duration);
+                // Clear any existing timeout to prevent rapid-fire bug
+                if (window.slideTimeout) clearTimeout(window.slideTimeout);
+                window.slideTimeout = setTimeout(nextSlide, duration);
             }
         }
 

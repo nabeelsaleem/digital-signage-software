@@ -693,7 +693,7 @@
                     </div>
                     <span class="font-bold text-sm text-slate-900 dark:text-white">Live Weather</span>
                 </button>
-                <button onclick="closeModal('modal-widget-store'); alert('Ticker modal coming next!')" class="flex flex-col items-center p-4 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-brand-500 hover:bg-brand-500/10 transition-all text-center group">
+                <button onclick="closeModal('modal-widget-store'); openAddTickerModal()" class="flex flex-col items-center p-4 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-brand-500 hover:bg-brand-500/10 transition-all text-center group">
                     <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-gray-800 flex items-center justify-center mb-3 text-slate-600 dark:text-gray-400 group-hover:text-brand-500 group-hover:bg-brand-500/20">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"></path></svg>
                     </div>
@@ -719,6 +719,90 @@
             <div class="flex justify-end gap-3">
                 <button onclick="closeModal('modal-add-weather')" class="btn-ghost">Cancel</button>
                 <button onclick="saveWeatherWidget()" class="btn-primary">Save Widget</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-ticker" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-md shadow-2xl p-6 border border-slate-200 dark:border-gray-800">
+            <h3 class="font-bold text-lg mb-4 text-slate-900 dark:text-white">Configure News Ticker</h3>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Widget Name</label>
+                    <input type="text" id="ticker-name" class="input-field" placeholder="e.g. Morning Promo Ticker">
+                </div>
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Scrolling Message</label>
+                    <textarea id="ticker-message" class="input-field min-h-[100px] resize-none" placeholder="Type the message that will scroll across the bottom of the screen..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Duration (Secs)</label>
+                        <input type="number" id="ticker-duration" class="input-field" value="20" min="5">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Font Size</label>
+                        <select id="ticker-font-size" class="input-field">
+                            <option value="24">Small</option>
+                            <option value="36" selected>Medium</option>
+                            <option value="48">Large</option>
+                            <option value="60">XL</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Background Color</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="ticker-bg-color" class="h-10 w-10 rounded cursor-pointer border-0 p-0 bg-transparent" value="#000000">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Text Color</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="ticker-text-color" class="h-10 w-10 rounded cursor-pointer border-0 p-0 bg-transparent" value="#ffffff">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('modal-add-ticker')" class="btn-ghost">Cancel</button>
+                <button onclick="saveTickerWidget()" class="btn-primary">Save Ticker</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-sticky-logo" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-md shadow-2xl p-6 border border-slate-200 dark:border-gray-800">
+            <h3 class="font-bold text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                Configure Sticky Logo
+            </h3>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Target Screen</label>
+                    <select id="logo-target-device" class="input-field">
+                        <option value="all">Apply to All Screens</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Upload Logo (PNG with transparency)</label>
+                    <input type="file" id="logo-file" accept="image/png, image/jpeg" class="input-field py-2 text-sm bg-slate-100 dark:bg-gray-800 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                </div>
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Logo Position</label>
+                    <select id="logo-position" class="input-field">
+                        <option value="top-left">Top Left</option>
+                        <option selected value="top-right">Top Right</option>
+                        <option value="bottom-left">Bottom Left</option>
+                        <option value="bottom-right">Bottom Right</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="removeStickyLogo()" id="btn-remove-logo" class="mr-auto btn-danger">Remove Branding</button>
+                <button onclick="closeModal('modal-sticky-logo')" class="btn-ghost">Cancel</button>
+                <button onclick="saveStickyLogo()" class="btn-primary">Save Branding</button>
             </div>
         </div>
     </div>
@@ -762,6 +846,38 @@
             } else {
                 lightIcon.classList.remove('hidden');
                 darkIcon.classList.add('hidden');
+            }
+        }
+
+        async function removeStickyLogo() {
+            if(!confirm('Remove branding from selected screen(s)?')) return;
+            
+            const targetId = document.getElementById('logo-target-device').value;
+            const btn = document.getElementById('btn-remove-logo');
+            const originalText = btn.innerText;
+            btn.innerText = 'Removing...'; btn.disabled = true;
+
+            try {
+                let query = sb.from('devices').update({ logo_url: null, logo_position: null });
+                
+                if (targetId === 'all') {
+                    query = query.eq('user_id', state.user.id);
+                } else {
+                    query = query.eq('id', targetId);
+                }
+                
+                const { error } = await query;
+                if (error) throw error;
+                
+                showToast('Branding removed', 'success');
+                closeModal('modal-sticky-logo');
+                loadDevices();
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to remove branding', 'error');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
 
@@ -1039,7 +1155,7 @@
                 title.innerText = 'Screens';
                 btn.innerHTML = `
                     <div class="flex items-center gap-2">
-                        <button onclick="requirePro(() => alert('Branding settings opening...'))" class="btn-secondary hidden sm:flex items-center gap-2 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10 hover:border-yellow-500">
+                        <button onclick="requirePro(openStickyLogoModal)" class="btn-secondary hidden sm:flex items-center gap-2 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10 hover:border-yellow-500">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             Sticky Logo
                         </button>
@@ -1124,6 +1240,101 @@
             }
         }
 
+        function openAddTickerModal() {
+            document.getElementById('ticker-name').value = '';
+            document.getElementById('ticker-message').value = '';
+            document.getElementById('ticker-duration').value = '20';
+            document.getElementById('ticker-bg-color').value = '#000000';
+            document.getElementById('ticker-text-color').value = '#ffffff';
+            document.getElementById('ticker-font-size').value = '36';
+            document.getElementById('modal-add-ticker').classList.remove('hidden');
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+        }
+
+        async function saveTickerWidget() {
+            const name = document.getElementById('ticker-name').value;
+            const message = document.getElementById('ticker-message').value;
+            const duration = document.getElementById('ticker-duration').value || 20;
+            const bgColor = document.getElementById('ticker-bg-color').value;
+            const textColor = document.getElementById('ticker-text-color').value;
+            const fontSize = document.getElementById('ticker-font-size').value;
+            
+            if(!name || !message) return showToast('Please enter a name and message', 'error');
+            const btn = document.querySelector('#modal-add-ticker button.btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...'; btn.disabled = true;
+            const { error } = await sb.from('media').insert({
+                user_id: state.user.id,
+                name: name,
+                type: 'widget_ticker',
+                url: 'ticker://' + encodeURIComponent(name),
+                metadata: { 
+                    message: message, 
+                    duration: parseInt(duration),
+                    bgColor: bgColor,
+                    textColor: textColor,
+                    fontSize: parseInt(fontSize)
+                }
+            });
+            btn.innerText = originalText; btn.disabled = false;
+            if(error) showToast(error.message, 'error');
+            else {
+                showToast('Ticker Widget Added!', 'success');
+                closeModal('modal-add-ticker');
+                loadMedia();
+            }
+        }
+
+        function openStickyLogoModal() {
+            const select = document.getElementById('logo-target-device');
+            select.innerHTML = '<option value="all">Apply to All Screens</option>' + 
+                state.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            
+            document.getElementById('logo-file').value = '';
+            document.getElementById('logo-position').value = 'top-right';
+            
+            document.getElementById('modal-sticky-logo').classList.remove('hidden');
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+        }
+
+        async function saveStickyLogo() {
+            const targetId = document.getElementById('logo-target-device').value;
+            const position = document.getElementById('logo-position').value;
+            const fileInput = document.getElementById('logo-file');
+            const file = fileInput.files[0];
+            
+            if(!file) return showToast('Please select a logo image', 'error');
+            const btn = document.querySelector('#modal-sticky-logo button.btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Uploading...'; btn.disabled = true;
+            try {
+                // 1. Upload to Supabase Storage
+                const fileName = `logos/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
+                const { error: uploadError } = await sb.storage.from('media').upload(fileName, file);
+                if (uploadError) throw uploadError;
+                const { data: { publicUrl } } = sb.storage.from('media').getPublicUrl(fileName);
+                // 2. Update Device(s)
+                let query = sb.from('devices').update({ logo_url: publicUrl, logo_position: position });
+                
+                if (targetId === 'all') {
+                    query = query.eq('user_id', state.user.id);
+                } else {
+                    query = query.eq('id', targetId);
+                }
+                const { error: dbError } = await query;
+                if (dbError) throw dbError;
+                showToast('Branding applied successfully!', 'success');
+                closeModal('modal-sticky-logo');
+                loadDevices();
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to apply branding', 'error');
+            } finally {
+                btn.innerText = originalText; 
+                btn.disabled = false;
+            }
+        }
+
 
 
         // --- 4. MEDIA ---
@@ -1164,6 +1375,7 @@
                 const isVideo = m.type.includes('video');
                 const isWeb = m.type === 'web';
                 const isWeather = m.type === 'widget_weather';
+                const isTicker = m.type === 'widget_ticker';
                 
                 let tagColor = 'bg-emerald-600 text-white';
                 let tagText = 'IMG';
@@ -1184,6 +1396,16 @@
                         <svg class="w-10 h-10 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
                         <span class="text-xs font-bold">${m.metadata?.city || 'Weather'}</span>
                     </div>`;
+                } else if (m.type === 'widget_ticker') {
+                    tagColor = 'bg-orange-500 text-white';
+                    tagText = 'TICKER';
+                    const bgColor = m.metadata?.bgColor || '#1f2937';
+                    const textColor = m.metadata?.textColor || '#fb923c';
+                    const fontSize = m.metadata?.fontSize || 36;
+                    thumbnail = `<div class="flex flex-col items-center justify-center h-full p-4 text-center" style="background-color: ${bgColor}; color: ${textColor};">
+                        <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"></path></svg>
+                        <span class="font-bold line-clamp-2 leading-tight" style="font-size: ${Math.max(12, fontSize * 0.4)}px;">"${m.metadata?.message || 'Scrolling text'}"</span>
+                    </div>`;
                 }
 
                 grid.innerHTML += `
@@ -1191,7 +1413,7 @@
                         <div class="aspect-video relative bg-gray-800 overflow-hidden">
                             ${thumbnail}
                             <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                ${(!isWeb && !isWeather) ? `<button onclick="openReplaceDialog('${m.id}')" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded shadow-lg">REPLACE</button>` : ''}
+                                ${(!isWeb && !isWeather && !isTicker) ? `<button onclick="openReplaceDialog('${m.id}')" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded shadow-lg">REPLACE</button>` : ''}
                                 <button onclick="deleteMedia(${m.id})" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button>
                             </div>
                             <span class="absolute bottom-2 left-2 px-2 py-0.5 ${tagColor} backdrop-blur text-[10px] font-bold uppercase rounded">${tagText}</span>
@@ -1911,7 +2133,9 @@
                 'custom-input-modal',
                 'modal-upgrade-pro',
                 'modal-widget-store',
-                'modal-add-weather'
+                'modal-add-weather',
+                'modal-add-ticker',
+                'modal-sticky-logo'
             ];
 
             // Check if ANY of these are still visible (missing the 'hidden' class)
