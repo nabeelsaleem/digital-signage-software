@@ -673,6 +673,56 @@
         </div>
     </div>
 
+    <div id="modal-widget-store" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-lg shadow-2xl p-6 border border-slate-200 dark:border-gray-800 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-400 to-brand-600"></div>
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-xl text-slate-900 dark:text-white">PRO Widgets</h3>
+                <button onclick="closeModal('modal-widget-store')" class="btn-icon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="closeModal('modal-widget-store'); openAddWebModal()" class="flex flex-col items-center p-4 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-brand-500 hover:bg-brand-500/10 transition-all text-center group">
+                    <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-gray-800 flex items-center justify-center mb-3 text-slate-600 dark:text-gray-400 group-hover:text-brand-500 group-hover:bg-brand-500/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                    </div>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">Web Embed</span>
+                </button>
+                <button onclick="closeModal('modal-widget-store'); openAddWeatherModal()" class="flex flex-col items-center p-4 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-brand-500 hover:bg-brand-500/10 transition-all text-center group">
+                    <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-gray-800 flex items-center justify-center mb-3 text-slate-600 dark:text-gray-400 group-hover:text-brand-500 group-hover:bg-brand-500/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path></svg>
+                    </div>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">Live Weather</span>
+                </button>
+                <button onclick="closeModal('modal-widget-store'); alert('Ticker modal coming next!')" class="flex flex-col items-center p-4 rounded-xl border border-slate-200 dark:border-gray-700 hover:border-brand-500 hover:bg-brand-500/10 transition-all text-center group">
+                    <div class="w-12 h-12 rounded-full bg-slate-100 dark:bg-gray-800 flex items-center justify-center mb-3 text-slate-600 dark:text-gray-400 group-hover:text-brand-500 group-hover:bg-brand-500/20">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"></path></svg>
+                    </div>
+                    <span class="font-bold text-sm text-slate-900 dark:text-white">News Ticker</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-weather" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-md shadow-2xl p-6 border border-slate-200 dark:border-gray-800">
+            <h3 class="font-bold text-lg mb-4 text-slate-900 dark:text-white">Configure Weather</h3>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Widget Name</label>
+                    <input type="text" id="weather-name" class="input-field" placeholder="e.g. New York Weather">
+                </div>
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">City Name</label>
+                    <input type="text" id="weather-city" class="input-field" placeholder="e.g. New York, US">
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('modal-add-weather')" class="btn-ghost">Cancel</button>
+                <button onclick="saveWeatherWidget()" class="btn-primary">Save Widget</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container" class="fixed bottom-6 right-6 z-[10000] flex flex-col gap-3"></div>
 
     <script>
@@ -969,7 +1019,7 @@
                 title.innerText = 'Media Library';
                 btn.innerHTML = `
                     <div class="flex items-center gap-2">
-                        <button onclick="requirePro(openAddWebModal)" class="btn-secondary hidden sm:flex items-center gap-2 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10 hover:border-yellow-500">
+                        <button onclick="requirePro(openWidgetStore)" class="btn-secondary hidden sm:flex items-center gap-2 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10 hover:border-yellow-500">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             Apps & HTML
                         </button>
@@ -1038,6 +1088,42 @@
             }
         }
 
+        function openWidgetStore() {
+            document.getElementById('modal-widget-store').classList.remove('hidden');
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+        }
+
+        function openAddWeatherModal() {
+            document.getElementById('weather-name').value = '';
+            document.getElementById('weather-city').value = '';
+            document.getElementById('modal-add-weather').classList.remove('hidden');
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+        }
+
+        async function saveWeatherWidget() {
+            const name = document.getElementById('weather-name').value;
+            const city = document.getElementById('weather-city').value;
+            
+            if(!name || !city) return showToast('Please enter name and city', 'error');
+            const btn = document.querySelector('#modal-add-weather button.btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...'; btn.disabled = true;
+            const { error } = await sb.from('media').insert({
+                user_id: state.user.id,
+                name: name,
+                type: 'widget_weather',
+                url: 'weather://' + encodeURIComponent(city), 
+                metadata: { city: city }
+            });
+            btn.innerText = originalText; btn.disabled = false;
+            if(error) showToast(error.message, 'error');
+            else {
+                showToast('Weather Widget Added!', 'success');
+                closeModal('modal-add-weather');
+                loadMedia();
+            }
+        }
+
 
 
         // --- 4. MEDIA ---
@@ -1077,19 +1163,27 @@
             filtered.forEach(m => {
                 const isVideo = m.type.includes('video');
                 const isWeb = m.type === 'web';
+                const isWeather = m.type === 'widget_weather';
                 
                 let tagColor = 'bg-emerald-600 text-white';
                 let tagText = 'IMG';
                 let thumbnail = `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">`;
 
-                if (isVideo) {
+                if (m.type.includes('video')) {
                     tagColor = 'bg-indigo-600 text-white';
                     tagText = 'VIDEO';
-                    thumbnail = `<div class="flex items-center justify-center h-full bg-gray-800 text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-8 h-8"><path d="M8 5v14l11-7z"/></svg></div>`;
-                } else if (isWeb) {
+                    thumbnail = `<div class="flex items-center justify-center h-full bg-gray-800 text-gray-500"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>`;
+                } else if (m.type === 'web') {
                     tagColor = 'bg-yellow-500 text-black';
                     tagText = 'WEB';
-                    thumbnail = `<div class="flex items-center justify-center h-full bg-gray-800 text-yellow-500"><svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg></div>`;
+                    thumbnail = `<div class="flex items-center justify-center h-full bg-gray-800 text-yellow-500"><svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg></div>`;
+                } else if (m.type === 'widget_weather') {
+                    tagColor = 'bg-sky-500 text-white';
+                    tagText = 'WIDGET';
+                    thumbnail = `<div class="flex flex-col items-center justify-center h-full bg-slate-800 text-sky-400">
+                        <svg class="w-10 h-10 mb-1" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/></svg>
+                        <span class="text-xs font-bold">${m.metadata?.city || 'Weather'}</span>
+                    </div>`;
                 }
 
                 grid.innerHTML += `
@@ -1097,7 +1191,7 @@
                         <div class="aspect-video relative bg-gray-800 overflow-hidden">
                             ${thumbnail}
                             <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                ${!isWeb ? `<button onclick="openReplaceDialog('${m.id}')" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded shadow-lg">REPLACE</button>` : ''}
+                                ${(!isWeb && !isWeather) ? `<button onclick="openReplaceDialog('${m.id}')" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded shadow-lg">REPLACE</button>` : ''}
                                 <button onclick="deleteMedia(${m.id})" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button>
                             </div>
                             <span class="absolute bottom-2 left-2 px-2 py-0.5 ${tagColor} backdrop-blur text-[10px] font-bold uppercase rounded">${tagText}</span>
@@ -1815,7 +1909,9 @@
                 'modal-group-manage', 
                 'modal-group-playlist',
                 'custom-input-modal',
-                'modal-upgrade-pro'
+                'modal-upgrade-pro',
+                'modal-widget-store',
+                'modal-add-weather'
             ];
 
             // Check if ANY of these are still visible (missing the 'hidden' class)
