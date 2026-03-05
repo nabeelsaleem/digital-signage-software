@@ -807,6 +807,40 @@
         </div>
     </div>
 
+    <div id="modal-zone-layout" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-md shadow-2xl p-6 border border-slate-200 dark:border-gray-800">
+            <h3 class="font-bold text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
+                Zone Layouts
+            </h3>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Target Screen</label>
+                    <select id="layout-target-device" class="input-field">
+                        <option value="all">Apply to All Screens</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Layout Mode</label>
+                    <select id="layout-type" class="input-field" onchange="toggleSidebarSelect()">
+                        <option value="full">Full Screen (Standard)</option>
+                        <option value="split-v">Vertical Split (Sidebar Right)</option>
+                        <option value="split-h">Horizontal Split (Ticker Bottom)</option>
+                    </select>
+                </div>
+                <div id="sidebar-playlist-container" class="hidden">
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Sidebar / Bottom Content</label>
+                    <select id="layout-sidebar-playlist" class="input-field"></select>
+                    <p class="text-[10px] text-slate-400 mt-1">Select a playlist to run in the secondary zone.</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('modal-zone-layout')" class="btn-ghost">Cancel</button>
+                <button onclick="saveZoneLayout()" class="btn-primary">Apply Layout</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container" class="fixed bottom-6 right-6 z-[10000] flex flex-col gap-3"></div>
 
     <script>
@@ -1155,6 +1189,10 @@
                 title.innerText = 'Screens';
                 btn.innerHTML = `
                     <div class="flex items-center gap-2">
+                        <button onclick="requirePro(openZoneLayoutModal)" class="btn-secondary hidden sm:flex items-center gap-2 border-brand-500/30 text-brand-600 hover:bg-brand-500/10 hover:border-brand-500">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                            Layouts
+                        </button>
                         <button onclick="requirePro(openStickyLogoModal)" class="btn-secondary hidden sm:flex items-center gap-2 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10 hover:border-yellow-500">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             Sticky Logo
@@ -1335,6 +1373,49 @@
             }
         }
 
+        function openZoneLayoutModal() {
+            const select = document.getElementById('layout-target-device');
+            select.innerHTML = '<option value="all">Apply to All Screens</option>' + 
+                state.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            
+            const plSelect = document.getElementById('layout-sidebar-playlist');
+            plSelect.innerHTML = state.playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+            document.getElementById('layout-type').value = 'full';
+            toggleSidebarSelect();
+            
+            document.getElementById('modal-zone-layout').classList.remove('hidden');
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+        }
+
+        function toggleSidebarSelect() {
+            const type = document.getElementById('layout-type').value;
+            const container = document.getElementById('sidebar-playlist-container');
+            if (type === 'full') container.classList.add('hidden');
+            else container.classList.remove('hidden');
+        }
+
+        async function saveZoneLayout() {
+            const targetId = document.getElementById('layout-target-device').value;
+            const type = document.getElementById('layout-type').value;
+            const sidebarPl = document.getElementById('layout-sidebar-playlist').value;
+            
+            const payload = { layout_type: type };
+            if (type !== 'full') payload.sidebar_playlist_id = sidebarPl;
+            else payload.sidebar_playlist_id = null;
+
+            let query = sb.from('devices').update(payload);
+            if (targetId === 'all') query = query.eq('user_id', state.user.id);
+            else query = query.eq('id', targetId);
+
+            const { error } = await query;
+            if (error) showToast(error.message, 'error');
+            else {
+                showToast('Layout updated!', 'success');
+                closeModal('modal-zone-layout');
+                loadDevices();
+            }
+        }
 
 
         // --- 4. MEDIA ---
@@ -2135,7 +2216,8 @@
                 'modal-widget-store',
                 'modal-add-weather',
                 'modal-add-ticker',
-                'modal-sticky-logo'
+                'modal-sticky-logo',
+                'modal-zone-layout'
             ];
 
             // Check if ANY of these are still visible (missing the 'hidden' class)

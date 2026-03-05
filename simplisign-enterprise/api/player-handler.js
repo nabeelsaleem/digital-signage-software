@@ -199,7 +199,7 @@ export default async function handler(req, res) {
 
             // 5. Get URLs and Types for items
             const ids = pl.items.map(i => i.id);
-            const { data: media } = await supabase.from('media').select('id, url, type').in('id', ids);
+            const { data: media } = await supabase.from('media').select('id, url, type, metadata').in('id', ids);
 
             const playlist = pl.items.map(i => {
                 const f = media ? media.find(m => m.id === i.id) : null;

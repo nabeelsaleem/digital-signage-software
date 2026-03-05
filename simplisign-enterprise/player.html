@@ -140,12 +140,25 @@
     </div>
 
     <div id="player-canvas" class="absolute inset-0 bg-black hidden overflow-hidden">
-        <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter transition-opacity duration-1000">
-        <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
-        
-        <iframe id="active-iframe" class="w-full h-full absolute inset-0 hidden border-0" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
-        
-        <div id="active-widget" class="w-full h-full absolute inset-0 hidden flex items-center justify-center flex-col p-12 transition-opacity duration-1000"></div>
+        <div id="layout-container" class="w-full h-full flex flex-col">
+            
+            <!-- MAIN ZONE -->
+            <div id="zone-main" class="relative flex-1 overflow-hidden">
+                <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter transition-opacity duration-1000">
+                <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
+                <iframe id="active-iframe" class="w-full h-full absolute inset-0 hidden border-0" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+                <div id="active-widget" class="w-full h-full absolute inset-0 hidden flex items-center justify-center flex-col p-12 transition-opacity duration-1000"></div>
+            </div>
+
+            <!-- SIDEBAR / BOTTOM ZONE -->
+            <div id="zone-side" class="hidden relative overflow-hidden bg-gray-900 border-l border-gray-800">
+                <img id="side-slide" class="w-full h-full object-cover absolute inset-0 fade-enter transition-opacity duration-1000">
+                <video id="side-video" class="w-full h-full object-cover absolute inset-0 hidden" muted playsinline></video>
+                <iframe id="side-iframe" class="w-full h-full absolute inset-0 hidden border-0"></iframe>
+                <div id="side-widget" class="w-full h-full absolute inset-0 hidden flex items-center justify-center flex-col p-4"></div>
+            </div>
+
+        </div>
         
         <img id="sticky-logo" class="absolute hidden z-[60] max-w-[200px] max-h-[200px] object-contain drop-shadow-2xl">
         <div id="status-pill" class="status-dot status-orange"></div>
@@ -157,7 +170,9 @@
         let deviceCode = localStorage.getItem('ss_device_code');
         let deviceId = null;
         let currentPlaylist = [];
+        let currentSidePlaylist = [];
         let currentIndex = 0;
+        let currentSideIndex = 0;
         let imageCache = {};
         let isPlaying = false;
         let isOffline = false;
@@ -353,6 +368,49 @@ async function checkUpdates() {
                     logoEl.classList.remove('hidden');
                 } else {
                     logoEl.classList.add('hidden');
+                }
+
+                // --- ZONE LAYOUT LOGIC ---
+                const layoutContainer = document.getElementById('layout-container');
+                const zoneMain = document.getElementById('zone-main');
+                const zoneSide = document.getElementById('zone-side');
+
+                if (device.layout_type === 'split-v') {
+                    // Vertical Split (Sidebar Right)
+                    layoutContainer.className = 'w-full h-full flex flex-row';
+                    zoneMain.className = 'relative h-full w-[75%] overflow-hidden';
+                    zoneSide.className = 'relative h-full w-[25%] overflow-hidden bg-gray-900 border-l border-gray-800 block';
+                } else if (device.layout_type === 'split-h') {
+                    // Horizontal Split (Bottom Bar)
+                    layoutContainer.className = 'w-full h-full flex flex-col';
+                    zoneMain.className = 'relative w-full h-[80%] overflow-hidden';
+                    zoneSide.className = 'relative w-full h-[20%] overflow-hidden bg-gray-900 border-t border-gray-800 block';
+                } else {
+                    // Full Screen
+                    layoutContainer.className = 'w-full h-full flex flex-col';
+                    zoneMain.className = 'relative flex-1 overflow-hidden';
+                    zoneSide.className = 'hidden';
+                }
+
+                // Fetch Sidebar Playlist if needed
+                if (device.layout_type !== 'full' && device.sidebar_playlist_id) {
+                    // Check if we need to fetch/update sidebar content
+                    if (!window.lastSidebarId || window.lastSidebarId !== device.sidebar_playlist_id) {
+                        window.lastSidebarId = device.sidebar_playlist_id;
+                        const { data: pl } = await sb.from('playlists').select('items').eq('id', device.sidebar_playlist_id).single();
+                        if (pl && pl.items) {
+                            const ids = pl.items.map(i => i.id);
+                            const { data: media } = await sb.from('media').select('id, url, type, metadata').in('id', ids);
+                            currentSidePlaylist = pl.items.map(i => {
+                                const f = media ? media.find(m => m.id === i.id) : null;
+                                return f ? { ...f, duration: i.duration } : null;
+                            }).filter(Boolean);
+                            currentSideIndex = 0;
+                            runSideLoop();
+                        }
+                    }
+                } else {
+                    currentSidePlaylist = []; // Clear if switched to full
                 }
 
                 // 2. REMOTE REFRESH LOGIC
@@ -561,6 +619,69 @@ async function checkUpdates() {
                 if (window.slideTimeout) clearTimeout(window.slideTimeout);
                 window.slideTimeout = setTimeout(nextSlide, duration);
             }
+        }
+
+        function runSideLoop() {
+            if (!currentSidePlaylist.length) return;
+            
+            const item = currentSidePlaylist[currentSideIndex];
+            const imgEl = document.getElementById('side-slide');
+            const vidEl = document.getElementById('side-video');
+            const iframeEl = document.getElementById('side-iframe');
+            const widgetEl = document.getElementById('side-widget');
+            
+            let duration = (item.duration || 10) * 1000;
+
+            // Reset
+            imgEl.classList.add('hidden');
+            vidEl.classList.add('hidden');
+            iframeEl.classList.add('hidden');
+            widgetEl.classList.add('hidden');
+            vidEl.pause();
+
+            if (item.type.includes('video')) {
+                vidEl.classList.remove('hidden');
+                vidEl.src = item.url;
+                vidEl.play().catch(e => console.error("Side Video Error:", e));
+                vidEl.onended = () => { if (item.duration === 0) nextSideSlide(); };
+            } else if (item.type === 'web') {
+                iframeEl.src = item.url;
+                iframeEl.classList.remove('hidden');
+            } else if (item.type === 'widget_ticker') {
+                const meta = item.metadata || {};
+                widgetEl.style.backgroundColor = meta.bgColor || '#0a0a0a';
+                widgetEl.style.color = meta.textColor || '#d4ff00';
+                // Adjust font size for smaller zone
+                const fontSize = Math.max(16, (meta.fontSize || 36) * 0.6); 
+                widgetEl.innerHTML = `
+                    <div style="font-size: ${fontSize}px; width: 100%; overflow: hidden; white-space: nowrap; font-weight: bold;">
+                        <marquee scrollamount="10">${meta.message || 'Ticker...'}</marquee>
+                    </div>`;
+                widgetEl.classList.remove('hidden');
+            } else if (item.type === 'widget_weather') {
+                // Simplified weather for sidebar
+                const city = item.metadata?.city || 'Local';
+                widgetEl.style.backgroundColor = '#111827';
+                widgetEl.style.color = '#ffffff';
+                widgetEl.innerHTML = `<h3 class="text-xl font-bold">${city}</h3><p class="text-sm opacity-50">Loading...</p>`;
+                widgetEl.classList.remove('hidden');
+                fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`).then(r=>r.json()).then(d=>{
+                    widgetEl.innerHTML = `<h1 class="text-4xl font-bold">${d.current_condition[0].temp_C}°</h1><p>${city}</p>`;
+                });
+            } else {
+                imgEl.src = item.url;
+                imgEl.classList.remove('hidden');
+            }
+
+            if (!item.type.includes('video') || item.duration > 0) {
+                if (window.sideTimeout) clearTimeout(window.sideTimeout);
+                window.sideTimeout = setTimeout(nextSideSlide, duration);
+            }
+        }
+
+        function nextSideSlide() {
+            currentSideIndex = (currentSideIndex + 1) % currentSidePlaylist.length;
+            runSideLoop();
         }
 
         function nextSlide() {
