@@ -356,19 +356,20 @@ async function checkUpdates() {
                 const { device, playlist } = response;
 
                 // --- STICKY LOGO LOGIC ---
-                const logoEl = document.getElementById('sticky-logo');
-                if (device.logo_url) {
-                    logoEl.src = device.logo_url;
-                    logoEl.className = 'absolute z-[60] max-w-[200px] max-h-[200px] object-contain transition-all duration-500 ';
-                    if (device.logo_position === 'top-left') logoEl.classList.add('top-8', 'left-8');
-                    else if (device.logo_position === 'top-right') logoEl.classList.add('top-8', 'right-8');
-                    else if (device.logo_position === 'bottom-left') logoEl.classList.add('bottom-8', 'left-8');
-                    else if (device.logo_position === 'bottom-right') logoEl.classList.add('bottom-8', 'right-8');
-                    else logoEl.classList.add('top-8', 'right-8'); // Default
-                    logoEl.classList.remove('hidden');
-                } else {
-                    logoEl.classList.add('hidden');
-                }
+                // --- STICKY LOGO LOGIC ---
+const logoEl = document.getElementById('sticky-logo');
+if (device.logo_url) {
+    logoEl.src = device.logo_url;
+    logoEl.className = 'absolute z-[60] max-w-[200px] max-h-[200px] object-contain transition-all duration-500 ';
+    if (device.logo_position === 'top-left') logoEl.classList.add('top-8', 'left-8');
+    else if (device.logo_position === 'top-right') logoEl.classList.add('top-8', 'right-8');
+    else if (device.logo_position === 'bottom-left') logoEl.classList.add('bottom-8', 'left-8');
+    else if (device.logo_position === 'bottom-right') logoEl.classList.add('bottom-8', 'right-8');
+    else logoEl.classList.add('top-8', 'right-8');
+    logoEl.classList.remove('hidden');
+} else {
+    logoEl.classList.add('hidden');
+}
 
                 // --- ZONE LAYOUT LOGIC ---
                 const layoutContainer = document.getElementById('layout-container');
@@ -533,6 +534,7 @@ async function checkUpdates() {
         }
     }); 
 }
+
 
         function runLoop() {
             if (!currentPlaylist.length) return;
