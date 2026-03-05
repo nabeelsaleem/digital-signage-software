@@ -636,12 +636,49 @@
         </div>
     </div>
 
+    <div id="modal-upgrade-pro" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-md shadow-2xl p-8 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-400 to-brand-600"></div>
+            <div class="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-600">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg>
+            </div>
+            <h3 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Upgrade to PRO</h3>
+            <p class="text-sm mb-8" style="color: var(--text-secondary);">Unlock advanced features like Weather Widgets, Live Embeds, and Unlimited Storage.</p>
+            
+            <div class="space-y-3">
+                <a href="pricing.html" class="w-full btn-primary py-3 block">View Plans & Upgrade</a>
+                <button onclick="closeModal('modal-upgrade-pro')" class="w-full btn-ghost">Maybe Later</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-add-web" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-md shadow-2xl p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-400 to-amber-600"></div>
+            <h3 class="text-2xl font-bold mb-4" style="color: var(--text-primary);">Embed Web Page</h3>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block" style="color: var(--text-secondary);">Display Name</label>
+                    <input type="text" id="web-name" class="input-field" placeholder="e.g. Company Dashboard">
+                </div>
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block" style="color: var(--text-secondary);">URL</label>
+                    <input type="url" id="web-url" class="input-field" placeholder="https://example.com">
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 mt-8">
+                <button onclick="saveWebLink()" class="w-full btn-primary py-3">Add to Library</button>
+                <button onclick="closeModal('modal-add-web')" class="w-full btn-ghost">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container" class="fixed bottom-6 right-6 z-[10000] flex flex-col gap-3"></div>
 
     <script>
         // --- CONFIGURATION ---
         let sb = null;
-        let state = { user: null, media: [], playlists: [], devices: [], groups: [], schedules: [], draft: [] };
+        let state = { user: null, media: [], playlists: [], devices: [], groups: [], schedules: [], draft: [], subscription_tier: 'standard' };
         let currentTab = localStorage.getItem('lastActiveTab') || 'media';
         let calendar = null;
         let modalCalendar = null;
@@ -676,6 +713,17 @@
                 lightIcon.classList.remove('hidden');
                 darkIcon.classList.add('hidden');
             }
+        }
+
+        function requirePro(callback) {
+            if (state.subscription_tier !== 'pro') {
+                // Show modal if they are NOT pro
+                document.getElementById('modal-upgrade-pro').classList.remove('hidden');
+                document.getElementById('modal-backdrop').classList.remove('hidden');
+                return;
+            }
+            // If they ARE pro, execute the action
+            if (callback) callback();
         }
 
         // --- 1. INIT APP ---
@@ -910,7 +958,6 @@
             const btn = document.getElementById('header-actions');
             const title = document.getElementById('page-title');
             
-            // Re-render header button with Heroicons SVG
             const iconUpload = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>`;
             const iconPlus = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
             const iconCal = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0h18M5.25 12h13.5h-13.5zm0 3.75h13.5h-13.5z" /></svg>`;
@@ -920,7 +967,15 @@
 
             if (view === 'media') {
                 title.innerText = 'Media Library';
-                btn.innerHTML = `<button onclick="document.getElementById('media-upload-input').click()" class="${baseBtnClass}">${iconUpload} Upload</button>`;
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <button onclick="requirePro(openAddWebModal)" class="btn-secondary hidden sm:flex items-center gap-2 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10 hover:border-yellow-500">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            Apps & HTML
+                        </button>
+                        <button onclick="document.getElementById('media-upload-input').click()" class="${baseBtnClass}">${iconUpload} Upload</button>
+                    </div>
+                `;
                 loadMedia();
             } else if (view === 'playlists') {
                 title.innerText = 'Playlists';
@@ -932,10 +987,58 @@
                 setTimeout(loadSchedules, 100);
             } else {
                 title.innerText = 'Screens';
-                btn.innerHTML = `<button onclick="addDevice()" class="${baseBtnClass}">${iconScreen} New Screen</button>`;
+                btn.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <button onclick="requirePro(() => alert('Branding settings opening...'))" class="btn-secondary hidden sm:flex items-center gap-2 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10 hover:border-yellow-500">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            Sticky Logo
+                        </button>
+                        <button onclick="addDevice()" class="${baseBtnClass}">${iconScreen} New Screen</button>
+                    </div>
+                `;
                 loadDevices();
             }
         }
+
+        function openAddWebModal() {
+            document.getElementById('web-name').value = '';
+            document.getElementById('web-url').value = '';
+            document.getElementById('modal-add-web').classList.remove('hidden');
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+        }
+
+        async function saveWebLink() {
+            const name = document.getElementById('web-name').value;
+            let url = document.getElementById('web-url').value;
+            
+            if(!name || !url) return showToast('Please enter a name and URL', 'error');
+            if(!url.startsWith('http')) url = 'https://' + url;
+
+            const btn = document.querySelector('#modal-add-web button.btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...'; 
+            btn.disabled = true;
+
+            const { error } = await sb.from('media').insert({
+                user_id: state.user.id,
+                name: name,
+                type: 'web',
+                url: url
+            });
+
+            btn.innerText = originalText; 
+            btn.disabled = false;
+
+            if(error) {
+                showToast(error.message, 'error');
+            } else {
+                showToast('Web App Added!', 'success');
+                closeModal('modal-add-web');
+                loadMedia();
+            }
+        }
+
+
 
         // --- 4. MEDIA ---
         async function loadMedia() {
@@ -973,20 +1076,31 @@
 
             filtered.forEach(m => {
                 const isVideo = m.type.includes('video');
-                const tagColor = isVideo ? 'bg-indigo-600' : 'bg-emerald-600';
-                const thumbnail = isVideo 
-                    ? `<div class="flex items-center justify-center h-full bg-gray-800 text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-8 h-8"><path d="M8 5v14l11-7z"/></svg></div>`
-                    : `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">`;
+                const isWeb = m.type === 'web';
+                
+                let tagColor = 'bg-emerald-600 text-white';
+                let tagText = 'IMG';
+                let thumbnail = `<img src="${m.url}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">`;
+
+                if (isVideo) {
+                    tagColor = 'bg-indigo-600 text-white';
+                    tagText = 'VIDEO';
+                    thumbnail = `<div class="flex items-center justify-center h-full bg-gray-800 text-gray-500"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" class="w-8 h-8"><path d="M8 5v14l11-7z"/></svg></div>`;
+                } else if (isWeb) {
+                    tagColor = 'bg-yellow-500 text-black';
+                    tagText = 'WEB';
+                    thumbnail = `<div class="flex items-center justify-center h-full bg-gray-800 text-yellow-500"><svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg></div>`;
+                }
 
                 grid.innerHTML += `
                     <div class="card group relative overflow-hidden">
                         <div class="aspect-video relative bg-gray-800 overflow-hidden">
                             ${thumbnail}
                             <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                <button onclick="openReplaceDialog('${m.id}')" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded shadow-lg">REPLACE</button>
+                                ${!isWeb ? `<button onclick="openReplaceDialog('${m.id}')" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded shadow-lg">REPLACE</button>` : ''}
                                 <button onclick="deleteMedia(${m.id})" class="p-2 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg></button>
                             </div>
-                            <span class="absolute bottom-2 left-2 px-2 py-0.5 ${tagColor} backdrop-blur text-white text-[10px] font-bold uppercase rounded">${isVideo ? 'VIDEO' : 'IMG'}</span>
+                            <span class="absolute bottom-2 left-2 px-2 py-0.5 ${tagColor} backdrop-blur text-[10px] font-bold uppercase rounded">${tagText}</span>
                         </div>
                         <div class="p-3" style="border-top: 1px solid var(--border-color);">
                             <p class="text-sm font-medium truncate" style="color: var(--text-primary);" title="${m.name}">${m.name}</p>
@@ -1700,7 +1814,8 @@
                 'modal-create-group', 
                 'modal-group-manage', 
                 'modal-group-playlist',
-                'custom-input-modal'
+                'custom-input-modal',
+                'modal-upgrade-pro'
             ];
 
             // Check if ANY of these are still visible (missing the 'hidden' class)
