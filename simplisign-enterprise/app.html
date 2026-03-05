@@ -807,6 +807,48 @@
         </div>
     </div>
 
+    <div id="modal-ticker-overlay" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-md shadow-2xl p-6 border border-slate-200 dark:border-gray-800">
+            <h3 class="font-bold text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+                <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"/></svg>
+                Configure Ticker Overlay
+            </h3>
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Target Screen</label>
+                    <select id="ticker-target-device" class="input-field">
+                        <option value="all">Apply to All Screens</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="ticker-active" class="w-5 h-5 rounded text-brand-600 focus:ring-brand-500">
+                    <label for="ticker-active" class="text-sm font-medium text-slate-700 dark:text-slate-300">Enable Ticker Overlay</label>
+                </div>
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Message</label>
+                    <textarea id="ticker-text" class="input-field min-h-[80px]" placeholder="Enter scrolling text..."></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Position</label>
+                        <select id="ticker-position" class="input-field">
+                            <option value="bottom">Bottom</option>
+                            <option value="top">Top</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Speed (Secs)</label>
+                        <input type="number" id="ticker-speed" class="input-field" value="20" min="5">
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeModal('modal-ticker-overlay')" class="btn-ghost">Cancel</button>
+                <button onclick="saveTickerOverlay()" class="btn-primary">Save Ticker</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-zone-layout" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
         <div class="card w-full max-w-md shadow-2xl p-6 border border-slate-200 dark:border-gray-800">
             <h3 class="font-bold text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
@@ -1197,6 +1239,10 @@
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             Sticky Logo
                         </button>
+                        <button onclick="requirePro(openTickerOverlayModal)" class="btn-secondary hidden sm:flex items-center gap-2 border-orange-500/30 text-orange-600 hover:bg-orange-500/10 hover:border-orange-500">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"/></svg>
+                            Ticker Overlay
+                        </button>
                         <button onclick="addDevice()" class="${baseBtnClass}">${iconScreen} New Screen</button>
                     </div>
                 `;
@@ -1369,6 +1415,59 @@
                 showToast('Failed to apply branding', 'error');
             } finally {
                 btn.innerText = originalText; 
+                btn.disabled = false;
+            }
+        }
+
+        function openTickerOverlayModal() {
+            const select = document.getElementById('ticker-target-device');
+            select.innerHTML = '<option value="all">Apply to All Screens</option>' + 
+                state.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+            
+            document.getElementById('ticker-active').checked = false;
+            document.getElementById('ticker-text').value = '';
+            document.getElementById('ticker-position').value = 'bottom';
+            document.getElementById('ticker-speed').value = '20';
+            
+            document.getElementById('modal-ticker-overlay').classList.remove('hidden');
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+        }
+
+        async function saveTickerOverlay() {
+            const targetId = document.getElementById('ticker-target-device').value;
+            const active = document.getElementById('ticker-active').checked;
+            const text = document.getElementById('ticker-text').value;
+            const position = document.getElementById('ticker-position').value;
+            const speed = document.getElementById('ticker-speed').value;
+
+            const btn = document.querySelector('#modal-ticker-overlay button.btn-primary');
+            const originalText = btn.innerText;
+            btn.innerText = 'Saving...'; btn.disabled = true;
+
+            try {
+                let query = sb.from('devices').update({ 
+                    ticker_active: active,
+                    ticker_text: text,
+                    ticker_position: position,
+                    ticker_speed: parseInt(speed),
+                    ticker_bg: '#000000', // Default black
+                    ticker_color: '#ffffff' // Default white
+                });
+                
+                if (targetId === 'all') query = query.eq('user_id', state.user.id);
+                else query = query.eq('id', targetId);
+
+                const { error } = await query;
+                if (error) throw error;
+                
+                showToast('Ticker updated successfully!', 'success');
+                closeModal('modal-ticker-overlay');
+                loadDevices();
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to update ticker', 'error');
+            } finally {
+                btn.innerText = originalText;
                 btn.disabled = false;
             }
         }
@@ -2217,7 +2316,8 @@
                 'modal-add-weather',
                 'modal-add-ticker',
                 'modal-sticky-logo',
-                'modal-zone-layout'
+                'modal-zone-layout',
+                'modal-ticker-overlay'
             ];
 
             // Check if ANY of these are still visible (missing the 'hidden' class)

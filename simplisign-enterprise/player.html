@@ -70,6 +70,11 @@
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(0.9); }
         }
+
+        @keyframes marquee {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
+        }
     </style>
 </head>
 <body class="h-screen w-screen text-white font-sans antialiased selection:bg-brand-500 selection:text-white">
@@ -161,6 +166,11 @@
         </div>
         
         <img id="sticky-logo" class="absolute hidden z-[60] max-w-[200px] max-h-[200px] object-contain drop-shadow-2xl">
+        
+        <div id="overlay-ticker" class="absolute left-0 w-full z-[70] hidden overflow-hidden whitespace-nowrap">
+            <div id="overlay-ticker-track" class="inline-block"><span id="overlay-ticker-content" class="font-bold px-4"></span></div>
+        </div>
+
         <div id="status-pill" class="status-dot status-orange"></div>
     </div>
 
@@ -370,6 +380,29 @@ if (device.logo_url) {
 } else {
     logoEl.classList.add('hidden');
 }
+
+                // --- TICKER OVERLAY LOGIC ---
+                const tickerEl = document.getElementById('overlay-ticker');
+                const tickerContent = document.getElementById('overlay-ticker-content');
+                const tickerTrack = document.getElementById('overlay-ticker-track');
+
+                if (device.ticker_active && device.ticker_text) {
+                    tickerEl.classList.remove('hidden');
+                    tickerEl.classList.remove('top-0', 'bottom-0');
+                    tickerEl.classList.add(device.ticker_position === 'top' ? 'top-0' : 'bottom-0');
+                    
+                    tickerEl.style.backgroundColor = device.ticker_bg || '#000000';
+                    tickerEl.style.color = device.ticker_color || '#ffffff';
+                    tickerEl.style.height = (device.ticker_size ? (device.ticker_size + 20) : 60) + 'px';
+                    
+                    tickerContent.innerText = device.ticker_text;
+                    tickerContent.style.fontSize = (device.ticker_size || 32) + 'px';
+                    tickerContent.style.lineHeight = tickerEl.style.height;
+                    
+                    tickerTrack.style.animation = `marquee ${device.ticker_speed || 20}s linear infinite`;
+                } else {
+                    tickerEl.classList.add('hidden');
+                }
 
                 // --- ZONE LAYOUT LOGIC ---
                 const layoutContainer = document.getElementById('layout-container');
