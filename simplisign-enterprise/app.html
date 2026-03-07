@@ -371,6 +371,13 @@
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" /></svg>
                     Playlists
                 </button>
+                <button onclick="nav('layouts')" class="nav-item w-full group flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 4.5v15m6-15v15m-10.5-6h15m-15-6h15m-3-4.5H5.25C4.007 4.5 3 5.507 3 6.75v10.5c0 1.243 1.007 2.25 2.25 2.25h13.5c1.243 0 2.25-1.007 2.25-2.25V6.75C21 5.507 19.993 4.5 18.75 4.5H15.75z" /></svg>
+                        Layouts
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-500"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd" /></svg>
+                </button>
                 <button onclick="nav('schedules')" class="nav-item w-full">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0h18M5.25 12h13.5h-13.5zm0 3.75h13.5h-13.5z" /></svg>
                     Schedules
@@ -440,6 +447,20 @@
 
                 <div id="view-playlists" class="hidden max-w-7xl mx-auto fade-enter">
                     <div id="playlist-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+                </div>
+
+                <div id="view-layouts" class="hidden max-w-7xl mx-auto fade-enter">
+                    <div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold" style="color: var(--text-primary);">Screen Layouts</h3>
+                            <p class="text-sm" style="color: var(--text-secondary);">Design multi-zone templates for your screens.</p>
+                        </div>
+                        <button onclick="openLayoutBuilder()" class="btn-primary" style="background-color: #d4ff00; color: #000;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                            Create Layout
+                        </button>
+                    </div>
+                    <div id="layout-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
                 </div>
 
                 <div id="view-schedules" class="hidden max-w-7xl mx-auto fade-enter">
@@ -894,7 +915,7 @@
     <script>
         // --- CONFIGURATION ---
         let sb = null;
-        let state = { user: null, media: [], playlists: [], devices: [], groups: [], schedules: [], draft: [], subscription_tier: 'standard' };
+        let state = { user: null, media: [], playlists: [], devices: [], groups: [], schedules: [], draft: [], layouts: [], subscription_tier: 'standard' };
         let currentTab = localStorage.getItem('lastActiveTab') || 'media';
         let calendar = null;
         let modalCalendar = null;
@@ -1189,10 +1210,20 @@
 
         // --- 3. NAVIGATION ---
         function nav(view) {
-            ['media', 'playlists', 'devices', 'schedules'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
+            ['media', 'playlists', 'layouts', 'devices', 'schedules'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
             document.getElementById(`view-${view}`).classList.remove('hidden');
             
             currentTab = view;
+
+            if (view === 'layouts') {
+                if (state.subscription_tier !== 'pro') {
+                    document.getElementById('modal-upgrade-pro').classList.remove('hidden');
+                    document.getElementById('modal-backdrop').classList.remove('hidden');
+                    // Revert back to previous tab
+                    return nav('media');
+                }
+            }
+
             localStorage.setItem('lastActiveTab', view);
             document.getElementById('global-search').value = '';
 
@@ -1229,6 +1260,10 @@
                 title.innerText = 'Playlists';
                 btn.innerHTML = `<button onclick="openPlaylistBuilder()" class="${baseBtnClass}">${iconPlus} New Playlist</button>`;
                 loadPlaylists();
+            } else if (view === 'layouts') {
+                title.innerText = 'Layouts (PRO)';
+                btn.innerHTML = ``; // Button is already in the view header
+                loadLayouts();
             } else if (view === 'schedules') {
                 title.innerText = 'Schedules';
                 btn.innerHTML = `<button onclick="openScheduleModal()" class="${baseBtnClass}">${iconCal} Add Schedule</button>`;
@@ -2497,6 +2532,14 @@
         });
 
         // --- SEARCH ---
+        async function loadLayouts() {
+            const list = document.getElementById('layout-list');
+            list.innerHTML = `<div class="col-span-full py-16 text-center border-2 border-dashed border-gray-800 rounded-2xl"><p class="text-gray-500 mb-2">No layouts created.</p></div>`;
+        }
+        function openLayoutBuilder() {
+            alert("Layout Builder Interface Loading...");
+        }
+
         function handleGlobalSearch(query) {
             const lowerQuery = query.toLowerCase();
             
