@@ -145,32 +145,8 @@
     </div>
 
     <div id="player-canvas" class="absolute inset-0 bg-black hidden overflow-hidden">
-        <div id="layout-container" class="w-full h-full flex flex-col">
-            
-            <!-- MAIN ZONE -->
-            <div id="zone-main" class="relative flex-1 overflow-hidden">
-                <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter transition-opacity duration-1000">
-                <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
-                <iframe id="active-iframe" class="w-full h-full absolute inset-0 hidden border-0" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
-                <div id="active-widget" class="w-full h-full absolute inset-0 hidden flex items-center justify-center flex-col p-12 transition-opacity duration-1000"></div>
-            </div>
-
-            <!-- SIDEBAR / BOTTOM ZONE -->
-            <div id="zone-side" class="hidden relative overflow-hidden bg-gray-900 border-l border-gray-800">
-                <img id="side-slide" class="w-full h-full object-cover absolute inset-0 fade-enter transition-opacity duration-1000">
-                <video id="side-video" class="w-full h-full object-cover absolute inset-0 hidden" muted playsinline></video>
-                <iframe id="side-iframe" class="w-full h-full absolute inset-0 hidden border-0"></iframe>
-                <div id="side-widget" class="w-full h-full absolute inset-0 hidden flex items-center justify-center flex-col p-4"></div>
-            </div>
-
-        </div>
-        
-        <img id="sticky-logo" class="absolute hidden z-[60] max-w-[200px] max-h-[200px] object-contain drop-shadow-2xl">
-        
-        <div id="overlay-ticker" class="absolute left-0 w-full z-[70] hidden overflow-hidden whitespace-nowrap">
-            <div id="overlay-ticker-track" class="inline-block"><span id="overlay-ticker-content" class="font-bold px-4"></span></div>
-        </div>
-
+        <div id="zones-container" class="absolute inset-0"></div>
+        <img id="sticky-logo" class="absolute hidden z-[100] max-w-[200px] max-h-[200px] object-contain drop-shadow-2xl">
         <div id="status-pill" class="status-dot status-orange"></div>
     </div>
 
@@ -179,10 +155,10 @@
         let sb = null;
         let deviceCode = localStorage.getItem('ss_device_code');
         let deviceId = null;
+        let activeLayout = null;
+        let zoneStates = {}; // Stores { zoneId: { currentIndex, playlist, timer } }
         let currentPlaylist = [];
-        let currentSidePlaylist = [];
         let currentIndex = 0;
-        let currentSideIndex = 0;
         let imageCache = {};
         let isPlaying = false;
         let isOffline = false;
@@ -363,88 +339,42 @@ async function checkUpdates() {
                 // Safety Check: Ensure response is valid
                 if (!response || !response.device) return;
 
-                const { device, playlist } = response;
+                const { device, playlist, layout_data } = response;
 
                 // --- STICKY LOGO LOGIC ---
-                // --- STICKY LOGO LOGIC ---
-const logoEl = document.getElementById('sticky-logo');
-if (device.logo_url) {
-    logoEl.src = device.logo_url;
-    logoEl.className = 'absolute z-[60] max-w-[200px] max-h-[200px] object-contain transition-all duration-500 ';
-    if (device.logo_position === 'top-left') logoEl.classList.add('top-8', 'left-8');
-    else if (device.logo_position === 'top-right') logoEl.classList.add('top-8', 'right-8');
-    else if (device.logo_position === 'bottom-left') logoEl.classList.add('bottom-8', 'left-8');
-    else if (device.logo_position === 'bottom-right') logoEl.classList.add('bottom-8', 'right-8');
-    else logoEl.classList.add('top-8', 'right-8');
-    logoEl.classList.remove('hidden');
-} else {
-    logoEl.classList.add('hidden');
-}
-
-                // --- TICKER OVERLAY LOGIC ---
-                const tickerEl = document.getElementById('overlay-ticker');
-                const tickerContent = document.getElementById('overlay-ticker-content');
-                const tickerTrack = document.getElementById('overlay-ticker-track');
-
-                if (device.ticker_active && device.ticker_text) {
-                    tickerEl.classList.remove('hidden');
-                    tickerEl.classList.remove('top-0', 'bottom-0');
-                    tickerEl.classList.add(device.ticker_position === 'top' ? 'top-0' : 'bottom-0');
-                    
-                    tickerEl.style.backgroundColor = device.ticker_bg || '#000000';
-                    tickerEl.style.color = device.ticker_color || '#ffffff';
-                    tickerEl.style.height = (device.ticker_size ? (device.ticker_size + 20) : 60) + 'px';
-                    
-                    tickerContent.innerText = device.ticker_text;
-                    tickerContent.style.fontSize = (device.ticker_size || 32) + 'px';
-                    tickerContent.style.lineHeight = tickerEl.style.height;
-                    
-                    tickerTrack.style.animation = `marquee ${device.ticker_speed || 20}s linear infinite`;
+                const logoEl = document.getElementById('sticky-logo');
+                if (device.logo_url) {
+                    logoEl.src = device.logo_url;
+                    logoEl.className = 'absolute z-[100] max-w-[200px] max-h-[200px] object-contain transition-all duration-500 ';
+                    if (device.logo_position === 'top-left') logoEl.classList.add('top-8', 'left-8');
+                    else if (device.logo_position === 'top-right') logoEl.classList.add('top-8', 'right-8');
+                    else if (device.logo_position === 'bottom-left') logoEl.classList.add('bottom-8', 'left-8');
+                    else if (device.logo_position === 'bottom-right') logoEl.classList.add('bottom-8', 'right-8');
+                    else logoEl.classList.add('top-8', 'right-8');
+                    logoEl.classList.remove('hidden');
                 } else {
-                    tickerEl.classList.add('hidden');
+                    logoEl.classList.add('hidden');
                 }
 
-                // --- ZONE LAYOUT LOGIC ---
-                const layoutContainer = document.getElementById('layout-container');
-                const zoneMain = document.getElementById('zone-main');
-                const zoneSide = document.getElementById('zone-side');
-
-                if (device.layout_type === 'split-v') {
-                    // Vertical Split (Sidebar Right)
-                    layoutContainer.className = 'w-full h-full flex flex-row';
-                    zoneMain.className = 'relative h-full w-[75%] overflow-hidden';
-                    zoneSide.className = 'relative h-full w-[25%] overflow-hidden bg-gray-900 border-l border-gray-800 block';
-                } else if (device.layout_type === 'split-h') {
-                    // Horizontal Split (Bottom Bar)
-                    layoutContainer.className = 'w-full h-full flex flex-col';
-                    zoneMain.className = 'relative w-full h-[80%] overflow-hidden';
-                    zoneSide.className = 'relative w-full h-[20%] overflow-hidden bg-gray-900 border-t border-gray-800 block';
-                } else {
-                    // Full Screen
-                    layoutContainer.className = 'w-full h-full flex flex-col';
-                    zoneMain.className = 'relative flex-1 overflow-hidden';
-                    zoneSide.className = 'hidden';
-                }
-
-                // Fetch Sidebar Playlist if needed
-                if (device.layout_type !== 'full' && device.sidebar_playlist_id) {
-                    // Check if we need to fetch/update sidebar content
-                    if (!window.lastSidebarId || window.lastSidebarId !== device.sidebar_playlist_id) {
-                        window.lastSidebarId = device.sidebar_playlist_id;
-                        const { data: pl } = await sb.from('playlists').select('items').eq('id', device.sidebar_playlist_id).single();
-                        if (pl && pl.items) {
-                            const ids = pl.items.map(i => i.id);
-                            const { data: media } = await sb.from('media').select('id, url, type, metadata').in('id', ids);
-                            currentSidePlaylist = pl.items.map(i => {
-                                const f = media ? media.find(m => m.id === i.id) : null;
-                                return f ? { ...f, duration: i.duration } : null;
-                            }).filter(Boolean);
-                            currentSideIndex = 0;
-                            runSideLoop();
-                        }
+                // Logic: If layout exists, use layout. If not, use standard playlist.
+                if (layout_data) {
+                    if (JSON.stringify(layout_data) !== JSON.stringify(activeLayout)) {
+                        console.log("New Layout detected. Initializing zones...");
+                        activeLayout = layout_data;
+                        initMultiZoneLayout(layout_data);
+                    }
+                } else if (playlist) {
+                    // Handle standard single-playlist mode (Reset zones if moving from layout to single)
+                    if (activeLayout) { activeLayout = null; document.getElementById('zones-container').innerHTML = ''; }
+                    if (JSON.stringify(playlist) !== JSON.stringify(currentPlaylist)) {
+                        currentPlaylist = playlist;
+                        currentIndex = 0;
+                        runLoop(); // Standard single-loop
                     }
                 } else {
-                    currentSidePlaylist = []; // Clear if switched to full
+                    // No layout and no playlist, clear the screen
+                    if (activeLayout) { activeLayout = null; document.getElementById('zones-container').innerHTML = ''; }
+                    if (currentPlaylist.length > 0) stopPlayback();
                 }
 
                 // 2. REMOTE REFRESH LOGIC
@@ -490,27 +420,6 @@ if (device.logo_url) {
                     }
                 }
 
-                // 5. SYNC PLAYLIST
-                if (playlist && Array.isArray(playlist)) {
-                    if (JSON.stringify(playlist) !== JSON.stringify(currentPlaylist)) {
-                        console.log("New Playlist Received");
-                        localStorage.setItem('cached_playlist', JSON.stringify(playlist));
-                        imageCache = {}; 
-                        currentPlaylist = playlist;
-                        currentIndex = 0;
-                        
-                        if (typeof preloadMedia === "function") {
-                             preloadMedia(currentPlaylist);
-                        } else if (typeof preloadImages === "function") {
-                             preloadImages(currentPlaylist);
-                        }
-
-                        if (!isPlaying && currentPlaylist.length > 0) {
-                            runLoop();
-                        }
-                    }
-                }
-                
                 updateStatus('Online');
 
             } catch (error) {
@@ -568,6 +477,92 @@ if (device.logo_url) {
     }); 
 }
 
+        function initMultiZoneLayout(layout) {
+            const container = document.getElementById('zones-container');
+            container.innerHTML = ''; // Clear previous
+            zoneStates = {}; // Reset states
+
+            layout.zones.forEach(zone => {
+                // Create HTML element for the zone
+                const zoneDiv = document.createElement('div');
+                zoneDiv.id = `zone-${zone.id}`;
+                zoneDiv.className = "absolute overflow-hidden bg-black";
+                zoneDiv.style.left = zone.x + '%';
+                zoneDiv.style.top = zone.y + '%';
+                zoneDiv.style.width = zone.w + '%';
+                zoneDiv.style.height = zone.h + '%';
+                
+                // Add standard media elements inside the zone
+                zoneDiv.innerHTML = `
+                    <img class="w-full h-full object-cover absolute inset-0 fade-enter transition-opacity duration-1000">
+                    <video class="w-full h-full object-cover absolute inset-0 hidden" muted playsinline></video>
+                    <iframe class="w-full h-full absolute inset-0 hidden border-0"></iframe>
+                    <div class="widget-layer w-full h-full absolute inset-0 hidden flex items-center justify-center p-4"></div>
+                `;
+                container.appendChild(zoneDiv);
+
+                // Initialize state for this zone
+                if (zone.playlist_items) {
+                    zoneStates[zone.id] = {
+                        currentIndex: 0,
+                        playlist: zone.playlist_items,
+                        timer: null
+                    };
+                    runZoneLoop(zone.id);
+                }
+            });
+        }
+
+        function runZoneLoop(zoneId) {
+            const state = zoneStates[zoneId];
+            if (!state || !state.playlist.length) return;
+
+            const item = state.playlist[state.currentIndex];
+            const zoneEl = document.getElementById(`zone-${zoneId}`);
+            const img = zoneEl.querySelector('img');
+            const vid = zoneEl.querySelector('video');
+            const ifr = zoneEl.querySelector('iframe');
+            const widget = zoneEl.querySelector('.widget-layer');
+
+            // Reset elements
+            [img, vid, ifr, widget].forEach(el => el.classList.add('hidden'));
+            vid.pause();
+
+            if (item.type.includes('video')) {
+                vid.classList.remove('hidden');
+                vid.src = item.url;
+                vid.play();
+            } else if (item.type === 'web') {
+                ifr.classList.remove('hidden');
+                ifr.src = item.url;
+            } else if (item.type.includes('widget')) {
+                widget.classList.remove('hidden');
+                
+                if (item.type === 'widget_ticker') {
+                    const meta = item.metadata || {};
+                    widget.style.backgroundColor = meta.bgColor || '#0a0a0a';
+                    widget.style.color = meta.textColor || '#d4ff00';
+                    const fontSize = Math.max(16, (meta.fontSize || 48) * 0.8);
+                    widget.innerHTML = `<div style="font-size: ${fontSize}px; width: 100%; overflow: hidden; white-space: nowrap; font-weight: bold; display:flex; align-items:center; height:100%;"><marquee scrollamount="15">${meta.message || 'Scrolling Ticker...'}</marquee></div>`;
+                } else if (item.type === 'widget_weather') {
+                    const city = item.metadata?.city || 'Local Area';
+                    widget.style.backgroundColor = '#111827';
+                    widget.style.color = '#ffffff';
+                    widget.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-center p-2"><svg class="w-12 h-12 mb-4 text-sky-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"></path></svg><h1 class="text-2xl font-bold tracking-tight">${city}</h1></div>`;
+                    fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`).then(r => r.json()).then(data => { const temp = data.current_condition[0].temp_C; const desc = data.current_condition[0].weatherDesc[0].value; widget.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-center p-2"><h1 class="text-6xl font-black tracking-tighter text-white leading-none">${temp}°</h1><h2 class="text-2xl font-semibold mt-2 text-sky-400">${desc}</h2><p class="text-lg mt-4 text-gray-500 uppercase tracking-widest font-bold">${city}</p></div>`; }).catch(e => console.log('Weather fetch failed', e));
+                } else { widget.innerHTML = `<h1>Widget: ${item.name}</h1>`; }
+            } else {
+                img.classList.remove('hidden');
+                img.src = item.url;
+            }
+
+            // Schedule next transition for this specific zone
+            clearTimeout(state.timer);
+            state.timer = setTimeout(() => {
+                state.currentIndex = (state.currentIndex + 1) % state.playlist.length;
+                runZoneLoop(zoneId);
+            }, (item.duration || 10) * 1000);
+        }
 
         function runLoop() {
             if (!currentPlaylist.length) return;
@@ -654,69 +649,6 @@ if (device.logo_url) {
                 if (window.slideTimeout) clearTimeout(window.slideTimeout);
                 window.slideTimeout = setTimeout(nextSlide, duration);
             }
-        }
-
-        function runSideLoop() {
-            if (!currentSidePlaylist.length) return;
-            
-            const item = currentSidePlaylist[currentSideIndex];
-            const imgEl = document.getElementById('side-slide');
-            const vidEl = document.getElementById('side-video');
-            const iframeEl = document.getElementById('side-iframe');
-            const widgetEl = document.getElementById('side-widget');
-            
-            let duration = (item.duration || 10) * 1000;
-
-            // Reset
-            imgEl.classList.add('hidden');
-            vidEl.classList.add('hidden');
-            iframeEl.classList.add('hidden');
-            widgetEl.classList.add('hidden');
-            vidEl.pause();
-
-            if (item.type.includes('video')) {
-                vidEl.classList.remove('hidden');
-                vidEl.src = item.url;
-                vidEl.play().catch(e => console.error("Side Video Error:", e));
-                vidEl.onended = () => { if (item.duration === 0) nextSideSlide(); };
-            } else if (item.type === 'web') {
-                iframeEl.src = item.url;
-                iframeEl.classList.remove('hidden');
-            } else if (item.type === 'widget_ticker') {
-                const meta = item.metadata || {};
-                widgetEl.style.backgroundColor = meta.bgColor || '#0a0a0a';
-                widgetEl.style.color = meta.textColor || '#d4ff00';
-                // Adjust font size for smaller zone
-                const fontSize = Math.max(16, (meta.fontSize || 36) * 0.6); 
-                widgetEl.innerHTML = `
-                    <div style="font-size: ${fontSize}px; width: 100%; overflow: hidden; white-space: nowrap; font-weight: bold;">
-                        <marquee scrollamount="10">${meta.message || 'Ticker...'}</marquee>
-                    </div>`;
-                widgetEl.classList.remove('hidden');
-            } else if (item.type === 'widget_weather') {
-                // Simplified weather for sidebar
-                const city = item.metadata?.city || 'Local';
-                widgetEl.style.backgroundColor = '#111827';
-                widgetEl.style.color = '#ffffff';
-                widgetEl.innerHTML = `<h3 class="text-xl font-bold">${city}</h3><p class="text-sm opacity-50">Loading...</p>`;
-                widgetEl.classList.remove('hidden');
-                fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`).then(r=>r.json()).then(d=>{
-                    widgetEl.innerHTML = `<h1 class="text-4xl font-bold">${d.current_condition[0].temp_C}°</h1><p>${city}</p>`;
-                });
-            } else {
-                imgEl.src = item.url;
-                imgEl.classList.remove('hidden');
-            }
-
-            if (!item.type.includes('video') || item.duration > 0) {
-                if (window.sideTimeout) clearTimeout(window.sideTimeout);
-                window.sideTimeout = setTimeout(nextSideSlide, duration);
-            }
-        }
-
-        function nextSideSlide() {
-            currentSideIndex = (currentSideIndex + 1) % currentSidePlaylist.length;
-            runSideLoop();
         }
 
         function nextSlide() {

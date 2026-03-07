@@ -876,36 +876,84 @@
         </div>
     </div>
 
-    <div id="modal-zone-layout" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+    <div id="modal-assign-layout" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
         <div class="card w-full max-w-md shadow-2xl p-6 border border-slate-200 dark:border-gray-800">
             <h3 class="font-bold text-lg mb-4 text-slate-900 dark:text-white flex items-center gap-2">
-                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
-                Zone Layouts
+                <svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>
+                Assign Screen Layout
             </h3>
             <div class="space-y-4 mb-6">
                 <div>
                     <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Target Screen</label>
-                    <select id="layout-target-device" class="input-field">
-                        <option value="all">Apply to All Screens</option>
+                    <select id="assign-layout-target" class="input-field">
                     </select>
                 </div>
                 <div>
-                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Layout Mode</label>
-                    <select id="layout-type" class="input-field" onchange="toggleSidebarSelect()">
-                        <option value="full">Full Screen (Standard)</option>
-                        <option value="split-v">Vertical Split (Sidebar Right)</option>
-                        <option value="split-h">Horizontal Split (Ticker Bottom)</option>
+                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Select Layout</label>
+                    <select id="assign-layout-id" class="input-field">
+                        <option value="">-- None (Play Standard Playlist) --</option>
                     </select>
-                </div>
-                <div id="sidebar-playlist-container" class="hidden">
-                    <label class="text-xs font-bold uppercase tracking-wider mb-1 block text-slate-500">Sidebar / Bottom Content</label>
-                    <select id="layout-sidebar-playlist" class="input-field"></select>
-                    <p class="text-[10px] text-slate-400 mt-1">Select a playlist to run in the secondary zone.</p>
+                    <p class="text-[10px] text-slate-400 mt-2">Selecting a layout will override the default playlist.</p>
                 </div>
             </div>
             <div class="flex justify-end gap-3">
-                <button onclick="closeModal('modal-zone-layout')" class="btn-ghost">Cancel</button>
-                <button onclick="saveZoneLayout()" class="btn-primary">Apply Layout</button>
+                <button onclick="closeModal('modal-assign-layout')" class="btn-ghost">Cancel</button>
+                <button onclick="saveAssignedLayout()" class="btn-primary">Update Screen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-layout-builder" class="fixed inset-0 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="card w-full max-w-6xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="p-5 flex justify-between items-center shrink-0" style="background-color: var(--card-bg); border-bottom: 1px solid var(--border-color);">
+                <div>
+                    <h3 class="font-bold text-lg text-brand-500 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
+                        PRO Layout Builder
+                    </h3>
+                </div>
+                <button onclick="closeModal('modal-layout-builder')" class="btn-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            
+            <div class="flex-1 flex overflow-hidden">
+                <div class="w-80 p-5 overflow-y-auto space-y-6 custom-scrollbar" style="border-right: 1px solid var(--border-color); background-color: var(--bg-secondary);">
+                    <input type="hidden" id="layout-id">
+                    
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-2 block" style="color: var(--text-secondary);">Layout Name</label>
+                        <input type="text" id="layout-name" class="input-field border-brand-500" placeholder="e.g. Main Lobby Display">
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-2 block" style="color: var(--text-secondary);">Template Structure</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setLayoutTemplate('full')" id="tpl-full" class="p-3 border rounded-lg text-xs font-bold transition-all text-center" style="color: var(--text-primary); border-color: var(--border-color);">Full Screen</button>
+                            <button onclick="setLayoutTemplate('split-v')" id="tpl-split-v" class="p-3 border rounded-lg text-xs font-bold transition-all text-center" style="color: var(--text-primary); border-color: var(--border-color);">Split 70/30</button>
+                            <button onclick="setLayoutTemplate('l-shape')" id="tpl-l-shape" class="p-3 border rounded-lg text-xs font-bold transition-all text-center" style="color: var(--text-primary); border-color: var(--border-color);">L-Shape</button>
+                            <button onclick="setLayoutTemplate('dashboard')" id="tpl-dashboard" class="p-3 border rounded-lg text-xs font-bold transition-all text-center" style="color: var(--text-primary); border-color: var(--border-color);">Dashboard</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-bold uppercase tracking-wider mb-3 block" style="color: var(--text-secondary);">Zone Assignments</label>
+                        <div id="layout-assignments" class="space-y-3">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-1 p-8 flex flex-col items-center justify-center relative bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4xKSIvPjwvc3ZnPg==')] dark:bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')]" style="background-color: var(--bg-primary);">
+                    <div class="mb-4 flex gap-2 bg-gray-800 p-1 rounded-lg">
+                        <button onclick="setLayoutOrientation('landscape')" id="btn-landscape" class="px-4 py-1 text-xs font-bold bg-gray-700 text-white rounded shadow">Landscape TV</button>
+                        <button onclick="setLayoutOrientation('portrait')" id="btn-portrait" class="px-4 py-1 text-xs font-bold text-gray-400 hover:text-white rounded">Portrait TV</button>
+                    </div>
+                    <div id="layout-canvas-container" class="w-full max-w-4xl aspect-video bg-black border-4 border-gray-800 shadow-2xl relative overflow-hidden rounded-xl transition-all duration-500">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-5 flex justify-end gap-3 shrink-0" style="border-top: 1px solid var(--border-color); background-color: var(--card-bg);">
+                <button onclick="closeModal('modal-layout-builder')" class="btn-ghost">Cancel</button>
+                <button onclick="saveLayout()" class="btn-primary">Save Layout</button>
             </div>
         </div>
     </div>
@@ -1272,7 +1320,7 @@
                 title.innerText = 'Screens';
                 btn.innerHTML = `
                     <div class="flex items-center gap-2">
-                        <button onclick="requirePro(openZoneLayoutModal)" class="btn-secondary hidden sm:flex items-center gap-2 border-brand-500/30 text-brand-600 hover:bg-brand-500/10 hover:border-brand-500">
+                        <button onclick="requirePro(openAssignLayoutModal)" class="btn-secondary hidden sm:flex items-center gap-2 border-brand-500/30 text-brand-600 hover:bg-brand-500/10 hover:border-brand-500">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                             Layouts
                         </button>
@@ -1592,46 +1640,53 @@
             }
         }
 
-        function openZoneLayoutModal() {
-            const select = document.getElementById('layout-target-device');
-            select.innerHTML = '<option value="all">Apply to All Screens</option>' + 
+        function openAssignLayoutModal(deviceId = null) {
+            // Populate Screens
+            const devSelect = document.getElementById('assign-layout-target');
+            devSelect.innerHTML = '<option value="all">Apply to All Screens</option>' + 
                 state.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
-            
-            const plSelect = document.getElementById('layout-sidebar-playlist');
-            plSelect.innerHTML = state.playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            if (deviceId) devSelect.value = deviceId;
 
-            document.getElementById('layout-type').value = 'full';
-            toggleSidebarSelect();
-            
-            document.getElementById('modal-zone-layout').classList.remove('hidden');
+            // Populate Layouts
+            const layoutSelect = document.getElementById('assign-layout-id');
+            if (state.layouts.length === 0) {
+                layoutSelect.innerHTML = '<option value="">No Layouts Created Yet</option>';
+            } else {
+                layoutSelect.innerHTML = '<option value="">-- None (Play Standard Playlist) --</option>' + 
+                    state.layouts.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+            }
+
+            // Pre-select current layout if single device
+            if (deviceId) {
+                const dev = state.devices.find(d => d.id == deviceId);
+                if (dev && dev.layout_id) layoutSelect.value = dev.layout_id;
+            }
+
+            document.getElementById('modal-assign-layout').classList.remove('hidden');
             document.getElementById('modal-backdrop').classList.remove('hidden');
         }
 
-        function toggleSidebarSelect() {
-            const type = document.getElementById('layout-type').value;
-            const container = document.getElementById('sidebar-playlist-container');
-            if (type === 'full') container.classList.add('hidden');
-            else container.classList.remove('hidden');
-        }
+        async function saveAssignedLayout() {
+            const targetId = document.getElementById('assign-layout-target').value;
+            const layoutId = document.getElementById('assign-layout-id').value;
+            const finalLayoutId = layoutId ? parseInt(layoutId) : null;
 
-        async function saveZoneLayout() {
-            const targetId = document.getElementById('layout-target-device').value;
-            const type = document.getElementById('layout-type').value;
-            const sidebarPl = document.getElementById('layout-sidebar-playlist').value;
+            const btn = document.querySelector('#modal-assign-layout button.btn-primary');
+            btn.innerText = 'Updating...'; btn.disabled = true;
+
+            let query = sb.from('devices').update({ layout_id: finalLayoutId });
             
-            const payload = { layout_type: type };
-            if (type !== 'full') payload.sidebar_playlist_id = sidebarPl;
-            else payload.sidebar_playlist_id = null;
-
-            let query = sb.from('devices').update(payload);
             if (targetId === 'all') query = query.eq('user_id', state.user.id);
             else query = query.eq('id', targetId);
 
             const { error } = await query;
+            
+            btn.innerText = 'Update Screen'; btn.disabled = false;
+
             if (error) showToast(error.message, 'error');
             else {
-                showToast('Layout updated!', 'success');
-                closeModal('modal-zone-layout');
+                showToast('Screen Layout Updated!', 'success');
+                closeModal('modal-assign-layout');
                 loadDevices();
             }
         }
@@ -2153,13 +2208,15 @@
         async function loadDevices() {
             if(!sb || !state.user) return;
             
-            const [devRes, groupRes] = await Promise.all([
+            const [devRes, groupRes, layoutRes] = await Promise.all([
                 sb.from('devices').select('*').eq('user_id', state.user.id).order('id', {ascending: false}),
-                sb.from('groups').select('*').eq('user_id', state.user.id).order('name')
+                sb.from('groups').select('*').eq('user_id', state.user.id).order('name'),
+                sb.from('layouts').select('*').eq('user_id', state.user.id).order('name')
             ]);
 
             state.devices = devRes.data || [];
             state.groups = groupRes.data || [];
+            state.layouts = layoutRes.data || [];
 
             if(!state.playlists.length) { const { data: pl } = await sb.from('playlists').select('*').eq('user_id', state.user.id); state.playlists = pl || []; }
             
@@ -2438,8 +2495,9 @@
                 'modal-add-weather',
                 'modal-add-ticker',
                 'modal-sticky-logo',
-                'modal-zone-layout',
-                'modal-ticker-overlay'
+                'modal-assign-layout',
+                'modal-ticker-overlay',
+                'modal-layout-builder'
             ];
 
             // Check if ANY of these are still visible (missing the 'hidden' class)
@@ -2532,14 +2590,205 @@
         });
 
         // --- SEARCH ---
+        const layoutTemplates = {
+            'full': [ { id: 'z1', x: 0, y: 0, w: 100, h: 100, name: 'Main Full', color: '#4f46e5' } ],
+            'split-v': [
+                { id: 'z1', x: 0, y: 0, w: 70, h: 100, name: 'Main Zone', color: '#4f46e5' },
+                { id: 'z2', x: 70, y: 0, w: 30, h: 100, name: 'Side Zone', color: '#059669' }
+            ],
+            'l-shape': [
+                { id: 'z1', x: 0, y: 0, w: 75, h: 85, name: 'Main Zone', color: '#4f46e5' },
+                { id: 'z2', x: 75, y: 0, w: 25, h: 100, name: 'Side Zone', color: '#059669' },
+                { id: 'z3', x: 0, y: 85, w: 75, h: 15, name: 'Footer Ticker', color: '#ea580c' }
+            ],
+            'dashboard': [
+                { id: 'z1', x: 0, y: 0, w: 75, h: 85, name: 'Main Zone', color: '#4f46e5' },
+                { id: 'z2', x: 75, y: 0, w: 25, h: 85, name: 'Side Zone', color: '#059669' },
+                { id: 'z3', x: 0, y: 85, w: 20, h: 15, name: 'Logo Block', color: '#7c3aed' },
+                { id: 'z4', x: 20, y: 85, w: 80, h: 15, name: 'Footer Ticker', color: '#ea580c' }
+            ]
+        };
+
+        let currentLayoutStructure = [];
+        let currentOrientation = 'landscape';
+
         async function loadLayouts() {
+            if(!sb || !state.user) return;
+            const { data, error } = await sb.from('layouts').select('*').eq('user_id', state.user.id).order('id', {ascending: false});
+            if(error) return showToast(error.message, 'error');
+            state.layouts = data || [];
+            
             const list = document.getElementById('layout-list');
-            list.innerHTML = `<div class="col-span-full py-16 text-center border-2 border-dashed border-gray-800 rounded-2xl"><p class="text-gray-500 mb-2">No layouts created.</p></div>`;
-        }
-        function openLayoutBuilder() {
-            alert("Layout Builder Interface Loading...");
+            if(state.layouts.length === 0) {
+                 list.innerHTML = `<div class="col-span-full py-16 text-center border-2 border-dashed border-gray-800 rounded-2xl"><p class="text-gray-500 mb-2">No layouts created.</p></div>`;
+                 return;
+            }
+
+            list.innerHTML = state.layouts.map(l => `
+                <div class="card p-5 group hover:border-brand-500 transition-all cursor-pointer" onclick="openLayoutBuilder(${l.id})">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="font-bold text-lg text-brand-500">${escapeHtml(l.name)}</h3>
+                        <button onclick="event.stopPropagation(); deleteLayout(${l.id})" class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="badge-neutral">${l.zones.length} Zones</span>
+                    </div>
+                </div>
+            `).join('');
         }
 
+        function openLayoutBuilder(id = null) {
+            document.getElementById('modal-layout-builder').classList.remove('hidden');
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            
+            if(id) {
+                const l = state.layouts.find(x => x.id === id);
+                document.getElementById('layout-id').value = l.id;
+                document.getElementById('layout-name').value = l.name;
+                currentLayoutStructure = JSON.parse(JSON.stringify(l.zones));
+                // Try to guess template from zone count to highlight button
+                const count = currentLayoutStructure.length;
+                highlightTemplateButton(count === 1 ? 'full' : count === 2 ? 'split-v' : count === 3 ? 'l-shape' : 'dashboard');
+            } else {
+                document.getElementById('layout-id').value = '';
+                document.getElementById('layout-name').value = '';
+                setLayoutTemplate('dashboard'); // Default
+            }
+            renderLayoutCanvas();
+        }
+
+        function setLayoutOrientation(o) {
+            currentOrientation = o;
+            const canvas = document.getElementById('layout-canvas-container');
+            if (o === 'landscape') {
+                canvas.classList.add('aspect-video');
+                canvas.classList.remove('aspect-[9/16]');
+                document.getElementById('btn-landscape').classList.replace('text-gray-400', 'text-white');
+                document.getElementById('btn-landscape').classList.add('bg-gray-700', 'shadow');
+                document.getElementById('btn-portrait').classList.replace('text-white', 'text-gray-400');
+                document.getElementById('btn-portrait').classList.remove('bg-gray-700', 'shadow');
+            } else {
+                canvas.classList.remove('aspect-video');
+                canvas.classList.add('aspect-[9/16]', 'h-full', 'w-auto');
+                document.getElementById('btn-portrait').classList.replace('text-gray-400', 'text-white');
+                document.getElementById('btn-portrait').classList.add('bg-gray-700', 'shadow');
+                document.getElementById('btn-landscape').classList.replace('text-white', 'text-gray-400');
+                document.getElementById('btn-landscape').classList.remove('bg-gray-700', 'shadow');
+            }
+        }
+
+        function highlightTemplateButton(tpl) {
+            ['full', 'split-v', 'l-shape', 'dashboard'].forEach(t => {
+                const btn = document.getElementById(`tpl-${t}`);
+                if (t === tpl) {
+                    btn.style.borderColor = 'var(--text-primary)';
+                    btn.style.backgroundColor = 'var(--bg-tertiary)';
+                } else {
+                    btn.style.borderColor = 'var(--border-color)';
+                    btn.style.backgroundColor = 'transparent';
+                }
+            });
+        }
+
+        function setLayoutTemplate(tpl) {
+            highlightTemplateButton(tpl);
+            // Deep copy template so edits don't corrupt the master
+            currentLayoutStructure = JSON.parse(JSON.stringify(layoutTemplates[tpl]));
+            renderLayoutCanvas();
+        }
+
+        function renderLayoutCanvas() {
+            const canvas = document.getElementById('layout-canvas-container');
+            const assignContainer = document.getElementById('layout-assignments');
+            
+            canvas.innerHTML = '';
+            assignContainer.innerHTML = '';
+
+            const playlistOptions = `<option value="">-- Select Playlist --</option>` + state.playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+            currentLayoutStructure.forEach((zone, index) => {
+                // 1. Draw on Canvas
+                canvas.innerHTML += `
+                    <div class="absolute border border-black flex flex-col items-center justify-center p-2 text-center overflow-hidden transition-all shadow-inner"
+                         style="left: ${zone.x}%; top: ${zone.y}%; width: ${zone.w}%; height: ${zone.h}%; background-color: ${zone.color}99;">
+                        <span class="font-black text-white text-xl opacity-50">${zone.name}</span>
+                        <span class="text-xs text-white opacity-70 mt-1" id="label-z${index}">No Playlist</span>
+                    </div>
+                `;
+
+                // 2. Add to settings sidebar
+                assignContainer.innerHTML += `
+                    <div class="p-3 rounded-lg" style="background-color: var(--input-bg); border: 1px solid var(--border-color);">
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="w-3 h-3 rounded-full" style="background-color: ${zone.color}"></div>
+                            <span class="text-sm font-bold" style="color: var(--text-primary);">${zone.name}</span>
+                        </div>
+                        <select class="input-field text-xs py-1.5" onchange="updateZonePlaylist(${index}, this.value)">
+                            ${playlistOptions}
+                        </select>
+                    </div>
+                `;
+            });
+
+            // After render, restore selected playlists if they exist in state
+            setTimeout(() => {
+                const selects = assignContainer.querySelectorAll('select');
+                currentLayoutStructure.forEach((zone, i) => {
+                    if(zone.playlist_id && selects[i]) {
+                        selects[i].value = zone.playlist_id;
+                        updateZonePlaylist(i, zone.playlist_id);
+                    }
+                });
+            }, 50);
+        }
+
+        function updateZonePlaylist(zoneIndex, playlistId) {
+            currentLayoutStructure[zoneIndex].playlist_id = playlistId ? parseInt(playlistId) : null;
+            const pl = state.playlists.find(p => p.id == playlistId);
+            const label = document.getElementById(`label-z${zoneIndex}`);
+            if(label) label.innerText = pl ? pl.name : 'No Playlist';
+        }
+
+        async function saveLayout() {
+            const name = document.getElementById('layout-name').value;
+            const id = document.getElementById('layout-id').value;
+            
+            if(!name) return showToast('Enter a layout name', 'error');
+            
+            // Validate that at least the Main Zone has a playlist
+            if(!currentLayoutStructure[0].playlist_id) {
+                return showToast('Please assign a playlist to the Main Zone', 'error');
+            }
+
+            const btn = document.querySelector('#modal-layout-builder button.btn-primary');
+            const ogText = btn.innerText;
+            btn.innerText = 'Saving...'; btn.disabled = true;
+
+            const payload = {
+                user_id: state.user.id,
+                name: name,
+                zones: currentLayoutStructure
+            };
+
+            const { error } = id ? await sb.from('layouts').update(payload).eq('id', id) : await sb.from('layouts').insert(payload);
+            
+            btn.innerText = ogText; btn.disabled = false;
+            
+            if(error) showToast(error.message, 'error');
+            else {
+                showToast('Layout Saved!', 'success');
+                closeModal('modal-layout-builder');
+                loadLayouts();
+            }
+        }
+
+        async function deleteLayout(id) {
+            if(!confirm('Delete this Layout? Screens using it will stop working.')) return;
+            await sb.from('layouts').delete().eq('id', id);
+            loadLayouts();
+        }
+
+        // --- SEARCH ---
         function handleGlobalSearch(query) {
             const lowerQuery = query.toLowerCase();
             
