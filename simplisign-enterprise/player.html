@@ -145,7 +145,15 @@
     </div>
 
     <div id="player-canvas" class="absolute inset-0 bg-black hidden overflow-hidden">
-        <div id="zones-container" class="absolute inset-0"></div>
+        <div id="zones-container" class="absolute inset-0 z-10"></div>
+
+        <div id="single-zone-layer" class="absolute inset-0 z-0">
+            <img id="active-slide" class="w-full h-full object-contain absolute inset-0 fade-enter transition-opacity duration-1000">
+            <video id="active-video" class="w-full h-full object-contain absolute inset-0 hidden" muted playsinline></video>
+            <iframe id="active-iframe" class="w-full h-full absolute inset-0 hidden border-0" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+            <div id="active-widget" class="w-full h-full absolute inset-0 hidden flex items-center justify-center flex-col p-12 transition-opacity duration-1000"></div>
+        </div>
+        
         <img id="sticky-logo" class="absolute hidden z-[100] max-w-[200px] max-h-[200px] object-contain drop-shadow-2xl">
         <div id="status-pill" class="status-dot status-orange"></div>
     </div>

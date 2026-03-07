@@ -30,40 +30,33 @@ export default async function handler(req, res) {
             // 1. Heartbeat
             await supabase.from('devices').update({ status: 'online', last_seen: new Date() }).eq('id', deviceId);
 
-            // 2. Fetch Device (ADDED layout_id HERE)
+            // 2. Fetch Device (Including layout_id)
             const { data: device, error: devErr } = await supabase
                 .from('devices')
-                .select('id, code, group_id, playlist_id, layout_id, refresh_requested, screenshot_requested, unpair_requested, logo_url, logo_position, ticker_active, ticker_text, ticker_position, ticker_bg, ticker_color, ticker_speed')
+                .select('id, code, group_id, playlist_id, layout_id, refresh_requested, screenshot_requested, unpair_requested, logo_url, logo_position')
                 .eq('id', deviceId)
                 .single();
 
             if (devErr || !device) return res.status(404).json({ error: 'Device not found' });
             if (device.code !== code.toUpperCase()) return res.status(403).json({ error: 'Unauthorized' });
 
-            // Reset refresh flag if needed
-            if (device.refresh_requested) {
-                await supabase.from('devices').update({ refresh_requested: false }).eq('id', deviceId);
-            }
+            if (device.refresh_requested) await supabase.from('devices').update({ refresh_requested: false }).eq('id', deviceId);
 
-            // --- 3. LAYOUT LOGIC (New PRO Feature) ---
+            // --- 3. LAYOUT LOGIC (This is what you were missing!) ---
             if (device.layout_id) {
-                // Fetch the Layout details
                 const { data: layout } = await supabase.from('layouts').select('*').eq('id', device.layout_id).single();
                 
                 if (layout && layout.zones) {
-                    // We need to fetch the playlist items for EACH zone
+                    // Fetch playlist items for EACH zone
                     const populatedZones = await Promise.all(layout.zones.map(async (zone) => {
                         if (!zone.playlist_id) return { ...zone, playlist_items: [] };
 
-                        // Fetch Playlist Items
                         const { data: pl } = await supabase.from('playlists').select('items').eq('id', zone.playlist_id).single();
                         if (!pl || !pl.items || !pl.items.length) return { ...zone, playlist_items: [] };
 
-                        // Fetch actual Media Files
                         const ids = pl.items.map(i => i.id);
                         const { data: media } = await supabase.from('media').select('id, url, type, metadata').in('id', ids);
 
-                        // Merge duration with media info
                         const items = pl.items.map(i => {
                             const f = media ? media.find(m => m.id === i.id) : null;
                             return f ? { ...f, duration: i.duration } : null;
@@ -72,24 +65,12 @@ export default async function handler(req, res) {
                         return { ...zone, playlist_items: items };
                     }));
 
-                    // Return Layout Data!
-                    return res.status(200).json({ 
-                        device, 
-                        layout_data: { ...layout, zones: populatedZones } 
-                    });
+                    return res.status(200).json({ device, layout_data: { ...layout, zones: populatedZones } });
                 }
             }
 
-            // --- 4. STANDARD SINGLE PLAYLIST LOGIC (Fallback) ---
-            
-            // ... (Your existing scheduling logic mostly goes here) ...
-            // Simplified for brevity: Use existing scheduling logic to find activeId
-            
+            // --- 4. FALLBACK SINGLE PLAYLIST ---
             let activeId = device.playlist_id;
-            
-            // (Insert your Schedule filtering logic here if you want schedules to override default playlists)
-            // ... [Keep your existing schedule code block here] ...
-
             if (!activeId) return res.status(200).json({ device, playlist: [] });
 
             const { data: pl } = await supabase.from('playlists').select('items').eq('id', activeId).single();
