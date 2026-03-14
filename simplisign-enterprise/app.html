@@ -1118,7 +1118,8 @@
                 provider: 'google', 
                 options: { 
                     queryParams: { prompt: 'select_account', access_type: 'offline' },
-                    redirectTo: window.location.origin 
+                    // FIX: Redirect exactly back to this page (app.html) instead of the root origin
+                    redirectTo: window.location.href 
                 } 
             }); 
         }
