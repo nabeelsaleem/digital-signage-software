@@ -536,35 +536,49 @@ async function checkUpdates() {
             [img, vid, ifr, widget].forEach(el => el.classList.add('hidden'));
             vid.pause();
 
+            // Safety catch for older widgets
+            const isWidget = item.type.includes('widget') || item.url.startsWith('ticker://') || item.url.startsWith('weather://');
+
             if (item.type.includes('video')) {
                 vid.classList.remove('hidden');
                 vid.src = item.url;
-                vid.play();
+                vid.play().catch(e => console.error(e));
             } else if (item.type === 'web') {
                 ifr.classList.remove('hidden');
                 ifr.src = item.url;
-            } else if (item.type.includes('widget')) {
+            } else if (isWidget) {
                 widget.classList.remove('hidden');
                 
-                if (item.type === 'widget_ticker') {
+                if (item.type === 'widget_ticker' || item.url.startsWith('ticker://')) {
                     const meta = item.metadata || {};
                     widget.style.backgroundColor = meta.bgColor || '#0a0a0a';
                     widget.style.color = meta.textColor || '#d4ff00';
-                    const fontSize = Math.max(16, (meta.fontSize || 48) * 0.8);
+                    
+                    // FIX: Responsive Font Size (Prevents the massive green text)
+                    const zoneHeight = zoneEl.offsetHeight || 100;
+                    const dynamicSize = Math.min(meta.fontSize || 48, zoneHeight * 0.5); 
+                    const fontSize = Math.max(16, dynamicSize);
+                    
                     widget.innerHTML = `<div style="font-size: ${fontSize}px; width: 100%; overflow: hidden; white-space: nowrap; font-weight: bold; display:flex; align-items:center; height:100%;"><marquee scrollamount="15">${meta.message || 'Scrolling Ticker...'}</marquee></div>`;
-                } else if (item.type === 'widget_weather') {
+                } else if (item.type === 'widget_weather' || item.url.startsWith('weather://')) {
                     const city = item.metadata?.city || 'Local Area';
                     widget.style.backgroundColor = '#111827';
                     widget.style.color = '#ffffff';
                     widget.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-center p-2"><svg class="w-12 h-12 mb-4 text-sky-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"></path></svg><h1 class="text-2xl font-bold tracking-tight">${city}</h1></div>`;
                     fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`).then(r => r.json()).then(data => { const temp = data.current_condition[0].temp_C; const desc = data.current_condition[0].weatherDesc[0].value; widget.innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-center p-2"><h1 class="text-6xl font-black tracking-tighter text-white leading-none">${temp}°</h1><h2 class="text-2xl font-semibold mt-2 text-sky-400">${desc}</h2><p class="text-lg mt-4 text-gray-500 uppercase tracking-widest font-bold">${city}</p></div>`; }).catch(e => console.log('Weather fetch failed', e));
-                } else { widget.innerHTML = `<h1>Widget: ${item.name}</h1>`; }
+                } else { 
+                    widget.innerHTML = `<h1 class="text-white">Widget: ${item.name}</h1>`; 
+                }
             } else {
+                // FIX: Added the fade-enter-active so images are no longer invisible!
                 img.classList.remove('hidden');
-                img.src = item.url;
+                img.classList.remove('fade-enter-active');
+                setTimeout(() => {
+                    img.src = item.url;
+                    img.classList.add('fade-enter-active');
+                }, 50);
             }
 
-            // Schedule next transition for this specific zone
             clearTimeout(state.timer);
             state.timer = setTimeout(() => {
                 state.currentIndex = (state.currentIndex + 1) % state.playlist.length;
@@ -582,7 +596,6 @@ async function checkUpdates() {
             const iframeEl = document.getElementById('active-iframe');
             const widgetEl = document.getElementById('active-widget');
             
-            // Determine Duration (Default to item duration or 10s)
             let duration = (item.duration || 10) * 1000;
 
             // Hide everything first
@@ -591,59 +604,50 @@ async function checkUpdates() {
             iframeEl.classList.add('hidden');
             widgetEl.classList.add('hidden');
             vidEl.pause();
-            iframeEl.src = ''; // Clear iframe memory
+            iframeEl.src = ''; 
+
+            const isWidget = item.type.includes('widget') || item.url.startsWith('ticker://') || item.url.startsWith('weather://');
 
             if (item.type.includes('video')) {
-                // --- VIDEO MODE ---
                 vidEl.classList.remove('hidden');
                 vidEl.src = item.url;
                 vidEl.play().catch(e => console.error("Video Play Error:", e));
                 vidEl.onended = () => { if (item.duration === 0) nextSlide(); };
                 
             } else if (item.type === 'web') {
-                // --- WEB EMBED MODE ---
                 iframeEl.src = item.url;
                 iframeEl.classList.remove('hidden');
                 
-            } else if (item.type === 'widget_ticker') {
-                // --- TICKER MODE ---
-                const meta = item.metadata || {};
-                widgetEl.style.backgroundColor = meta.bgColor || '#0a0a0a';
-                widgetEl.style.color = meta.textColor || '#d4ff00';
-                widgetEl.innerHTML = `
-                    <div style="font-size: ${meta.fontSize || 48}px; width: 100%; overflow: hidden; white-space: nowrap; font-weight: bold;">
-                        <marquee scrollamount="20">${meta.message || 'Scrolling Ticker...'}</marquee>
-                    </div>`;
-                widgetEl.classList.remove('hidden');
-                
-            } else if (item.type === 'widget_weather') {
-                // --- WEATHER MODE ---
-                const city = item.metadata?.city || 'Local Area';
-                widgetEl.style.backgroundColor = '#111827'; // Dark slate
-                widgetEl.style.color = '#ffffff';
-                
-                // Show loading state first
-                widgetEl.innerHTML = `
-                    <svg class="w-32 h-32 mb-8 text-sky-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"></path></svg>
-                    <h1 class="text-5xl font-bold tracking-tight">${city}</h1>
-                `;
-                widgetEl.classList.remove('hidden');
-                
-                // Fetch Live Weather from free wttr.in JSON API
-                fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`)
-                    .then(r => r.json())
-                    .then(data => {
-                        const temp = data.current_condition[0].temp_C;
-                        const desc = data.current_condition[0].weatherDesc[0].value;
-                        widgetEl.innerHTML = `
-                            <h1 class="text-[12rem] font-black tracking-tighter text-white leading-none">${temp}°</h1>
-                            <h2 class="text-6xl font-semibold mt-4 text-sky-400">${desc}</h2>
-                            <p class="text-3xl mt-8 text-gray-500 uppercase tracking-[0.3em] font-bold">${city}</p>
-                        `;
-                    }).catch(e => console.log('Weather fetch failed', e));
+            } else if (isWidget) {
+                if (item.type === 'widget_ticker' || item.url.startsWith('ticker://')) {
+                    const meta = item.metadata || {};
+                    widgetEl.style.backgroundColor = meta.bgColor || '#0a0a0a';
+                    widgetEl.style.color = meta.textColor || '#d4ff00';
+                    widgetEl.innerHTML = `
+                        <div style="font-size: ${meta.fontSize || 48}px; width: 100%; overflow: hidden; white-space: nowrap; font-weight: bold; display:flex; align-items:center; height:100%;">
+                            <marquee scrollamount="20">${meta.message || 'Scrolling Ticker...'}</marquee>
+                        </div>`;
+                    widgetEl.classList.remove('hidden');
+                } else if (item.type === 'widget_weather' || item.url.startsWith('weather://')) {
+                    const city = item.metadata?.city || 'Local Area';
+                    widgetEl.style.backgroundColor = '#111827';
+                    widgetEl.style.color = '#ffffff';
+                    widgetEl.innerHTML = `<svg class="w-32 h-32 mb-8 text-sky-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"></path></svg><h1 class="text-5xl font-bold tracking-tight">${city}</h1>`;
+                    widgetEl.classList.remove('hidden');
                     
+                    fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`)
+                        .then(r => r.json())
+                        .then(data => {
+                            const temp = data.current_condition[0].temp_C;
+                            const desc = data.current_condition[0].weatherDesc[0].value;
+                            widgetEl.innerHTML = `
+                                <h1 class="text-[12rem] font-black tracking-tighter text-white leading-none">${temp}°</h1>
+                                <h2 class="text-6xl font-semibold mt-4 text-sky-400">${desc}</h2>
+                                <p class="text-3xl mt-8 text-gray-500 uppercase tracking-[0.3em] font-bold">${city}</p>
+                            `;
+                        }).catch(e => console.log('Weather fetch failed', e));
+                }
             } else {
-                // --- IMAGE MODE ---
                 imgEl.classList.remove('hidden');
                 imgEl.classList.remove('fade-enter-active');
                 setTimeout(() => {
@@ -653,7 +657,6 @@ async function checkUpdates() {
             }
 
             if (!item.type.includes('video') || item.duration > 0) {
-                // Clear any existing timeout to prevent rapid-fire bug
                 if (window.slideTimeout) clearTimeout(window.slideTimeout);
                 window.slideTimeout = setTimeout(nextSlide, duration);
             }
