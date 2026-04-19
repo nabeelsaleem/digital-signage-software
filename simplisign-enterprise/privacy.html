@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy — Supacms</title>
+    <meta name="description" content="Supacms Privacy Policy — learn how we collect, use, store, and protect your personal data when you use our digital signage platform.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: { brand: { DEFAULT: '#d4ff00', dark: '#bfe600' }, dark: '#0a0a0a' }
+                }
+            }
+        }
+    </script>
+    <style>
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(0,0,0,0.04) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0,0,0,0.04) 1px, transparent 1px);
+        }
+        .toc-link { transition: all 0.2s; border-left: 2px solid transparent; }
+        .toc-link:hover, .toc-link.active { border-left-color: #d4ff00; color: #0a0a0a; padding-left: 12px; }
+        .section-anchor { scroll-margin-top: 100px; }
+        .prose-section h2 { font-size: 1.4rem; font-weight: 800; color: #0a0a0a; margin-bottom: 0.75rem; margin-top: 2.5rem; padding-top: 2.5rem; border-top: 1px solid #f1f5f9; }
+        .prose-section h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .prose-section p { color: #475569; line-height: 1.8; margin-bottom: 1rem; font-size: 0.95rem; }
+        .prose-section ul { list-style: none; margin-bottom: 1rem; }
+        .prose-section ul li { color: #475569; font-size: 0.95rem; line-height: 1.8; padding-left: 1.25rem; position: relative; margin-bottom: 0.4rem; }
+        .prose-section ul li::before { content: "→"; position: absolute; left: 0; color: #d4ff00; font-weight: 900; }
+        .prose-section strong { color: #0a0a0a; font-weight: 700; }
+        .prose-section a { color: #0a0a0a; text-decoration: underline; text-underline-offset: 2px; }
+        .highlight-box { background: #f8fafc; border-left: 4px solid #d4ff00; padding: 1rem 1.25rem; border-radius: 0 0.75rem 0.75rem 0; margin: 1.25rem 0; }
+        .highlight-box p { margin: 0; color: #334155; font-weight: 600; font-size: 0.9rem; }
+        .data-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 1rem; padding: 1.25rem; margin-bottom: 0.75rem; }
+        .data-card .label { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8; margin-bottom: 0.25rem; }
+        .data-card .value { font-weight: 700; color: #0f172a; font-size: 0.9rem; }
+        .data-card .desc { font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <div class="fixed inset-0 bg-grid opacity-60 pointer-events-none z-0"></div>
+
+    <!-- NAV -->
+    <nav class="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 font-extrabold text-2xl tracking-tight text-dark">
+                <div class="w-8 h-8 bg-brand rounded flex items-center justify-center text-dark text-lg">S</div>
+                Supacms
+            </a>
+            <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+                <a href="/" class="hover:text-brand-dark transition-colors">Home</a>
+                <a href="/pricing.html" class="hover:text-brand-dark transition-colors">Pricing</a>
+                <a href="/terms.html" class="hover:text-brand-dark transition-colors">Terms of Service</a>
+                <a href="/refunds.html" class="hover:text-brand-dark transition-colors">Refunds</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="app.html" class="text-sm font-bold text-dark hover:text-slate-600 transition-colors hidden md:block">Login</a>
+                <a href="pricing.html" class="bg-dark text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-slate-800 transition-all shadow-lg hover:-translate-y-0.5">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO HEADER -->
+    <div class="pt-32 pb-12 px-6 bg-white border-b border-slate-200 relative z-10">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">
+                <a href="/" class="hover:text-dark transition-colors">Home</a>
+                <span>/</span>
+                <span class="text-dark">Privacy Policy</span>
+            </div>
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <div class="inline-block bg-brand/20 border border-brand text-dark font-bold px-3 py-1 rounded-full text-xs uppercase tracking-widest mb-4">Legal</div>
+                    <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-dark">Privacy Policy</h1>
+                    <p class="text-slate-500 mt-3 font-medium">Your privacy matters. Here's exactly how we handle your data.</p>
+                </div>
+                <div class="shrink-0 text-sm text-slate-400 font-medium bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+                    <div class="font-bold text-slate-600 mb-0.5">Last Updated</div>
+                    March 15, 2026
+                </div>
+            </div>
+
+            <!-- Legal nav pills -->
+            <div class="flex gap-3 mt-8 flex-wrap">
+                <a href="terms.html" class="bg-white border border-slate-200 text-slate-600 font-bold px-4 py-2 rounded-full text-xs hover:border-dark transition-colors">Terms of Service</a>
+                <span class="bg-dark text-white font-bold px-4 py-2 rounded-full text-xs">Privacy Policy</span>
+                <a href="refunds.html" class="bg-white border border-slate-200 text-slate-600 font-bold px-4 py-2 rounded-full text-xs hover:border-dark transition-colors">Refund Policy</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="max-w-4xl mx-auto px-6 py-16 relative z-10">
+        <div class="flex gap-12">
+
+            <!-- TOC Sidebar -->
+            <aside class="hidden lg:block w-56 shrink-0">
+                <div class="sticky top-28">
+                    <div class="text-xs font-black uppercase tracking-widest text-slate-400 mb-4">Contents</div>
+                    <nav class="space-y-1 text-sm font-semibold text-slate-500" id="toc">
+                        <a href="#overview" class="toc-link block py-1.5 pl-3">1. Overview</a>
+                        <a href="#what-we-collect" class="toc-link block py-1.5 pl-3">2. What We Collect</a>
+                        <a href="#how-we-collect" class="toc-link block py-1.5 pl-3">3. How We Collect</a>
+                        <a href="#how-we-use" class="toc-link block py-1.5 pl-3">4. How We Use Data</a>
+                        <a href="#sharing" class="toc-link block py-1.5 pl-3">5. Sharing Data</a>
+                        <a href="#cookies" class="toc-link block py-1.5 pl-3">6. Cookies</a>
+                        <a href="#storage" class="toc-link block py-1.5 pl-3">7. Storage & Security</a>
+                        <a href="#retention" class="toc-link block py-1.5 pl-3">8. Data Retention</a>
+                        <a href="#your-rights" class="toc-link block py-1.5 pl-3">9. Your Rights</a>
+                        <a href="#third-party" class="toc-link block py-1.5 pl-3">10. Third-Party Services</a>
+                        <a href="#children" class="toc-link block py-1.5 pl-3">11. Children's Privacy</a>
+                        <a href="#changes" class="toc-link block py-1.5 pl-3">12. Policy Changes</a>
+                        <a href="#contact" class="toc-link block py-1.5 pl-3">13. Contact Us</a>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- Content -->
+            <div class="flex-1 bg-white rounded-3xl border border-slate-200 shadow-xl p-8 md:p-12 prose-section">
+
+                <div class="highlight-box mb-8">
+                    <p>We believe privacy should be simple. This policy explains in plain language what data we collect, why we collect it, and what you can do about it. We do not sell your personal data. Ever.</p>
+                </div>
+
+                <h2 id="overview" class="section-anchor">1. Overview</h2>
+                <p>This Privacy Policy applies to all users of the Supacms platform, including visitors to our website and registered account holders. It explains how Supacms ("we", "us", "our") collects, processes, stores, and protects your personal information.</p>
+                <p>By using the Service, you consent to the data practices described in this Privacy Policy. If you do not agree with this policy, please do not use our Service.</p>
+
+                <h2 id="what-we-collect" class="section-anchor">2. What Data We Collect</h2>
+                <p>We only collect data that is necessary to provide and improve the Service. Here's a breakdown of the categories:</p>
+
+                <div class="data-card">
+                    <div class="label">Account Information</div>
+                    <div class="value">Name, Email Address, Company Name</div>
+                    <div class="desc">Provided when you register for an account.</div>
+                </div>
+                <div class="data-card">
+                    <div class="label">Billing Information</div>
+                    <div class="value">Payment method details (processed by our Merchant of Record)</div>
+                    <div class="desc">We do not store your full card number on our servers. Payment data is handled securely by our third-party payment processor.</div>
+                </div>
+                <div class="data-card">
+                    <div class="label">Usage & Device Data</div>
+                    <div class="value">Screen connection logs, playlist activity, login timestamps, IP addresses</div>
+                    <div class="desc">Collected automatically to ensure platform reliability and detect anomalies.</div>
+                </div>
+                <div class="data-card">
+                    <div class="label">User Content</div>
+                    <div class="value">Images, videos, text, and HTML files you upload</div>
+                    <div class="desc">Stored securely on our cloud infrastructure solely to deliver the Service to your screens.</div>
+                </div>
+                <div class="data-card">
+                    <div class="label">Communications</div>
+                    <div class="value">Support emails, feedback messages</div>
+                    <div class="desc">Kept to resolve your enquiry and improve our support experience.</div>
+                </div>
+
+                <h2 id="how-we-collect" class="section-anchor">3. How We Collect Data</h2>
+                <p>We collect data through the following means:</p>
+                <ul>
+                    <li><strong>Directly from you</strong> — when you register, subscribe, upload content, or contact us</li>
+                    <li><strong>Automatically</strong> — via server logs, device pairing events, and usage analytics</li>
+                    <li><strong>From third parties</strong> — our payment processor shares transaction confirmation data with us</li>
+                    <li><strong>Cookies and local storage</strong> — to maintain your session and preferences (see Section 6)</li>
+                </ul>
+
+                <h2 id="how-we-use" class="section-anchor">4. How We Use Your Data</h2>
+                <p>We use the data we collect for the following purposes:</p>
+                <ul>
+                    <li><strong>Service delivery:</strong> To operate, maintain, and deliver the Supacms platform</li>
+                    <li><strong>Account management:</strong> To create and manage your account, authenticate logins, and process plan upgrades</li>
+                    <li><strong>Billing & payments:</strong> To process subscription fees, issue invoices, and handle refund requests</li>
+                    <li><strong>Customer support:</strong> To respond to your questions, troubleshoot issues, and resolve disputes</li>
+                    <li><strong>Service improvement:</strong> To analyse usage patterns and improve platform performance and features</li>
+                    <li><strong>Security:</strong> To detect fraud, prevent abuse, and protect the platform and its users</li>
+                    <li><strong>Legal compliance:</strong> To meet applicable legal obligations, resolve disputes, and enforce our agreements</li>
+                    <li><strong>Communications:</strong> To send important service updates, security alerts, and (where you've opted in) product news</li>
+                </ul>
+                <p>We do not use your data for advertising. We do not build advertising profiles or sell your data to ad networks, data brokers, or any third parties.</p>
+
+                <h2 id="sharing" class="section-anchor">5. Data Sharing & Disclosure</h2>
+                <p>We do not sell, trade, or rent your personal information to any third party. We may share your data only in the following limited circumstances:</p>
+                <ul>
+                    <li><strong>Service providers:</strong> We share data with trusted third-party vendors who help us run the platform (e.g., cloud hosting via Supabase/AWS, payment processing). These vendors are contractually bound to protect your data and may not use it for their own purposes.</li>
+                    <li><strong>Legal obligations:</strong> We may disclose your data if required to do so by law, court order, or governmental authority.</li>
+                    <li><strong>Protection of rights:</strong> We may disclose data to enforce our Terms of Service, protect the safety and security of our users, or investigate fraud.</li>
+                    <li><strong>Business transfers:</strong> In the event of a merger, acquisition, or sale of substantially all assets, your data may be transferred. We will notify you via email and a prominent notice on the platform prior to any such transfer.</li>
+                </ul>
+
+                <h2 id="cookies" class="section-anchor">6. Cookies & Tracking</h2>
+                <p>We use a minimal number of cookies strictly necessary to operate the Service. We do not use advertising cookies or cross-site tracking.</p>
+                <ul>
+                    <li><strong>Session cookies:</strong> Keep you logged in while using the dashboard. These are deleted when you close your browser.</li>
+                    <li><strong>Preference cookies:</strong> Remember your dashboard settings and UI preferences.</li>
+                    <li><strong>Analytics cookies:</strong> Anonymous usage data to understand how the platform is used so we can improve it (e.g., page load performance, feature usage frequency).</li>
+                </ul>
+                <p>You can disable cookies in your browser settings. Note that disabling session cookies will prevent you from logging in to the Service.</p>
+
+                <h2 id="storage" class="section-anchor">7. Data Storage & Security</h2>
+                <p>Your data is stored on secure cloud infrastructure provided by Supabase, built on Amazon Web Services (AWS). We implement industry-standard security measures including:</p>
+                <ul>
+                    <li>TLS/SSL encryption for all data transmitted between your browser and our servers</li>
+                    <li>Encrypted storage for sensitive account data</li>
+                    <li>Access controls limiting which personnel can access customer data</li>
+                    <li>Regular security reviews and vulnerability assessments</li>
+                    <li>Automated backups to prevent data loss</li>
+                </ul>
+                <p>While we take all reasonable precautions, no method of transmission or storage is 100% secure. In the event of a data breach that affects your personal information, we will notify you within 72 hours of becoming aware of the breach.</p>
+
+                <h2 id="retention" class="section-anchor">8. Data Retention</h2>
+                <p>We retain your data only for as long as necessary to fulfil the purposes outlined in this policy or as required by law.</p>
+                <ul>
+                    <li><strong>Active accounts:</strong> Data is retained for the duration of your account</li>
+                    <li><strong>After cancellation:</strong> We retain account data for 90 days post-cancellation to allow for reactivation and dispute resolution, after which it is permanently deleted</li>
+                    <li><strong>Billing records:</strong> Retained for 7 years to comply with applicable accounting and tax laws</li>
+                    <li><strong>Support communications:</strong> Retained for 2 years after the issue was resolved</li>
+                </ul>
+                <p>You may request earlier deletion of your data at any time (see Section 9 — Your Rights).</p>
+
+                <h2 id="your-rights" class="section-anchor">9. Your Rights</h2>
+                <p>Depending on your location and applicable law, you may have the following rights regarding your personal data:</p>
+                <ul>
+                    <li><strong>Right of access:</strong> Request a copy of the personal data we hold about you</li>
+                    <li><strong>Right to rectification:</strong> Request corrections to any inaccurate personal data</li>
+                    <li><strong>Right to erasure:</strong> Request deletion of your personal data ("right to be forgotten")</li>
+                    <li><strong>Right to restrict processing:</strong> Request that we limit how we use your data in certain circumstances</li>
+                    <li><strong>Right to data portability:</strong> Request your data in a machine-readable format</li>
+                    <li><strong>Right to object:</strong> Object to certain types of data processing</li>
+                    <li><strong>Right to withdraw consent:</strong> Where processing is based on consent, withdraw it at any time</li>
+                </ul>
+                <div class="highlight-box">
+                    <p>To exercise any of these rights, email us at <a href="mailto:nabeelsaleemshaikh@gmail.com">nabeelsaleemshaikh@gmail.com</a> with the subject line "Privacy Request". We will respond within 30 days.</p>
+                </div>
+
+                <h2 id="third-party" class="section-anchor">10. Third-Party Services</h2>
+                <p>The Service integrates with the following third-party services. Each has its own privacy policy:</p>
+                <ul>
+                    <li><strong>Supabase / AWS:</strong> Cloud database and file storage infrastructure</li>
+                    <li><strong>Payment Processor (Merchant of Record):</strong> Handles billing and subscription payments securely</li>
+                    <li><strong>Analytics provider:</strong> Anonymous platform usage statistics</li>
+                </ul>
+                <p>Our website may contain links to third-party sites. We are not responsible for the privacy practices of those sites and encourage you to read their privacy policies.</p>
+
+                <h2 id="children" class="section-anchor">11. Children's Privacy</h2>
+                <p>The Service is not directed at individuals under the age of 18, and we do not knowingly collect personal data from children. If you believe a child under 18 has provided us with personal information, please contact us immediately at <a href="mailto:nabeelsaleemshaikh@gmail.com">nabeelsaleemshaikh@gmail.com</a> and we will take prompt action to delete that information.</p>
+
+                <h2 id="changes" class="section-anchor">12. Changes to This Policy</h2>
+                <p>We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. When we make material changes, we will notify you via:</p>
+                <ul>
+                    <li>Email to the address associated with your account</li>
+                    <li>A prominent notice on our website and dashboard</li>
+                </ul>
+                <p>The "Last Updated" date at the top of this page will always reflect the most recent revision. We encourage you to review this policy periodically.</p>
+
+                <h2 id="contact" class="section-anchor">13. Contact Us</h2>
+                <p>If you have any questions, concerns, or requests about this Privacy Policy or how we handle your personal data, please contact us:</p>
+                <div class="highlight-box">
+                    <p>📧 Email: <a href="mailto:nabeelsaleemshaikh@gmail.com">nabeelsaleemshaikh@gmail.com</a><br>
+                    🌐 Website: <a href="https://supacms.com">supacms.com</a><br>
+                    We aim to respond to all privacy-related enquiries within 5 business days.</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-white border-t border-slate-200 relative z-10">
+        <div class="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2 font-bold text-lg text-dark">
+                <div class="w-6 h-6 bg-brand rounded flex items-center justify-center text-dark text-sm">S</div>
+                Supacms
+            </div>
+            <div class="flex gap-8 text-sm font-semibold text-slate-600">
+                <a href="pricing.html" class="hover:text-dark transition-colors">Pricing</a>
+                <a href="app.html" class="hover:text-dark transition-colors">Dashboard</a>
+                <a href="terms.html" class="hover:text-dark transition-colors">Terms</a>
+                <a href="privacy.html" class="hover:text-dark transition-colors">Privacy</a>
+                <a href="refunds.html" class="hover:text-dark transition-colors">Refunds</a>
+            </div>
+            <div class="text-sm text-slate-400 font-medium">&copy; 2026 Supacms. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+        const sections = document.querySelectorAll('.section-anchor');
+        const tocLinks = document.querySelectorAll('.toc-link');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    tocLinks.forEach(l => l.classList.remove('active'));
+                    const active = document.querySelector(`.toc-link[href="#${entry.target.id}"]`);
+                    if (active) active.classList.add('active');
+                }
+            });
+        }, { rootMargin: '-20% 0px -70% 0px' });
+        sections.forEach(s => observer.observe(s));
+    </script>
+</body>
+</html>
