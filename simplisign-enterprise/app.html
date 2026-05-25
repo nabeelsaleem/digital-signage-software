@@ -1103,9 +1103,21 @@
                         switchAuthView('update-pass');
                         return; 
                     }
+
+                    
                     // --- SCENARIO B: LOGGED IN ---
                     if (session) {
                         state.user = session.user;
+                        
+                        // FIX: Fetch the user's actual subscription tier from the database!
+                        try {
+                            const { data: profile } = await sb.from('profiles').select('subscription_tier').eq('id', state.user.id).single();
+                            if (profile) {
+                                state.subscription_tier = profile.subscription_tier;
+                            }
+                        } catch (err) {
+                            console.error("Failed to fetch profile tier:", err);
+                        }
                         
                         document.getElementById('auth-view').classList.add('hidden');
                         document.getElementById('sidebar').classList.remove('hidden');
@@ -1117,7 +1129,9 @@
                         
                         // Only load data if we aren't already on a tab (prevents double-fetch)
                         nav(currentTab);
-                    } 
+                    }
+
+                        
                     // --- SCENARIO C: LOGGED OUT ---
                     else {
                         state.user = null;
@@ -2853,7 +2867,7 @@
             const handler = FS.Checkout.configure({
                 plugin_id: '30416', // Your Product ID
                 plan_id: planId,    // 49968 (Standard) or 50087 (PRO)
-                public_key: 'pk_YOUR_FREEMIUS_PUBLIC_KEY', // IMPORTANT: Put your Freemius Public Key here!
+                public_key: 'pk_0eeed04732ef5a304a86061505752', // IMPORTANT: Put your Freemius Public Key here!
                 image: 'https://raw.githubusercontent.com/nabeelsaleem/digital-signage-software/edf98040c6518e4e89997f88b9ca4e3c1877b1d0/simplisign-enterprise/images/FOR%20LIGHT%20MODE.svg'
             });
 
