@@ -661,18 +661,43 @@
     </div>
 
     <div id="modal-upgrade-pro" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
-        <div class="card w-full max-w-md shadow-2xl p-8 text-center relative overflow-hidden">
+        <div class="card w-full max-w-2xl shadow-2xl p-8 relative overflow-hidden" style="background-color: var(--card-bg);">
             <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-400 to-brand-600"></div>
-            <div class="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-600">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" /></svg>
-            </div>
-            <h3 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Upgrade to PRO</h3>
-            <p class="text-sm mb-8" style="color: var(--text-secondary);">Unlock advanced features like Weather Widgets, Live Embeds, and Unlimited Storage.</p>
             
-            <div class="space-y-3">
-                <button onclick="openProCheckout()" class="w-full btn-primary py-3">Upgrade to PRO - $13.99/mo</button>
-                <button onclick="closeModal('modal-upgrade-pro')" class="w-full btn-ghost">Maybe Later</button>
+            <div class="text-center mb-8">
+                <h3 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Upgrade Your Plan</h3>
+                <p class="text-sm" style="color: var(--text-secondary);">Choose the plan that fits your business needs to unlock more features.</p>
             </div>
+
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="border rounded-xl p-6 text-center hover:border-brand-500 transition-all flex flex-col" style="border-color: var(--border-color); background-color: var(--bg-secondary);">
+                    <h4 class="text-lg font-bold mb-2" style="color: var(--text-primary);">Standard</h4>
+                    <div class="text-3xl font-black text-brand-500 mb-4">$6.99<span class="text-sm font-normal" style="color: var(--text-secondary);">/mo</span></div>
+                    <ul class="text-sm text-left space-y-3 mb-8 flex-1" style="color: var(--text-secondary);">
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> Unlimited Screens</li>
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> Image & Video Uploads</li>
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> Remote Scheduling</li>
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> Device Groups</li>
+                    </ul>
+                    <button onclick="openCheckout('49968')" class="w-full btn-secondary py-3">Get Standard</button>
+                </div>
+
+                <div class="border-2 border-brand-500 rounded-xl p-6 text-center relative flex flex-col shadow-lg shadow-brand-500/10" style="background-color: var(--card-bg);">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-500 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">Most Popular</div>
+                    <h4 class="text-lg font-bold mb-2" style="color: var(--text-primary);">PRO</h4>
+                    <div class="text-3xl font-black text-brand-500 mb-4">$13.99<span class="text-sm font-normal" style="color: var(--text-secondary);">/mo</span></div>
+                    <ul class="text-sm text-left space-y-3 mb-8 flex-1" style="color: var(--text-secondary);">
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> <strong>Everything in Standard</strong></li>
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> Multi-Zone Layouts</li>
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> Live Weather Widgets</li>
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> Scrolling News Tickers</li>
+                        <li class="flex items-center gap-2"><span class="text-brand-500 font-bold">✔</span> HTML Web Embeds</li>
+                    </ul>
+                    <button onclick="openCheckout('50087')" class="w-full btn-primary py-3">Get PRO</button>
+                </div>
+            </div>
+
+            <button onclick="closeModal('modal-upgrade-pro')" class="w-full btn-ghost">Maybe Later</button>
         </div>
     </div>
 
@@ -2819,33 +2844,26 @@
         }
 
         // --- 7. FREEMIUS BILLING INTEGRATION ---
-        function openProCheckout() {
+        function openCheckout(planId) {
             if (!state.user || !state.user.email) {
                 return showToast('Please log in to upgrade.', 'error');
             }
 
-            const btn = document.querySelector('#modal-upgrade-pro button.btn-primary');
-            const ogText = btn.innerText;
-            btn.innerText = 'Loading Checkout...';
-
-            // Configure Freemius
+            // Configure Freemius dynamically based on the planId passed
             const handler = FS.Checkout.configure({
-                plugin_id: '30416', // Your Product ID from URL
-                plan_id: '50087',   // Your PRO Plan ID
-                public_key: 'pk_0eeed04732ef5a304a86061505752', // REPLACE THIS
+                plugin_id: '30416', // Your Product ID
+                plan_id: planId,    // 49968 (Standard) or 50087 (PRO)
+                public_key: 'pk_YOUR_FREEMIUS_PUBLIC_KEY', // IMPORTANT: Put your Freemius Public Key here!
                 image: 'https://raw.githubusercontent.com/nabeelsaleem/digital-signage-software/edf98040c6518e4e89997f88b9ca4e3c1877b1d0/simplisign-enterprise/images/FOR%20LIGHT%20MODE.svg'
             });
 
-            // Open the modal and pass the user's email securely
+            // Open the modal
             handler.open({
                 user_email: state.user.email,
                 success: function(response) {
-                    showToast('Payment Successful! Unlocking PRO features...', 'success');
-                    // The webhook will upgrade them in the background. Refresh after 3 seconds.
+                    showToast('Payment Successful! Unlocking features...', 'success');
+                    // Refresh the app so the new features unlock automatically
                     setTimeout(() => window.location.reload(), 3000);
-                },
-                cancel: function() {
-                    btn.innerText = ogText;
                 }
             });
         }
