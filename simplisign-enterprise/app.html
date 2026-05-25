@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpliSign Enterprise</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="https://cdn.tailwindcss.com"></script>    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://checkout.freemius.com/checkout.min.js"></script>
     
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     
@@ -670,7 +670,7 @@
             <p class="text-sm mb-8" style="color: var(--text-secondary);">Unlock advanced features like Weather Widgets, Live Embeds, and Unlimited Storage.</p>
             
             <div class="space-y-3">
-                <a href="pricing.html" class="w-full btn-primary py-3 block">View Plans & Upgrade</a>
+                <button onclick="openProCheckout()" class="w-full btn-primary py-3">Upgrade to PRO - $13.99/mo</button>
                 <button onclick="closeModal('modal-upgrade-pro')" class="w-full btn-ghost">Maybe Later</button>
             </div>
         </div>
@@ -2816,6 +2816,38 @@
                 const filtered = state.devices.filter(d => d.name.toLowerCase().includes(lowerQuery) || d.code.toLowerCase().includes(lowerQuery));
                 renderDeviceCards(filtered);
             }
+        }
+
+        // --- 7. FREEMIUS BILLING INTEGRATION ---
+        function openProCheckout() {
+            if (!state.user || !state.user.email) {
+                return showToast('Please log in to upgrade.', 'error');
+            }
+
+            const btn = document.querySelector('#modal-upgrade-pro button.btn-primary');
+            const ogText = btn.innerText;
+            btn.innerText = 'Loading Checkout...';
+
+            // Configure Freemius
+            const handler = FS.Checkout.configure({
+                plugin_id: '30416', // Your Product ID from URL
+                plan_id: '50087',   // Your PRO Plan ID
+                public_key: 'pk_0eeed04732ef5a304a86061505752', // REPLACE THIS
+                image: 'https://raw.githubusercontent.com/nabeelsaleem/digital-signage-software/edf98040c6518e4e89997f88b9ca4e3c1877b1d0/simplisign-enterprise/images/FOR%20LIGHT%20MODE.svg'
+            });
+
+            // Open the modal and pass the user's email securely
+            handler.open({
+                user_email: state.user.email,
+                success: function(response) {
+                    showToast('Payment Successful! Unlocking PRO features...', 'success');
+                    // The webhook will upgrade them in the background. Refresh after 3 seconds.
+                    setTimeout(() => window.location.reload(), 3000);
+                },
+                cancel: function() {
+                    btn.innerText = ogText;
+                }
+            });
         }
 
         // Start
