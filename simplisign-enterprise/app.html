@@ -2328,10 +2328,27 @@
         }
 
         async function addDevice() {
+            // --- NEW: Enforce 1-Screen Limit for Free Users ---
+            if (state.subscription_tier === 'free' && state.devices.length >= 1) {
+                showToast('Free plan is limited to 1 screen. Please upgrade to add more.', 'warning');
+                document.getElementById('modal-upgrade-pro').classList.remove('hidden');
+                document.getElementById('modal-backdrop').classList.remove('hidden');
+                return; // Stop here, do not create the screen
+            }
+
+            // If they are PRO/Standard OR have 0 screens, proceed to create
             const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-            await sb.from('devices').insert({ user_id: state.user.id, code, name: 'New Screen' });
-            loadDevices();
+            const { error } = await sb.from('devices').insert({ user_id: state.user.id, code, name: 'New Screen' });
+            
+            if (error) {
+                showToast(error.message, 'error');
+            } else {
+                showToast('New screen added!', 'success');
+                loadDevices();
+            }
         }
+
+        
         async function assignPlaylist(id, pid) { await sb.from('devices').update({ playlist_id: pid || null }).eq('id', id); showToast('Content updated', 'success'); }
         
         async function renameDevice(id, old) {
