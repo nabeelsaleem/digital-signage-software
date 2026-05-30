@@ -1110,16 +1110,7 @@
                     if (session) {
                         state.user = session.user;
                         
-                        // FIX: Fetch the user's actual subscription tier from the database!
-                        try {
-                            const { data: profile } = await sb.from('profiles').select('subscription_tier').eq('id', state.user.id).single();
-                            if (profile) {
-                                state.subscription_tier = profile.subscription_tier;
-                            }
-                        } catch (err) {
-                            console.error("Failed to fetch profile tier:", err);
-                        }
-                        
+                        // 1. UNBLOCK UI IMMEDIATELY (This fixes the white screen freeze)
                         document.getElementById('auth-view').classList.add('hidden');
                         document.getElementById('sidebar').classList.remove('hidden');
                         document.getElementById('main-content').classList.remove('hidden');
@@ -1128,8 +1119,23 @@
                         const emailEl = document.getElementById('user-email');
                         if(emailEl) emailEl.innerText = state.user.email;
                         
-                        // Only load data if we aren't already on a tab (prevents double-fetch)
+                        // 2. LOAD DASHBOARD DATA IMMEDIATELY
                         nav(currentTab);
+
+                        // 3. FETCH PROFILE TIER IN BACKGROUND (Non-blocking)
+                        sb.from('profiles').select('subscription_tier').eq('id', state.user.id).single()
+                            .then(({ data: profile, error }) => {
+                                if (profile) {
+                                    state.subscription_tier = profile.subscription_tier;
+                                } else {
+                                    // Fallback to free if row is missing
+                                    state.subscription_tier = 'free';
+                                }
+                            })
+                            .catch(err => {
+                                console.error("Profile check background error:", err);
+                                state.subscription_tier = 'free';
+                            });
                     }
 
                         
