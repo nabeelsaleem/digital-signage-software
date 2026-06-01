@@ -5,79 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpliSign Player</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="dist/output.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: {
-                        gray: {
-                            850: '#1f2937',
-                            900: '#111827',
-                            950: '#030712',
-                        },
-                        brand: {
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                        }
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        body { 
-            background-color: #030712; /* Gray 950 */
-            cursor: none; 
-            overflow: hidden; 
-        }
-        
-        /* Reveal cursor only on pairing screen */
-        .pairing-active { cursor: default; }
-
-        /* Transitions */
-        .fade-enter { opacity: 0; transition: opacity 1s ease-in-out; }
-        .fade-enter-active { opacity: 1; }
-        
-        /* Status Dot System (Redesigned) */
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            z-index: 9999;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            transition: all 0.5s ease;
-        }
-        .status-red { background-color: #ef4444; opacity: 1; box-shadow: 0 0 10px #ef4444; } /* Offline */
-        .status-orange { background-color: #f97316; opacity: 1; animation: pulse 2s infinite; } /* Working */
-        .status-green { background-color: #10b981; opacity: 0; } /* Online (Hidden) */
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.9); }
-        }
-
-        @keyframes marquee {
-            0% { transform: translateX(100vw); }
-            100% { transform: translateX(-100%); }
-        }
-    </style>
 </head>
-<body class="h-screen w-screen text-white font-sans antialiased selection:bg-brand-500 selection:text-white">
+<body class="player-body h-screen w-screen text-white font-sans antialiased selection:bg-brand-500 selection:text-white">
 
     <div id="pairing-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-between p-12 bg-gray-950 pairing-active transition-opacity duration-500">
         
