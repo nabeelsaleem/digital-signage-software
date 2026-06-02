@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /* Tell Tailwind where to look for HTML/JS files relative to this CSS file */
-@source "../*.html";
-@source "../*.js";
+@source "../**/*.html";
+@source "../**/*.js";
 
 /* Support for class-based dark mode */
 @custom-variant dark (&:is(.dark *));
