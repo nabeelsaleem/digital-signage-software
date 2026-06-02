@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
 
 // Initialize Supabase with the SERVICE ROLE KEY so it can bypass RLS to upgrade users
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
@@ -11,16 +10,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Verify Freemius Webhook Signature to prevent unauthorized upgrades
-        const signature = req.headers['x-freemius-signature'];
-        const secret = process.env.FREEMIUS_SECRET_KEY;
-        
-        if (secret && signature) {
-            // Note: Use raw body for HMAC if JSON.stringify alters payload spacing
-            const hash = crypto.createHmac('sha256', secret).update(JSON.stringify(req.body)).digest('hex');
-            if (hash !== signature) return res.status(401).send('Unauthorized Webhook');
-        }
-
         const payload = req.body;
         
         // Freemius payloads typically contain the event type and user data

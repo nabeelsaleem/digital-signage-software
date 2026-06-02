@@ -5,39 +5,253 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpliSign Enterprise</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-<script>
-    tailwind.config = {
-        darkMode: 'class',
-        theme: {
-            extend: {
-                fontFamily: { sans: ['Inter', 'sans-serif'] },
-                colors: {
-                    gray: {
-                        850: '#1f2937',
-                        900: '#111827',
-                        950: '#030712',
-                    },
-                    brand: {
-                        400: '#818cf8',
-                        500: '#6366f1',
-                        600: '#4f46e5',
-                        700: '#4338ca',
-                    },
-                },
-            }
-        }
-    }
-</script>
-
+    <script src="https://cdn.tailwindcss.com"></script>    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://checkout.freemius.com/checkout.min.js"></script>
     
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                            950: '#030712',
+                        },
+                        brand: {
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                        },
+                    },
+                    borderRadius: {
+                        'card': '12px',
+                        'button': '8px',
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgb(0 0 0 / 0.1)',
+                        'card-hover': '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style type="text/tailwindcss">
+        /* CSS Variables for Theme Switching */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-color: #e5e7eb;
+            --border-color-hover: #d1d5db;
+            --card-bg: #ffffff;
+            --input-bg: #f9fafb;
+            --sidebar-bg: #ffffff;
+            --header-bg: rgba(255, 255, 255, 0.8);
+        }
+
+        .dark {
+            --bg-primary: #030712;
+            --bg-secondary: #111827;
+            --bg-tertiary: #1f2937;
+            --text-primary: #f9fafb;
+            --text-secondary: #9ca3af;
+            --text-tertiary: #6b7280;
+            --border-color: #374151;
+            --border-color-hover: #4b5563;
+            --card-bg: #111827;
+            --input-bg: rgba(17, 24, 39, 0.5);
+            --sidebar-bg: #111827;
+            --header-bg: rgba(17, 24, 39, 0.5);
+        }
+
+        body { 
+            @apply font-sans antialiased transition-colors duration-200;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        
+        /* Standardized Components */
+        
+        /* Navigation */
+        .nav-item {
+            @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200;
+            color: var(--text-secondary);
+        }
+        .nav-item:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+        .nav-item.active {
+            @apply bg-brand-600/10 text-brand-500 hover:bg-brand-600/20 hover:text-brand-400;
+        }
+
+        /* Buttons - STANDARDIZED SIZES */
+        .btn {
+            @apply px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 inline-flex items-center justify-center gap-2;
+        }
+        .btn-primary {
+            @apply btn bg-brand-600 text-white hover:bg-brand-500 shadow-lg shadow-brand-500/20;
+        }
+        .btn-secondary {
+            @apply btn;
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover {
+            background-color: var(--border-color);
+        }
+        .btn-danger {
+            @apply btn bg-red-600 text-white hover:bg-red-500;
+        }
+        .btn-ghost {
+            @apply btn hover:bg-opacity-10;
+            color: var(--text-secondary);
+        }
+        .btn-ghost:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+        .btn-icon {
+            @apply p-2 rounded-lg transition-colors duration-200;
+            color: var(--text-secondary);
+        }
+        .btn-icon:hover {
+            color: var(--text-primary);
+            background-color: var(--bg-tertiary);
+        }
+
+        /* Form Inputs - CONSISTENT STYLING */
+        .input-field {
+            @apply w-full rounded-lg px-4 py-2.5 text-sm transition-all duration-200;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .input-field::placeholder {
+            color: var(--text-tertiary);
+        }
+        .input-field:focus {
+            @apply outline-none ring-2 ring-brand-500 border-brand-500;
+        }
+
+        /* Cards - STANDARDIZED */
+        .card {
+            @apply rounded-card border shadow-card transition-all duration-200;
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+        }
+        .card:hover {
+            @apply shadow-card-hover;
+            border-color: var(--border-color-hover);
+        }
+        .card-interactive:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        /* Badges - STANDARDIZED */
+        .badge {
+            @apply px-2 py-1 rounded text-xs font-bold uppercase tracking-wide;
+        }
+        .badge-primary {
+            @apply badge bg-brand-600/10 text-brand-500 border border-brand-500/20;
+        }
+        .badge-success {
+            @apply badge bg-emerald-600/10 text-emerald-500 border border-emerald-500/20;
+        }
+        .badge-error {
+            @apply badge bg-red-600/10 text-red-500 border border-red-500/20;
+        }
+        .badge-neutral {
+            @apply badge border;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+
+        /* Toast Notifications - STANDARDIZED */
+        .toast {
+            @apply px-6 py-4 rounded-r-lg shadow-2xl flex items-center gap-3 text-sm font-medium min-w-[300px] border-y border-r;
+        }
+        .toast-success {
+            @apply toast bg-emerald-600 border-l-4 border-emerald-400 text-white border-emerald-400/20;
+        }
+        .toast-error {
+            @apply toast bg-red-600 border-l-4 border-red-400 text-white border-red-400/20;
+        }
+        .toast-warning {
+            @apply toast bg-amber-500 border-l-4 border-amber-300 text-white border-amber-300/20;
+        }
+        .toast-info {
+            @apply toast border-l-4 border-brand-500;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-right-color: var(--border-color);
+            border-top-color: var(--border-color);
+            border-bottom-color: var(--border-color);
+        }
+
+        /* Animations */
+        .fade-enter { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(4px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .toast-anim { animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes slideUp { 
+            from { transform: translateY(100%); opacity: 0; } 
+            to { transform: translateY(0); opacity: 1; } 
+        }
+
+        /* FullCalendar Dark Overrides */
+        :root {
+            --fc-page-bg-color: #ffffff;
+            --fc-border-color: #e5e7eb;
+            --fc-neutral-bg-color: #f3f4f6;
+            --fc-list-event-hover-bg-color: #e5e7eb;
+            --fc-today-bg-color: #f3f4f6;
+        }
+        .dark {
+            --fc-page-bg-color: #111827;
+            --fc-border-color: #374151;
+            --fc-neutral-bg-color: #1f2937;
+            --fc-list-event-hover-bg-color: #374151;
+            --fc-today-bg-color: #1f2937;
+        }
+        .fc-theme-standard td, .fc-theme-standard th { border-color: #374151 !important; }
+        .fc .fc-toolbar-title { color: var(--text-primary); font-size: 1.25rem; font-weight: 600; }
+        .fc .fc-button-primary { 
+            background-color: #1f2937; 
+            border-color: #374151; 
+            color: #d1d5db;
+            text-transform: capitalize;
+            font-weight: 500;
+        }
+        .fc .fc-button-primary:hover { background-color: #374151; border-color: #4b5563; }
+        .fc .fc-button-primary:not(:disabled).fc-button-active { 
+            background-color: #4f46e5; 
+            border-color: #4f46e5; 
+            color: white; 
+        }
+        .fc-col-header-cell-cushion { color: #9ca3af; font-weight: 500; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; padding-top: 10px; padding-bottom: 10px; }
+        .fc-timegrid-slot-label-cushion { color: #6b7280; font-size: 0.75rem; }
+    </style>
 </head>
-<body onload="initTheme(); document.body.classList.remove('opacity-0')" class="app-body opacity-0 transition-opacity duration-500 font-sans antialiased transition-colors duration-200">
+<body onload="initTheme(); document.body.classList.remove('opacity-0')" class="opacity-0 transition-opacity duration-500">
     <input type="file" id="replace-file-input" style="display: none;" accept="image/*,video/*">
 
     <div id="auth-view" class="fixed inset-0 z-[999] bg-slate-50 dark:bg-gray-950 flex items-center justify-center hidden">
@@ -875,6 +1089,7 @@
 
                 // 3. Auth Listener
                 sb.auth.onAuthStateChange(async (event, session) => {
+                    console.log("Auth Event:", event);
                     // CRITICAL FIX: Ignore background token refreshes to prevent 429 errors
                     if (event === 'TOKEN_REFRESHED') {
                         if(session) state.user = session.user; // Just update state
@@ -884,6 +1099,7 @@
                     if (event === 'PASSWORD_RECOVERY') isRecoveryMode = true;
                     // --- SCENARIO A: RECOVERY (Block Dashboard) ---
                     if (isRecoveryMode) {
+                        console.log("🔒 Recovery Mode Active - Blocking Dashboard Redirect");
                         document.getElementById('auth-view').classList.remove('hidden');
                         switchAuthView('update-pass');
                         return; 

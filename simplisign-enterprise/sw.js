@@ -38,7 +38,7 @@ self.addEventListener('fetch', (event) => {
     if (!event.request.url.startsWith('http')) return;
 
     event.respondWith(
-            caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
+        caches.match(event.request).then((cachedResponse) => {
             // Return cached file if found
             if (cachedResponse) {
                 return cachedResponse;
