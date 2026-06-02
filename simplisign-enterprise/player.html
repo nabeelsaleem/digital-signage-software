@@ -5,7 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpliSign Player</title>
     
-    <link rel="stylesheet" href="dist/output.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: {
+                    gray: {
+                        850: '#1f2937',
+                        900: '#111827',
+                        950: '#030712',
+                    },
+                    brand: {
+                        500: '#6366f1',
+                        600: '#4f46e5',
+                        700: '#4338ca',
+                    }
+                }
+            }
+        }
+    }
+</script>
+    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
