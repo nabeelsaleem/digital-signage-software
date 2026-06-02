@@ -2,7 +2,14 @@
   "name": "simplisign-enterprise",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "build": "tailwindcss -i src/input.css -o dist/output.css --minify"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwindcss": "^4.3.0"
   }
 }
