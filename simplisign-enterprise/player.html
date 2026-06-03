@@ -11,7 +11,29 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: {
+                    gray: {
+                        850: '#1f2937',
+                        900: '#111827',
+                        950: '#030712',
+                    },
+                    brand: {
+                        500: '#6366f1',
+                        600: '#4f46e5',
+                        700: '#4338ca',
+                    }
+                }
+            }
+        }
+    }
+</script>
+
 
     <style>
         body { 
