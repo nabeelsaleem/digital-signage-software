@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "tailwindcss -i src/input.css -o dist/output.css --minify"
-  },
+"build": "tailwindcss -i src/input.css -o dist/output.css --minify && cp *.html dist/ && cp -r images dist/ 2>/dev/null || true"  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
   },
