@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supacms | #1 Cloud Digital Signage Software — Turn Screens Into Profit</title>
+    <meta name="description" content="Supacms is the easiest cloud-based digital signage CMS. Manage unlimited screens, schedule content, and run live widgets — all from your browser. Starts at $7/mo. No hardware required.">
+    <meta name="keywords" content="digital signage software, cloud CMS, screen management, digital display software, menu board software, digital signage CMS, smart TV signage">
+    <meta property="og:title" content="Supacms | Turn Screens Into Profit">
+    <meta property="og:description" content="The #1 cloud digital signage platform. Manage any screen from anywhere. Works on any Smart TV or Fire Stick.">
+    <meta property="og:type" content="website">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://supacms.com/">
+        <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        brand: { DEFAULT: '#d4ff00', dark: '#bfe600' },
+                        dark: '#0a0a0a'
+                    }
+                }
+            }
+        }
+    </script>
+
+
+    <style>
+        .blob { position: absolute; filter: blur(80px); z-index: -1; opacity: 0.4; }
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+        }
+        .bg-grid-dark {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+        }
+
+        /* Ticker / Marquee */
+        @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .marquee-track { display: flex; width: max-content; animation: marquee 28s linear infinite; }
+        .marquee-track:hover { animation-play-state: paused; }
+
+        /* Fade-in on scroll */
+        .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
+
+        /* FAQ accordion */
+        .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.4s ease, padding 0.3s ease; }
+        .faq-answer.open { max-height: 500px; }
+        .faq-icon { transition: transform 0.3s ease; }
+        .faq-icon.open { transform: rotate(45deg); }
+
+        /* Pricing toggle */
+        .plan-toggle input:checked ~ .toggle-bg { background-color: #d4ff00; }
+        .plan-toggle input:checked ~ .toggle-dot { transform: translateX(24px); }
+
+        /* Testimonial card hover */
+        .testimonial-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .testimonial-card:hover { transform: translateY(-4px); box-shadow: 0 20px 60px rgba(212,255,0,0.12); }
+
+        /* Number counter pulse */
+        @keyframes pulse-brand { 0%,100%{ text-shadow:0 0 0 rgba(212,255,0,0); } 50%{ text-shadow:0 0 30px rgba(212,255,0,0.4); } }
+        .stat-num { animation: pulse-brand 3s ease-in-out infinite; }
+
+        /* Industry card hover */
+        .industry-card { transition: all 0.3s ease; }
+        .industry-card:hover { transform: translateY(-6px); border-color: #d4ff00 !important; }
+        .industry-card:hover .industry-icon { background: #d4ff00; color: #0a0a0a; }
+
+        /* Feature row hover */
+        .feature-row:hover { background: rgba(212,255,0,0.04); }
+    </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Supacms",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web, Android, iOS, SmartTV",
+      "offers": [
+        { "@type": "Offer", "price": "7.00", "priceCurrency": "USD", "name": "Standard Plan" },
+        { "@type": "Offer", "price": "18.00", "priceCurrency": "USD", "name": "Pro Plan" }
+      ],
+      "description": "Cloud-based digital signage CMS for managing screens, playlists, and live widgets from anywhere.",
+      "aggregateRating": { "@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "218" }
+    }
+    </script>
+</head>
+<body class="bg-white text-slate-900 font-sans antialiased overflow-x-hidden relative">
+
+    <!-- Background Blobs -->
+    <div class="blob bg-brand w-96 h-96 rounded-full top-[-10%] left-[-10%]"></div>
+    <div class="blob bg-cyan-300 w-96 h-96 rounded-full top-[20%] right-[-10%] opacity-20"></div>
+
+    <!-- ─── NAV ─── -->
+    <nav class="fixed w-full top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 transition-all">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="/" class="flex items-center gap-2 font-extrabold text-2xl tracking-tight text-dark">
+                <div class="w-8 h-8 bg-brand rounded flex items-center justify-center text-dark text-lg">S</div>
+                Supacms
+            </a>
+            <div class="hidden md:flex items-center gap-8 font-semibold text-sm">
+                <a href="#framework" class="hover:text-brand-dark transition-colors">Framework</a>
+                <a href="#features" class="hover:text-brand-dark transition-colors">Features</a>
+                <a href="#compare" class="hover:text-brand-dark transition-colors">Compare</a>
+                <a href="pricing.html" class="hover:text-brand-dark transition-colors">Pricing</a>
+                <a href="#faq" class="hover:text-brand-dark transition-colors">FAQ</a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="app.html" class="text-sm font-bold text-dark hover:text-slate-600 transition-colors hidden md:block">Login</a>
+                <a href="pricing.html" class="bg-dark text-white px-6 py-2.5 rounded-full text-sm font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ─── HERO ─── -->
+    <section class="pt-40 pb-20 px-6 relative bg-grid">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="inline-block bg-brand/20 text-dark border border-brand font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest mb-6">
+                🔥 The #1 CMS for Digital Signage
+            </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tighter leading-[1.1] mb-8 text-dark">
+                We Turn Dead Wall Space Into <span class="text-transparent bg-clip-text bg-gradient-to-r from-dark to-slate-500">Money Printing Displays.</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto font-medium leading-relaxed">
+                Stop wasting time with USB sticks and expensive hardware. Supacms is the cloud-based digital signage software that drives foot traffic, boosts sales, and runs entirely on autopilot.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="app.html" class="w-full sm:w-auto bg-brand text-dark px-8 py-4 rounded-full text-lg font-extrabold hover:bg-brand-dark transition-all shadow-[0_0_40px_-10px_rgba(212,255,0,0.8)] hover:-translate-y-1 text-center">
+                    Start Your Free Trial →
+                </a>
+                <a href="pricing.html" class="w-full sm:w-auto bg-white border-2 border-slate-200 text-dark px-8 py-4 rounded-full text-lg font-bold hover:border-dark transition-all text-center">
+                    View Pricing
+                </a>
+            </div>
+            <p class="mt-4 text-sm text-slate-500 font-medium">No credit card required • Setup in 2 minutes</p>
+        </div>
+    </section>
+
+    <!-- ─── MARQUEE / TICKER BAR ─── -->
+    <div class="bg-dark text-white py-4 overflow-hidden border-y border-slate-800">
+        <div class="marquee-track select-none">
+            <!-- Duplicate for seamless loop -->
+            <span class="flex items-center gap-12 px-8 text-sm font-bold uppercase tracking-widest whitespace-nowrap">
+                <span class="text-brand">✦</span> Works on Any Smart TV
+                <span class="text-brand">✦</span> Fire Stick Ready
+                <span class="text-brand">✦</span> Instant Cloud Updates
+                <span class="text-brand">✦</span> 99.9% Uptime
+                <span class="text-brand">✦</span> 1000+ Screens Powered
+                <span class="text-brand">✦</span> Setup in Under 2 Minutes
+                <span class="text-brand">✦</span> Starts at $7/mo
+                <span class="text-brand">✦</span> No Hardware Required
+                <span class="text-brand">✦</span> Advanced Dayparting
+                <span class="text-brand">✦</span> Live Weather Widgets
+                <span class="text-brand">✦</span> Scrolling Tickers
+                <span class="text-brand">✦</span> Works on Any Smart TV
+                <span class="text-brand">✦</span> Fire Stick Ready
+                <span class="text-brand">✦</span> Instant Cloud Updates
+                <span class="text-brand">✦</span> 99.9% Uptime
+                <span class="text-brand">✦</span> 1000+ Screens Powered
+                <span class="text-brand">✦</span> Setup in Under 2 Minutes
+                <span class="text-brand">✦</span> Starts at $7/mo
+                <span class="text-brand">✦</span> No Hardware Required
+                <span class="text-brand">✦</span> Advanced Dayparting
+                <span class="text-brand">✦</span> Live Weather Widgets
+                <span class="text-brand">✦</span> Scrolling Tickers
+            </span>
+        </div>
+    </div>
+
+    <!-- ─── SOCIAL PROOF LOGOS ─── -->
+    <section class="py-14 px-6 bg-white">
+        <div class="max-w-5xl mx-auto text-center">
+            <p class="text-xs uppercase tracking-widest font-bold text-slate-400 mb-8">Trusted by businesses across restaurants, retail & hospitality</p>
+            <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-40">
+                <span class="font-black text-2xl text-slate-700 tracking-tighter">BurgerHub</span>
+                <span class="font-black text-2xl text-slate-700 tracking-tighter">RetailPro</span>
+                <span class="font-black text-2xl text-slate-700 tracking-tighter">BrewCo.</span>
+                <span class="font-black text-2xl text-slate-700 tracking-tighter">Fascia&amp;Co</span>
+                <span class="font-black text-2xl text-slate-700 tracking-tighter">GymNation</span>
+                <span class="font-black text-2xl text-slate-700 tracking-tighter">QuickServe</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── DASHBOARD MOCKUP ─── -->
+    <section class="bg-dark text-white py-24 px-6 relative overflow-hidden">
+        <div class="blob bg-brand w-[800px] h-[800px] rounded-full top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] opacity-10"></div>
+        <div class="max-w-6xl mx-auto text-center relative z-10">
+            <h2 class="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">Turn Lost Revenue Into Profit.</h2>
+            <p class="text-slate-400 mb-16 max-w-2xl mx-auto text-lg">Push promotions, showcase menus, and update screens instantly from anywhere in the world.</p>
+            <div class="rounded-2xl border border-slate-800 bg-black/50 p-2 md:p-4 shadow-2xl backdrop-blur-xl mx-auto max-w-5xl ring-1 ring-white/10 transform hover:scale-[1.01] transition-transform duration-500">
+                <div class="rounded-xl overflow-hidden bg-[#0a0a0a] border border-slate-800 flex flex-col h-[400px] md:h-[600px]">
+                    <div class="h-10 border-b border-slate-800 flex items-center px-4 gap-2 bg-slate-900/50">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <div class="flex-1 flex">
+                        <div class="w-48 border-r border-slate-800 hidden md:block p-4 space-y-4">
+                            <div class="h-4 bg-slate-800 rounded w-3/4 mb-8"></div>
+                            <div class="h-3 bg-brand/20 rounded w-full"></div>
+                            <div class="h-3 bg-slate-800 rounded w-5/6"></div>
+                            <div class="h-3 bg-slate-800 rounded w-full"></div>
+                        </div>
+                        <div class="flex-1 p-6 md:p-10">
+                            <div class="flex justify-between items-center mb-8">
+                                <div class="h-6 bg-slate-800 rounded w-48"></div>
+                                <div class="h-8 bg-brand rounded w-24"></div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div class="aspect-video bg-slate-800 rounded-lg"></div>
+                                <div class="aspect-video bg-slate-800 rounded-lg"></div>
+                                <div class="aspect-video bg-slate-800 rounded-lg"></div>
+                                <div class="aspect-video bg-slate-800 rounded-lg border-2 border-brand border-dashed bg-brand/5 flex items-center justify-center text-brand font-bold text-sm">+ New Media</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-12 inline-block bg-brand text-dark font-extrabold px-6 py-2 rounded-full text-sm uppercase tracking-wider">Works on Any Smart TV or Stick</div>
+        </div>
+    </section>
+
+    <!-- ─── HOW IT WORKS ─── -->
+    <section class="py-24 px-6 bg-slate-50 relative overflow-hidden" id="how-it-works">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block bg-brand/20 text-dark border border-brand font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest mb-4">Simple as 1-2-3</span>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-dark mb-4">Up & Running in Minutes,<br>Not Months.</h2>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto">No IT team. No expensive installs. No headaches. Just plug in, log in, and start displaying.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6 relative">
+                <!-- Connector Line (desktop) -->
+                <div class="hidden md:block absolute top-14 left-[20%] right-[20%] h-0.5 bg-gradient-to-r from-brand/30 via-brand to-brand/30 z-0"></div>
+                <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 relative z-10 reveal">
+                    <div class="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center text-dark font-black text-2xl mb-6">1</div>
+                    <h3 class="text-xl font-bold mb-3 text-dark">Install the App</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">Download Supacms onto your Smart TV, Amazon Fire Stick, or any Android device. Takes under 60 seconds.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 relative z-10 reveal" style="transition-delay:0.1s">
+                    <div class="w-14 h-14 bg-dark rounded-2xl flex items-center justify-center text-brand font-black text-2xl mb-6">2</div>
+                    <h3 class="text-xl font-bold mb-3 text-dark">Upload Your Content</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">Drag and drop images, videos, or menu boards into your dashboard. Build playlists in seconds — no design skills needed.</p>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 relative z-10 reveal" style="transition-delay:0.2s">
+                    <div class="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center text-dark font-black text-2xl mb-6">3</div>
+                    <h3 class="text-xl font-bold mb-3 text-dark">Go Live & Profit</h3>
+                    <p class="text-slate-500 text-sm leading-relaxed">Hit publish. Your screen updates instantly — from anywhere in the world. Set schedules, run promos, watch revenue grow.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── FRAMEWORK (ORIGINAL) ─── -->
+    <section id="framework" class="py-24 px-6 bg-white relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-20 reveal">
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-dark mb-4">Our Winning Framework</h2>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto">Forget complex IT setups. We built a system that lets you focus on what matters: selling.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group reveal">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                    <div class="w-12 h-12 bg-dark text-white rounded-xl flex items-center justify-center font-bold text-xl mb-6">1</div>
+                    <h3 class="text-2xl font-bold mb-3 text-dark">Displays that Demand Attention</h3>
+                    <p class="text-slate-600 mb-6">Upload images and videos in seconds. Build playlists that rotate your highest-margin offers perfectly.</p>
+                    <ul class="space-y-2 text-sm font-semibold text-slate-700">
+                        <li class="flex items-center gap-2"><span class="text-brand text-lg">✔</span> Unlimited Media</li>
+                        <li class="flex items-center gap-2"><span class="text-brand text-lg">✔</span> Custom Layout Zones</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group reveal" style="transition-delay:0.1s">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                    <div class="w-12 h-12 bg-dark text-white rounded-xl flex items-center justify-center font-bold text-xl mb-6">2</div>
+                    <h3 class="text-2xl font-bold mb-3 text-dark">Smart Automations on Autopilot</h3>
+                    <p class="text-slate-600 mb-6">Set your breakfast menu for the morning and promos for the evening. Set it once, and let it run forever.</p>
+                    <ul class="space-y-2 text-sm font-semibold text-slate-700">
+                        <li class="flex items-center gap-2"><span class="text-brand text-lg">✔</span> Advanced Dayparting</li>
+                        <li class="flex items-center gap-2"><span class="text-brand text-lg">✔</span> Priority Overrides</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group reveal" style="transition-delay:0.2s">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand/10 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+                    <div class="w-12 h-12 bg-dark text-white rounded-xl flex items-center justify-center font-bold text-xl mb-6">3</div>
+                    <h3 class="text-2xl font-bold mb-3 text-dark">Dynamic & Live Widgets</h3>
+                    <p class="text-slate-600 mb-6">Keep customers staring with live weather, scrolling news tickers, and embedded HTML web apps.</p>
+                    <ul class="space-y-2 text-sm font-semibold text-slate-700">
+                        <li class="flex items-center gap-2"><span class="text-brand text-lg">✔</span> Live Weather Apps</li>
+                        <li class="flex items-center gap-2"><span class="text-brand text-lg">✔</span> Scrolling Tickers</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── STATS ─── -->
+    <section class="bg-dark text-white py-12 px-6">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center text-center divide-y md:divide-y-0 md:divide-x divide-slate-800">
+            <div class="py-6 md:py-0 md:px-12 w-full">
+                <div class="text-4xl font-extrabold text-brand mb-1 stat-num">99.9%</div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">Uptime Guarantee</div>
+            </div>
+            <div class="py-6 md:py-0 md:px-12 w-full">
+                <div class="text-4xl font-extrabold text-brand mb-1 stat-num">1000+</div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">Screens Powered</div>
+            </div>
+            <div class="py-6 md:py-0 md:px-12 w-full">
+                <div class="text-4xl font-extrabold text-brand mb-1 stat-num">&lt; 2m</div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">Setup Time</div>
+            </div>
+            <div class="py-6 md:py-0 md:px-12 w-full">
+                <div class="text-4xl font-extrabold text-brand mb-1 stat-num">4.9★</div>
+                <div class="text-sm text-slate-400 font-bold uppercase tracking-wider">Average Rating</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── FEATURE COMPARISON TABLE ─── -->
+    <section id="features" class="py-24 px-6 bg-white">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block bg-brand/20 text-dark border border-brand font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest mb-4">Plans & Features</span>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-dark mb-4">Everything You Need to Win.</h2>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto">Whether you're just starting out or scaling to hundreds of screens — we've got a plan for you.</p>
+            </div>
+
+            <!-- Table -->
+            <div class="rounded-3xl border border-slate-200 overflow-hidden shadow-xl reveal">
+                <!-- Header -->
+                <div class="grid grid-cols-3 bg-dark text-white">
+                    <div class="p-6 col-span-1">
+                        <span class="text-xs uppercase tracking-widest font-bold text-slate-400">Feature</span>
+                    </div>
+                    <div class="p-6 text-center border-l border-slate-800">
+                        <div class="font-extrabold text-lg">Standard</div>
+                        <div class="text-brand text-2xl font-black mt-1">$7<span class="text-sm text-slate-400 font-normal">/mo</span></div>
+                    </div>
+                    <div class="p-6 text-center border-l border-slate-800 bg-brand/10">
+                        <div class="font-extrabold text-lg text-brand">PRO</div>
+                        <div class="text-brand text-2xl font-black mt-1">$18<span class="text-sm text-slate-400 font-normal">/mo</span></div>
+                    </div>
+                </div>
+
+                <!-- Rows -->
+                <div id="feature-table" class="divide-y divide-slate-100">
+                    <!-- JS will render rows -->
+                </div>
+
+                <!-- CTA row -->
+                <div class="grid grid-cols-3 bg-slate-50 border-t border-slate-200">
+                    <div class="p-6"></div>
+                    <div class="p-6 text-center border-l border-slate-100">
+                        <a href="app.html" class="inline-block bg-dark text-white font-bold px-6 py-3 rounded-full text-sm hover:bg-slate-800 transition-all">Get Standard</a>
+                    </div>
+                    <div class="p-6 text-center border-l border-slate-100">
+                        <a href="pricing.html" class="inline-block bg-brand text-dark font-extrabold px-6 py-3 rounded-full text-sm hover:bg-brand-dark transition-all shadow-[0_0_20px_-5px_rgba(212,255,0,0.6)]">Get PRO →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── INDUSTRIES ─── -->
+    <section class="py-24 px-6 bg-slate-50" id="industries">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block bg-brand/20 text-dark border border-brand font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest mb-4">Who It's For</span>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-dark mb-4">Built for Every Business<br>With a Screen.</h2>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto">From single-location cafes to multi-site retail chains — Supacms scales with you.</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div class="industry-card bg-white border border-slate-200 rounded-2xl p-6 text-center cursor-pointer">
+                    <div class="industry-icon w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-2xl mx-auto mb-3 transition-all">🍔</div>
+                    <div class="font-bold text-dark text-sm">Restaurants</div>
+                    <div class="text-xs text-slate-400 mt-1">Menu Boards</div>
+                </div>
+                <div class="industry-card bg-white border border-slate-200 rounded-2xl p-6 text-center cursor-pointer">
+                    <div class="industry-icon w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-2xl mx-auto mb-3 transition-all">🛍️</div>
+                    <div class="font-bold text-dark text-sm">Retail Stores</div>
+                    <div class="text-xs text-slate-400 mt-1">Promotions</div>
+                </div>
+                <div class="industry-card bg-white border border-slate-200 rounded-2xl p-6 text-center cursor-pointer">
+                    <div class="industry-icon w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-2xl mx-auto mb-3 transition-all">🏋️</div>
+                    <div class="font-bold text-dark text-sm">Gyms & Fitness</div>
+                    <div class="text-xs text-slate-400 mt-1">Class Schedules</div>
+                </div>
+                <div class="industry-card bg-white border border-slate-200 rounded-2xl p-6 text-center cursor-pointer">
+                    <div class="industry-icon w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-2xl mx-auto mb-3 transition-all">🏨</div>
+                    <div class="font-bold text-dark text-sm">Hotels</div>
+                    <div class="text-xs text-slate-400 mt-1">Lobby Displays</div>
+                </div>
+                <div class="industry-card bg-white border border-slate-200 rounded-2xl p-6 text-center cursor-pointer">
+                    <div class="industry-icon w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-2xl mx-auto mb-3 transition-all">💈</div>
+                    <div class="font-bold text-dark text-sm">Salons & Spas</div>
+                    <div class="text-xs text-slate-400 mt-1">Service Menus</div>
+                </div>
+                <div class="industry-card bg-white border border-slate-200 rounded-2xl p-6 text-center cursor-pointer">
+                    <div class="industry-icon w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-2xl mx-auto mb-3 transition-all">🏢</div>
+                    <div class="font-bold text-dark text-sm">Corporate</div>
+                    <div class="text-xs text-slate-400 mt-1">Internal Comms</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── MID-PAGE CTA BANNER ─── -->
+    <section class="bg-brand py-14 px-6 relative overflow-hidden">
+        <div class="absolute inset-0 bg-grid opacity-10"></div>
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+            <div>
+                <div class="text-3xl md:text-4xl font-extrabold text-dark tracking-tight mb-2">Ready to stop losing money<br>on empty screens?</div>
+                <p class="text-dark/60 font-medium">Join 1,000+ screens already running on Supacms. Free trial. No card needed.</p>
+            </div>
+            <a href="app.html" class="shrink-0 bg-dark text-white px-10 py-4 rounded-full text-lg font-extrabold hover:bg-slate-800 transition-all shadow-xl hover:-translate-y-1 whitespace-nowrap">
+                Try Free Now →
+            </a>
+        </div>
+    </section>
+
+    <!-- ─── COMPARE ─── -->
+    <section id="compare" class="py-24 px-6 bg-white relative">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-16 reveal">
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-dark mb-4">We're Not Just Another CMS.</h2>
+                <p class="text-lg text-slate-600">See why businesses are ditching clunky legacy providers for Supacms.</p>
+            </div>
+            <div class="grid md:grid-cols-2 gap-8 md:gap-0 relative reveal">
+                <div class="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full items-center justify-center font-black text-2xl text-slate-300 z-10 shadow-xl border border-slate-100">VS</div>
+                <div class="bg-dark text-white p-10 md:p-14 md:rounded-l-3xl rounded-3xl md:rounded-r-none relative overflow-hidden shadow-2xl z-0">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-brand/20 blur-3xl rounded-full -z-10"></div>
+                    <div class="flex items-center gap-3 mb-8">
+                        <div class="w-10 h-10 bg-brand rounded-lg flex items-center justify-center text-dark text-xl font-black">S</div>
+                        <h3 class="text-3xl font-extrabold">Supacms</h3>
+                    </div>
+                    <ul class="space-y-6">
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-dark shrink-0 text-xs font-bold">✔</div> Works on ANY Smart TV/Stick</li>
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-dark shrink-0 text-xs font-bold">✔</div> Instant Cloud Updates</li>
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-dark shrink-0 text-xs font-bold">✔</div> Manage 1 or 1,000 screens</li>
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-dark shrink-0 text-xs font-bold">✔</div> <strong>Starts at just $7/mo</strong></li>
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-brand flex items-center justify-center text-dark shrink-0 text-xs font-bold">✔</div> Modern, Intuitive Dashboard</li>
+                    </ul>
+                    <a href="pricing.html" class="inline-block mt-10 bg-brand text-dark font-bold px-8 py-3 rounded-full hover:bg-white transition-colors">See Pricing</a>
+                </div>
+                <div class="bg-slate-50 border-2 border-slate-200 p-10 md:p-14 md:rounded-r-3xl rounded-3xl md:rounded-l-none text-slate-500">
+                    <div class="flex items-center gap-3 mb-8">
+                        <div class="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xl font-black">?</div>
+                        <h3 class="text-3xl font-extrabold text-slate-400">The Old Way</h3>
+                    </div>
+                    <ul class="space-y-6">
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 text-xs">✘</div> Requires $200+ Custom Hardware</li>
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 text-xs">✘</div> Manual USB Stick Updates</li>
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 text-xs">✘</div> Clunky 90s Interface</li>
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 text-xs">✘</div> Forces expensive $40+/mo contracts</li>
+                        <li class="flex items-center gap-4 text-lg font-medium"><div class="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center shrink-0 text-xs">✘</div> No real-time remote control</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── TESTIMONIALS ─── -->
+    <section class="py-24 px-6 bg-dark text-white relative overflow-hidden" id="testimonials">
+        <div class="blob bg-brand w-[600px] h-[600px] rounded-full top-[-20%] right-[-10%] opacity-5"></div>
+        <div class="max-w-7xl mx-auto relative z-10">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block bg-brand/20 text-brand border border-brand/30 font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest mb-4">Real Results</span>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">Businesses Love Supacms.</h2>
+                <p class="text-slate-400 text-lg max-w-xl mx-auto">Don't take our word for it — hear from the owners already printing cash with their screens.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- T1 -->
+                <div class="testimonial-card bg-slate-900 border border-slate-800 rounded-3xl p-8 reveal">
+                    <div class="flex items-center gap-1 mb-4 text-brand text-lg">★★★★★</div>
+                    <p class="text-slate-300 leading-relaxed mb-6">"We switched from a $45/month competitor and honestly Supacms blows it out of the water. Our breakfast menu flips to the lunch specials automatically every day. Set it and forget it."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand rounded-full flex items-center justify-center text-dark font-black text-sm">JR</div>
+                        <div>
+                            <div class="font-bold text-white text-sm">James R.</div>
+                            <div class="text-slate-500 text-xs">Owner, The Griddle Café</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- T2 -->
+                <div class="testimonial-card bg-slate-900 border border-slate-800 rounded-3xl p-8 reveal" style="transition-delay:0.1s">
+                    <div class="flex items-center gap-1 mb-4 text-brand text-lg">★★★★★</div>
+                    <p class="text-slate-300 leading-relaxed mb-6">"I manage 6 retail locations. Before Supacms I'd drive to each store with a USB. Now I update all 6 screens from my phone in 30 seconds. The time savings alone pays for the subscription 10x over."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand rounded-full flex items-center justify-center text-dark font-black text-sm">SK</div>
+                        <div>
+                            <div class="font-bold text-white text-sm">Sarah K.</div>
+                            <div class="text-slate-500 text-xs">Operations Manager, StyleHub</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- T3 -->
+                <div class="testimonial-card bg-slate-900 border border-slate-800 rounded-3xl p-8 reveal" style="transition-delay:0.2s">
+                    <div class="flex items-center gap-1 mb-4 text-brand text-lg">★★★★★</div>
+                    <p class="text-slate-300 leading-relaxed mb-6">"The live weather widget is a genius touch. Our gym lobby screen shows the weather, class schedule tickers, and our promo offer all at once. Members actually stop and read it now."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand rounded-full flex items-center justify-center text-dark font-black text-sm">MT</div>
+                        <div>
+                            <div class="font-bold text-white text-sm">Mike T.</div>
+                            <div class="text-slate-500 text-xs">Co-founder, IronPeak Fitness</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- T4 -->
+                <div class="testimonial-card bg-slate-900 border border-slate-800 rounded-3xl p-8 reveal">
+                    <div class="flex items-center gap-1 mb-4 text-brand text-lg">★★★★★</div>
+                    <p class="text-slate-300 leading-relaxed mb-6">"Setup literally took 90 seconds. Downloaded the app on our old Fire Stick, paired the screen, uploaded 3 images. Done. Couldn't believe how painless it was compared to what I expected."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand rounded-full flex items-center justify-center text-dark font-black text-sm">AL</div>
+                        <div>
+                            <div class="font-bold text-white text-sm">Anika L.</div>
+                            <div class="text-slate-500 text-xs">Owner, Bloom Nail Studio</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- T5 -->
+                <div class="testimonial-card bg-slate-900 border border-slate-800 rounded-3xl p-8 reveal" style="transition-delay:0.1s">
+                    <div class="flex items-center gap-1 mb-4 text-brand text-lg">★★★★★</div>
+                    <p class="text-slate-300 leading-relaxed mb-6">"We run 4 hotel lobby screens and the Screen Zones feature on PRO is incredible. One zone for branding, one for local weather, and a ticker for daily events — all on one screen. Guests love it."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand rounded-full flex items-center justify-center text-dark font-black text-sm">CB</div>
+                        <div>
+                            <div class="font-bold text-white text-sm">Carlos B.</div>
+                            <div class="text-slate-500 text-xs">GM, Meridian Suites Hotel</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- T6 -->
+                <div class="testimonial-card bg-slate-900 border border-slate-800 rounded-3xl p-8 reveal" style="transition-delay:0.2s">
+                    <div class="flex items-center gap-1 mb-4 text-brand text-lg">★★★★★</div>
+                    <p class="text-slate-300 leading-relaxed mb-6">"The Bulletin Board feature alone is worth the upgrade to PRO. Our staff see shift reminders and policy updates on the break-room screen automatically. Zero emails, zero confusion."</p>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-brand rounded-full flex items-center justify-center text-dark font-black text-sm">PN</div>
+                        <div>
+                            <div class="font-bold text-white text-sm">Priya N.</div>
+                            <div class="text-slate-500 text-xs">HR Lead, FastFuel QSR Chain</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rating summary -->
+            <div class="mt-16 flex flex-col md:flex-row items-center justify-center gap-6 text-center reveal">
+                <div class="text-7xl font-black text-brand">4.9</div>
+                <div class="text-left">
+                    <div class="flex gap-1 text-brand text-2xl mb-1">★★★★★</div>
+                    <div class="text-white font-bold text-lg">Average rating across 218 reviews</div>
+                    <div class="text-slate-400 text-sm">Based on verified customer reviews</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── FAQ ─── -->
+    <section id="faq" class="py-24 px-6 bg-white">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-16 reveal">
+                <span class="inline-block bg-brand/20 text-dark border border-brand font-bold px-4 py-1.5 rounded-full text-xs uppercase tracking-widest mb-4">FAQ</span>
+                <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-dark mb-4">Your Questions, Answered.</h2>
+                <p class="text-lg text-slate-600">Everything you need to know before your first screen goes live.</p>
+            </div>
+            <div id="faq-list" class="space-y-3 reveal">
+                <!-- JS renders FAQs -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── FINAL CTA ─── -->
+    <section class="py-24 px-6 relative">
+        <div class="max-w-5xl mx-auto bg-dark rounded-[3rem] p-10 md:p-20 text-center relative overflow-hidden shadow-2xl">
+            <div class="absolute inset-0 bg-grid opacity-20"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-brand/30 blur-[100px] rounded-full z-0 pointer-events-none"></div>
+            <div class="relative z-10">
+                <h2 class="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-8">
+                    Let's stop bleeding money, and make your screens <span class="text-brand">Start Printing Cash.</span>
+                </h2>
+                <p class="text-slate-400 text-xl mb-10 max-w-2xl mx-auto">Join the businesses already using Supacms to dominate their local market. Setup takes less than 2 minutes.</p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <a href="app.html" class="inline-block bg-brand text-dark px-10 py-5 rounded-full text-xl font-extrabold hover:scale-105 transition-transform shadow-[0_0_40px_-10px_rgba(212,255,0,0.8)]">
+                        Start Your Free Trial Now
+                    </a>
+                    <a href="pricing.html" class="inline-block bg-white/10 text-white border border-white/20 px-10 py-5 rounded-full text-xl font-bold hover:bg-white/20 transition-all">
+                        View Pricing
+                    </a>
+                </div>
+                <p class="text-slate-500 text-sm mt-6">✔ No credit card required &nbsp;&nbsp; ✔ Cancel anytime &nbsp;&nbsp; ✔ Setup in 2 minutes</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── FOOTER ─── -->
+    <footer class="bg-white border-t border-slate-200">
+        <div class="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2 font-bold text-lg text-dark">
+                <div class="w-6 h-6 bg-brand rounded flex items-center justify-center text-dark text-sm">S</div>
+                Supacms
+            </div>
+            <div class="flex gap-8 text-sm font-semibold text-slate-600">
+                <a href="pricing.html" class="hover:text-dark transition-colors">Pricing</a>
+                <a href="app.html" class="hover:text-dark transition-colors">Dashboard</a>
+                <a href="#faq" class="hover:text-dark transition-colors">FAQ</a>
+                <a href="legal.html#terms" class="hover:text-dark transition-colors">Terms</a>
+                <a href="legal.html#privacy" class="hover:text-dark transition-colors">Privacy</a>
+            </div>
+            <div class="text-sm text-slate-400 font-medium">&copy; 2026 Supacms. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+    // ── Feature Table Data ──
+    const features = [
+        { name: "Images & Video Uploads",      standard: true,  pro: true },
+        { name: "Remote Scheduling",            standard: true,  pro: true },
+        { name: "Device Groups",                standard: true,  pro: true },
+        { name: "Live Weather App",             standard: false, pro: true },
+        { name: "HTML5 / Website Embeds",       standard: false, pro: true },
+        { name: "Scrolling Text Tickers",       standard: false, pro: true },
+        { name: "Text Slides",                  standard: false, pro: true },
+        { name: "Sticky Logo / Branding",       standard: false, pro: true },
+        { name: "Bulletin Board",               standard: false, pro: true },
+        { name: "Screen Zones (Layouts)",       standard: false, pro: true },
+        { name: "Priority Override Scheduling", standard: false, pro: true },
+        { name: "Advanced Dayparting",          standard: false, pro: true },
+    ];
+
+    const table = document.getElementById('feature-table');
+    features.forEach((f, i) => {
+        const row = document.createElement('div');
+        row.className = `feature-row grid grid-cols-3 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`;
+        row.innerHTML = `
+            <div class="p-5 font-semibold text-slate-700 text-sm flex items-center">${f.name}</div>
+            <div class="p-5 text-center border-l border-slate-100 flex items-center justify-center">
+                ${f.standard
+                    ? '<span class="text-brand text-xl font-black">✔</span>'
+                    : '<span class="text-slate-300 text-xl">✕</span>'}
+            </div>
+            <div class="p-5 text-center border-l border-slate-100 bg-brand/5 flex items-center justify-center">
+                ${f.pro
+                    ? '<span class="text-brand text-xl font-black">✔</span>'
+                    : '<span class="text-slate-300 text-xl">✕</span>'}
+            </div>`;
+        table.appendChild(row);
+    });
+
+    // ── FAQ Data ──
+    const faqs = [
+        {
+            q: "What devices does Supacms work on?",
+            a: "Supacms works on any device running Android — including Amazon Fire TV Sticks, Android Smart TVs, Android tablets, and most smart displays. If it has an internet connection and the Google Play Store (or sideloading), it runs Supacms."
+        },
+        {
+            q: "Do I need to buy special hardware?",
+            a: "No! That's the whole point. Unlike legacy providers that force you to buy $200+ proprietary boxes, Supacms runs on any Android-capable device you already own — or a $30 Amazon Fire Stick. No hidden hardware costs."
+        },
+        {
+            q: "How long does it take to set up?",
+            a: "Most customers are fully live in under 2 minutes. Install the app on your screen, sign in, upload your media, and hit publish. It's genuinely that fast. Our record is 47 seconds from zero to live screen."
+        },
+        {
+            q: "Can I manage multiple screens from one account?",
+            a: "Yes, absolutely. You can manage as many screens as you need from a single dashboard. Group them by location, zone, or type — and push updates to all of them at once or individually. Perfect for multi-location businesses."
+        },
+        {
+            q: "What's the difference between Standard and PRO?",
+            a: "Standard includes all the essentials: image/video uploads, remote scheduling, and device groups. PRO unlocks the advanced engagement tools — live weather, HTML5 embeds, scrolling tickers, text slides, sticky branding, bulletin boards, and screen zones for split-layout displays."
+        },
+        {
+            q: "Can I schedule different content for different times of day?",
+            a: "Yes — both plans support remote scheduling, but PRO adds Advanced Dayparting for time-specific playlists (e.g., breakfast menu 6am–11am, lunch specials 11am–3pm, happy hour promos 4pm–7pm) and Priority Overrides for urgent announcements."
+        },
+        {
+            q: "Is there a free trial?",
+            a: "Yes! We offer a free trial on both plans — no credit card required. Sign up, get full access, and see the difference before you spend a cent. We're confident you won't want to stop."
+        },
+        {
+            q: "How often can I update my screen content?",
+            a: "As often as you like. Content updates are instant — push a change and your screen updates within seconds, from anywhere in the world. There are no limits on how frequently you can update."
+        },
+        {
+            q: "What happens if my internet goes down?",
+            a: "Supacms caches your most recent playlist locally on the device. If internet drops, your screen keeps playing the last synced content automatically — no blank screens, no embarrassing moments. As soon as connectivity returns, it syncs and updates."
+        },
+        {
+            q: "Can I cancel anytime?",
+            a: "Yes, cancel anytime with zero penalties, no exit fees, and no long-term contracts. We operate on a simple monthly subscription. If Supacms isn't working for you — though we've never heard that — you can leave anytime."
+        },
+    ];
+
+    const faqList = document.getElementById('faq-list');
+    faqs.forEach((faq, i) => {
+        const item = document.createElement('div');
+        item.className = 'border border-slate-200 rounded-2xl overflow-hidden';
+        item.innerHTML = `
+            <button onclick="toggleFaq(${i}, this)" class="w-full flex justify-between items-center p-6 text-left font-bold text-dark hover:bg-slate-50 transition-colors">
+                <span>${faq.q}</span>
+                <span class="faq-icon text-2xl text-brand ml-4 shrink-0">+</span>
+            </button>
+            <div class="faq-answer px-6 text-slate-600 leading-relaxed text-sm">
+                <div class="pb-6">${faq.a}</div>
+            </div>`;
+        faqList.appendChild(item);
+    });
+
+    function toggleFaq(idx, btn) {
+        const answer = btn.nextElementSibling;
+        const icon = btn.querySelector('.faq-icon');
+        const isOpen = answer.classList.contains('open');
+        // Close all
+        document.querySelectorAll('.faq-answer').forEach(a => a.classList.remove('open'));
+        document.querySelectorAll('.faq-icon').forEach(i => i.classList.remove('open'));
+        if (!isOpen) {
+            answer.classList.add('open');
+            icon.classList.add('open');
+        }
+    }
+
+    // ── Scroll Reveal ──
+    const reveals = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+    }, { threshold: 0.12 });
+    reveals.forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
