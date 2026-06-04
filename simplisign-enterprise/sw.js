@@ -32,22 +32,20 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// 3. FETCH: Serve from Cache first, then Network
+// 3. FETCH: Network First, Fallback to Cache
 self.addEventListener('fetch', (event) => {
-    // Only handle http/https requests
     if (!event.request.url.startsWith('http')) return;
 
     event.respondWith(
-            caches.match(event.request, { ignoreSearch: true }).then((cachedResponse) => {
-            // Return cached file if found
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-            // Otherwise try to download it
-            return fetch(event.request).catch(() => {
-                // If offline and request fails, we can't do anything for new media,
-                // but the player page itself will already be returned by the cache above.
+        fetch(event.request).then((networkResponse) => {
+            // If online, grab the freshest file from Vercel and update the cache quietly
+            return caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, networkResponse.clone());
+                return networkResponse;
             });
+        }).catch(() => {
+            // If offline, serve the last known good version from the cache
+            return caches.match(event.request, { ignoreSearch: true });
         })
     );
 });

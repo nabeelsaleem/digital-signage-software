@@ -1117,12 +1117,24 @@
                         // 3. FETCH PROFILE TIER IN BACKGROUND (Non-blocking)
                         sb.from('profiles').select('subscription_tier').eq('id', state.user.id).single()
                             .then(({ data: profile, error }) => {
-                                if (profile) {
-                                    state.subscription_tier = profile.subscription_tier;
-                                } else {
-                                    // Fallback to free if row is missing
-                                    state.subscription_tier = 'free';
+                                let tier = profile ? profile.subscription_tier : 'free';
+                                
+                                // Check for client-side upgrade grace period (e.g., 5 minutes)
+                                const pendingUpgradeStr = localStorage.getItem('ss_pending_upgrade');
+                                if (pendingUpgradeStr && tier === 'free') {
+                                    try {
+                                        const pendingUpgrade = JSON.parse(pendingUpgradeStr);
+                                        if (Date.now() - pendingUpgrade.time < 5 * 60 * 1000) {
+                                            tier = pendingUpgrade.tier || 'pro'; // Assume upgraded tier to unblock UI features while webhook processes
+                                        } else {
+                                            localStorage.removeItem('ss_pending_upgrade');
+                                        }
+                                    } catch (e) {
+                                        localStorage.removeItem('ss_pending_upgrade');
+                                    }
                                 }
+                                
+                                state.subscription_tier = tier;
                             })
                             .catch(err => {
                                 console.error("Profile check background error:", err);
@@ -2892,6 +2904,9 @@
                 user_email: state.user.email,
                 success: function(response) {
                     showToast('Payment Successful! Unlocking features...', 'success');
+                    // Set a client-side grace period for the upgrade (webhook takes time)
+                    const targetTier = planId == 50087 ? 'pro' : 'standard';
+                    localStorage.setItem('ss_pending_upgrade', JSON.stringify({ time: Date.now(), tier: targetTier }));
                     // Refresh the app so the new features unlock automatically
                     setTimeout(() => window.location.reload(), 3000);
                 }
