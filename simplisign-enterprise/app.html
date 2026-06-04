@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SimpliSign Enterprise</title>    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://checkout.freemius.com/checkout.min.js"></script>    
+    <script src="https://checkout.freemius.com/js/v1/"></script>    
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -2885,30 +2885,32 @@
             }
         }
 
-        // --- 7. FREEMIUS BILLING INTEGRATION ---
+       // --- 7. FREEMIUS BILLING INTEGRATION ---
         function openCheckout(planId) {
             if (!state.user || !state.user.email) {
                 return showToast('Please log in to upgrade.', 'error');
             }
 
-            // Configure Freemius dynamically based on the planId passed
-            const handler = FS.Checkout.configure({
-                plugin_id: '30416', // Your Product ID
-                plan_id: planId,    // 49968 (Standard) or 50087 (PRO)
-                public_key: 'pk_0eeed04732ef5a304a86061505752', // IMPORTANT: Put your Freemius Public Key here!
+            // 1. Initialize the modern Freemius SDK
+            const handler = new FS.Checkout({
+                product_id: '30416', // Your Product ID
+                public_key: 'pk_baf0618bb666a99b615832ea0f6ca', // <-- YOU MUST PASTE YOUR REAL KEY HERE!
                 image: 'https://raw.githubusercontent.com/nabeelsaleem/digital-signage-software/edf98040c6518e4e89997f88b9ca4e3c1877b1d0/simplisign-enterprise/images/FOR%20LIGHT%20MODE.svg'
             });
 
-            // Open the modal
+            // 2. Open the modal
             handler.open({
+                plan_id: planId,    // 49968 (Standard) or 50087 (PRO)
                 user_email: state.user.email,
                 success: function(response) {
                     showToast('Payment Successful! Unlocking features...', 'success');
+                    
                     // Set a client-side grace period for the upgrade (webhook takes time)
                     const targetTier = planId == 50087 ? 'pro' : 'standard';
                     localStorage.setItem('ss_pending_upgrade', JSON.stringify({ time: Date.now(), tier: targetTier }));
+                    
                     // Refresh the app so the new features unlock automatically
-                    setTimeout(() => window.location.reload(), 3000);
+                    setTimeout(() => window.location.reload(), 2000);
                 }
             });
         }
